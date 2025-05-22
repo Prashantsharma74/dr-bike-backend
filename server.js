@@ -15,7 +15,6 @@ const errorMiddleware = require("./middlewares/error");
 var serveIndex = require('serve-index')
 // const fileUpload = require('express-fileupload');
 
-
 app.all("*", function (req, res, next) {
   res.header("Access-Control-Allow-Origin", "*");
   res.header("Access-Control-Allow-Methods", "PUT, GET, POST, DELETE, OPTIONS");

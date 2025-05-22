@@ -13,23 +13,28 @@ const getRandomInt = async (length) => {
 }
 
 function getRoleCode(role) {
-    const roleMap = {
-      admin: "A",
-      subadmin: "SA",
-      telecaller: "T",
-      manager: "M",
-      executive: "E"
-    };
-    return roleMap[role.toLowerCase()] || "X"; // fallback to X
-  }
+  const map = {
+    telecaller: "TEL",
+    manager: "MGR",
+    admin: "ADM",
+    subadmin: "SADM",
+    executive: "EXE"
+  };
+  return map[role.toLowerCase()] || "EMP";  
+}
 
 function generateRandomSuffix(length = 6) {
-    return crypto.randomBytes(length)
-      .toString('base64')
-      .replace(/[^a-zA-Z0-9]/g, '')  // remove non-alphanumeric chars
-      .slice(0, length)
-      .toUpperCase();
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let result = '';
+  const bytes = crypto.randomBytes(length);
+
+  for (let i = 0; i < length; i++) {
+    const index = bytes[i] % chars.length;
+    result += chars.charAt(index);
   }
+
+  return result;
+}
 
 const currentdate = async (formate) => {
     let nowtime = moment();
@@ -60,7 +65,7 @@ const sendemails = async (emailAddress, name, otp, type, subject = '') => {
             var msg = `Dear ${name}, \n  
                 \n  ${otp}  
                 \n Best Regards`;
-        }else{
+        } else {
 
             var sub = subject;
             var msg = `Dear ${name}, \n  
@@ -78,10 +83,10 @@ const sendemails = async (emailAddress, name, otp, type, subject = '') => {
             port: 465,
             secure: true, // use TLS
             auth: {
-                 user: 'devitinformatix@gmail.com',
+                user: 'devitinformatix@gmail.com',
                 pass: 'itinfo@2020'
             }
-           
+
         });
         let mailContent = {
             from: {
@@ -96,24 +101,23 @@ const sendemails = async (emailAddress, name, otp, type, subject = '') => {
         await client.sendMail(mailContent, function (err, info) {
             if (err) {
                 console.log('message send msg', err)
-               
+
             } else {
-               // console.log('message send msg', info);
-               // const message = 'Your message has been successfully sent.';
-              
+                // console.log('message send msg', info);
+                // const message = 'Your message has been successfully sent.';
+
             }
         });
         //console.log("Your message has been successfully sent.");
     } catch (err) {
-    //console.log('err: ', err);
-        
+        //console.log('err: ', err);
+
         //console.log(err.message);
         // throw new Error(err.message);
     }
 }
 module.exports = {
-    getRandomInt, currentdate,sendemails, getRoleCode, generateRandomSuffix
+    getRandomInt, currentdate, sendemails, getRoleCode, generateRandomSuffix
 }
 
 
-  

@@ -17,8 +17,8 @@ const upload = multer({ storage: storage });
 
 /* POST users listing. */
 router.post('/suadminLogin', suadminLogin);
-router.post('/subadminsignup', verifyToken, subadminsignup);
-router.post('/suadminsignup', verifyToken, suadminsignup);
+router.post('/subadminsignup', subadminsignup);
+// router.post('/suadminsignup', verifyToken, suadminsignup);
 router.get('/getalladmin', verifyToken, getAllAdmin);
 router.delete('/deleteadmin', verifyToken, deleteAdmin);
 router.post('/Changepassword/:id', verifyToken, changePassword);
