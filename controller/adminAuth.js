@@ -2,6 +2,7 @@ const path = require('path');
 const fs = require('fs');
 var validation = require('../helper/validation');
 require('dotenv').config();
+const jwt = require("jsonwebtoken")
 
 const admin = require('../models/admin_model');
 var bcrypt = require('bcryptjs');
@@ -66,8 +67,6 @@ async function suadminsignup(req, res) {
     return res.status(201).send(response);
   }
 }
-
-
 // Assuming you have already set up Express.js and Mongoose
 
 // POST endpoint to add a new role
@@ -271,206 +270,7 @@ async function verifyOtpAdmin(req, res) {
   }
 }
 
-// Register SubAdmin
-async function subadminsignup(req, res) {
-  try {
-    const data = jwt_decode(req.headers.token);
-    const user_id = data.user_id;
-    const user_type = data.user_type;
-    if (user_id == null || user_type != 1) {
-      if (user_type === 3) {
-        var response = {
-          status: 403,
-          message: "SubAdmin is un-authorised !",
-        };
-        return res.status(201).send(response);
-      } else {
-        var response = {
-          status: 403,
-          message: "Admin is un-authorised !",
-        };
-        return res.status(401).send(response);
-      }
-    }
 
-    const { name, email, password, image, mobile, role } = req.body;
-    const roleCode = getRoleCode(role);
-    const randomSuffix = generateRandomSuffix(6);
-    const employeeId = `${roleCode}${randomSuffix}`;
-
-    let user = await admin.findOne({ email });
-
-    if (user) {
-      res.status(400).json({
-        success: false,
-        message: "Email Already Exists"
-      });
-      return;
-    }
-
-    user = await admin.findOne({ mobile });
-    if (user) {
-      return res.status(400).json({
-        success: false,
-        message: "Mobile Number Already Exists"
-      });
-    }
-
-    user = await admin({
-      name,
-      email,
-      password,
-      image,
-      mobile,
-      role,
-      employeeId: employeeId
-    });
-
-    console.log(user, "user")
-    const saltRounds = 10;
-    const salt = bcrypt.genSaltSync(saltRounds);
-
-    // now we set user password to hashed password
-    user.password = await bcrypt.hash(user.password, salt);
-    // user.save();
-
-    await user.save()
-      .then(async savedUser => {
-        const userId = savedUser._id;
-        const newRole = new Role({
-          subAdmin: savedUser._id
-        });
-        await newRole.save();
-        console.log("User created with ID:", userId);
-        // Now you can use userId wherever you need it
-      })
-      .catch(err => {
-        console.error("Error saving user:", err);
-      });
-
-    res.status(200).json({
-      status: 200,
-      success: true,
-      message: "Sub Admin Created Successfully"
-    });
-
-  } catch (error) {
-    console.error("Signup Error:", error);
-    return res.status(500).json({
-      status: 500,
-      message: 'Operation was not successful',
-      error: error.message || error
-    });
-  }
-}
-
-async function getAllAdmin(req, res) {
-  try {
-    const data = jwt_decode(req.headers.token);
-    const user_id = data.user_id;
-    const user_type = data.user_type;
-    const type = data.type;
-    if (user_id == null || user_type != 1 && user_type != 3) {
-      var response = {
-        status: 401,
-        message: "Admin is un-authorised !",
-      };
-      return res.status(401).send(response);
-    }
-
-    const admins = await admin.find(req.query).sort({ "_id": -1 });
-
-    var response = {
-      status: 200,
-      message: "success",
-      data: admins,
-    };
-    return res.status(200).send(response);
-
-  } catch (error) {
-    response = {
-      status: 201,
-      message: 'Operation was not successful',
-      Error: error
-    };
-    return res.status(201).send(response);
-  }
-}
-
-
-
-async function deleteAdmin(req, res) {
-  try {
-    const data = jwt_decode(req.headers.token);
-    const user_id = data.user_id;
-    const user_type = data.user_type;
-
-    if (user_id == null || user_type != 1) {
-      if (user_type === 3) {
-        var response = {
-          status: 201,
-          message: "SubAdmin is un-authorised !",
-        };
-        return res.status(201).send(response);
-      } else {
-        var response = {
-          status: 401,
-          message: "Admin is un-authorised !",
-        };
-        return res.status(401).send(response);
-      }
-    }
-
-    const { admin_id } = req.body;
-    const adminRes = await admin.findById(admin_id);
-
-    if (adminRes.role === "Admin") {
-      var response = {
-        status: 201,
-        message: "You Can't Delete Super Admin",
-      };
-
-      return res.status(201).send(response);
-    }
-
-    if (!adminRes) {
-      var response = {
-        status: 201,
-        message: "Admin Not Found",
-      };
-
-      return res.status(201).send(response);
-    }
-
-    admin.findByIdAndDelete(
-      { _id: admin_id },
-      async function (err, docs) {
-        if (err) {
-          var response = {
-            status: 201,
-            message: "Admin delete failed",
-          };
-          return res.status(201).send(response);
-        } else {
-
-          var response = {
-            status: 200,
-            message: "Admin deleted successfully",
-          };
-          return res.status(200).send(response);
-        }
-      }
-    );
-
-  } catch (error) {
-    response = {
-      status: 201,
-      message: 'Operation was not successful',
-      Error: error
-    };
-    return res.status(201).send(response);
-  }
-}
 
 function deleteFile(filePath) {
   try {
@@ -637,8 +437,231 @@ const getSingleRole = async (req, res) => {
 };
 
 
+// By Prashant 
+
+const twilio = require('twilio');
+const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+const otpStore = new Map();
+
+async function subadminsignup(req, res) {
+  try {
+    const { name, email, password, image, mobile, role } = req.body;
+
+    if (!name || !email || !password || !mobile || !role) {
+      return res.status(400).json({
+        success: false,
+        message: "Required fields are missing",
+      });
+    }
+
+    const existingEmail = await admin.findOne({ email });
+    if (existingEmail) {
+      return res.status(400).json({
+        success: false,
+        message: "Email already exists",
+      });
+    }
+
+    const existingMobile = await admin.findOne({ mobile });
+    if (existingMobile) {
+      return res.status(400).json({
+        success: false,
+        message: "Mobile number already exists",
+      });
+    }
+
+    const roleCode = getRoleCode(role);
+    const randomSuffix = generateRandomSuffix(6);
+    const employeeId = `${roleCode}${randomSuffix}`;
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    const newUser = new admin({
+      name,
+      email,
+      password: hashedPassword,
+      image,
+      mobile,
+      role,
+      employeeId,
+    });
+
+    const savedUser = await newUser.save();
+
+    await new Role({
+      subAdmin: savedUser._id
+    }).save();
+
+    console.log("User created with ID:", savedUser._id);
+
+    return res.status(200).json({
+      status: 200,
+      success: true,
+      message: "Sub Admin created successfully",
+      newUser
+    });
+
+  } catch (error) {
+    console.error("Signup Error:", error);
+    return res.status(500).json({
+      status: 500,
+      message: 'Operation was not successful',
+      error: error.message || error
+    });
+  }
+}
+
+const sendOtp = async (req, res) => {
+  let { phone } = req.body;
+  console.log("Received phone:", phone);
+  phone = String(phone).trim();
+
+  if (!/^\d{10}$/.test(phone)) {
+    return res.status(400).json({ message: "Invalid phone number. Expected 10 digits." });
+  }
+
+  const fullPhone = `+91${phone}`;
+
+  try {
+    const user = await admin.findOne({ mobile: phone });
+    if (!user) {
+      return res.status(403).json({ message: "Access denied. Not an admin user." });
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    otpStore.set(phone, otp);
+    setTimeout(() => otpStore.delete(phone), 5 * 60 * 1000);
+
+    await client.messages.create({
+      body: `Your OTP is ${otp}`,
+      from: process.env.TWILIO_PHONE_NUMBER,
+      to: fullPhone
+    });
+
+    return res.status(200).json({ status: true, message: "OTP sent successfully" });
+  } catch (error) {
+    console.error("Twilio error:", error.message);
+    return res.status(500).json({ status: false, message: "Failed to send OTP" });
+  }
+};
+
+const verifyOtp = async (req, res) => {
+  const phone = String(req.body.phone).trim();
+  const otp = String(req.body.otp).trim();
+
+  console.log("Received phone:", phone);
+  console.log("Received otp:", otp);
+  console.log("Stored otp:", otpStore.get(phone));
+
+  if (!phone || !otp) {
+    return res.status(400).json({ message: "Phone and OTP are required" });
+  }
+
+  const storedOtp = otpStore.get(phone);
+  if (!storedOtp || storedOtp !== otp) {
+    return res.status(401).json({ message: "Invalid or expired OTP" });
+  }
+
+  try {
+    const user = await admin.findOne({ mobile: phone });
+    if (!user) {
+      return res.status(404).json({ message: "User not found with this number" });
+    }
+
+    const token = jwt.sign(
+      { id: user._id, role: user.role },
+      'your_super_secret_key_here',
+      { expiresIn: "1d" }
+    );
 
 
+    otpStore.delete(phone);
+
+    return res.status(200).json({ message: "OTP verified", token });
+  } catch (err) {
+    console.error("Error during OTP verification:", err);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+async function getAllAdmin(req, res) {
+  try {
+    const token = req.headers.token;
+    console.log("Received token:", token);
+
+    const admins = await admin.find(req.query).sort({ _id: -1 });
+
+    return res.status(200).json({
+      status: 200,
+      message: "Success",
+      data: admins,
+    });
+
+  } catch (error) {
+    console.error("getAllAdmin error:", error);
+    return res.status(500).json({
+      status: 500,
+      message: "Operation was not successful",
+      error: error.message,
+    });
+  }
+}
+
+async function deleteAdmin(req, res) {
+  try {
+    const { admin_id } = req.params;
+
+    const adminRes = await admin.findById(admin_id);
+    if (!adminRes) {
+      return res.status(404).json({ status: 404, message: "Admin not found" });
+    }
+
+    if (adminRes.role === "Admin") {
+      return res.status(403).json({
+        status: 403,
+        message: "You can't delete Super Admin",
+      });
+    }
+
+    await admin.findByIdAndDelete(admin_id);
+
+    return res.status(200).json({
+      status: 200,
+      message: "Admin deleted successfully",
+    });
+
+  } catch (error) {
+    console.error("Delete Admin Error:", error);
+    return res.status(500).json({
+      status: 500,
+      message: "Server error",
+      error: error.message || error,
+    });
+  }
+}
+
+// All Requests  for Dashboard 
+const dashboardCounts = async (req, res) => {
+  try {
+    const adminCount = await admin.countDocuments();
+
+    res.status(200).json({
+      status: 200,
+      message: "Counts fetched successfully",
+      data: {
+        totalAdmins: adminCount,
+      },
+    });
+  } catch (error) {
+    console.error("Dashboard Counts Error:", error);
+    res.status(500).json({
+      status: 500,
+      message: "Error fetching dashboard counts",
+      error: error.message || error,
+    });
+  }
+};
 
 module.exports = {
   suadminLogin,
@@ -654,7 +677,8 @@ module.exports = {
   updateAdminPermission,
   getSingleRole,
   // sendOtpAdmin,
-  verifyOtpAdmin
-
-
+  verifyOtpAdmin,
+  verifyOtp,
+  sendOtp,
+  dashboardCounts
 };

@@ -61,24 +61,32 @@ function verifyToken(req, res, next){
   }
 };
 
+async function verifyUser(req, res, next) {
+  const token = req.cookies?.token;
 
-async function verifyUser(req, res, next){
-  const token = req.cookies["token"]
-  var data = jwt_decode(token);
-  const user = await Dealer.findOne({email:data.email});
-  if(!user){
-    return res.status(401).json({success:false, message:"Not Authorized.... Login First"})
+  if (!token) {
+    return res.status(401).json({ success: false, message: "Not authorized. Login first." });
   }
-  try{
+
+  try {
+    const data = jwt_decode(token);
+
+    if (!data || !data.mobile) {
+      return res.status(400).json({ success: false, message: "Invalid token data: missing mobile" });
+    }
+
+    const user = await Dealer.findOne({ mobile: data.mobile });
+
+    if (!user) {
+      return res.status(401).json({ success: false, message: "User not found with this mobile number" });
+    }
+
+    req.user = user;
     next();
   } catch (error) {
-  var responseErr = {
-      status : 401,
-      message:'Authentication Failed'
-    };
-    return res.status(401).send(responseErr);
+    console.error("verifyUser error:", error);
+    return res.status(401).json({ status: 401, message: "Authentication failed" });
+  }
 }
-}
-
 
 module.exports =   { verifyToken, verifyUser }

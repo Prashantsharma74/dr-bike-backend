@@ -47,7 +47,8 @@
     "path": "^0.12.7",
     "qrcode": "^1.5.4",
     "razorpay": "^2.9.4",
-    "serve-index": "^1.9.1"
+    "serve-index": "^1.9.1",
+    "twilio": "^5.6.1"
   },
   "engines": {
     "node": "16.x"

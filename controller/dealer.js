@@ -614,47 +614,36 @@ async function editDealer(req, res) {
 
 async function dealerList(req, res) {
   try {
-    const data = jwt_decode(req.headers.token);
-    const user_id = data.user_id;
-    const user_type = data.user_type;
-    const type = data.type;
-    if (user_id == null || (user_type != 1 && user_type != 3)) {
-      var response = {
-        status: 200,
-        message: "admin is un-authorised !",
-      };
-      return res.status(200).send(response);
-    }
+    const dealerResponse = await Dealer.find(req.query);
+    
+    let newDealerResponse = [...dealerResponse].sort((a, b) => b.wallet - a.wallet);
 
-    // var dealerResposnse = await Dealer.find(req.query).sort( { "_id": -1 } );
-    var dealerResposnse = await Dealer.find(req.query);
-    let new_dealerResposnse = [...dealerResposnse].sort((a, b) => b.wallet - a.wallet);
-
-    if (dealerResposnse.length > 0) {
-      var response = {
+    if (dealerResponse.length > 0) {
+      const response = {
         status: 200,
         message: "success",
-        data: dealerResposnse,
-        MaxWallet:new_dealerResposnse[0].wallet || 0
+        data: dealerResponse,
+        MaxWallet: newDealerResponse[0].wallet || 0
       };
       return res.status(200).send(response);
     } else {
-      var response = {
+      const response = {
         status: 201,
         message: "No Dealer Found",
-        data: dealerResposnse,
+        data: dealerResponse,
       };
       return res.status(201).send(response);
     }
   } catch (error) {
     console.log("error", error);
-    response = {
+    const response = {
       status: 201,
       message: "Operation was not successful",
     };
     return res.status(201).send(response);
   }
 }
+
 
 async function singledealer(req, res) {
   try {

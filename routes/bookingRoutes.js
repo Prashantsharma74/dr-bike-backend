@@ -37,7 +37,11 @@ const upload = multer({ storage });
 
 /* POST users listing. */
 router.post('/addbooking/:id',addbooking)
+
+// By Prashant 
 router.get('/getallbookings',getallbookings)
+
+
 router.get('/getuserbookings',getuserbookings)
 router.get('/getbooking/:id',getbooking)
 router.delete('/deletebooking',deletebooking)

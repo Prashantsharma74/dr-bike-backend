@@ -1,5 +1,5 @@
 const express = require('express');
-const { suadminLogin,AdminPermission,updateAdminPermission, suadminsignup, getAllAdmin, deleteAdmin, subadminsignup, updateProfilePicture,getProfilePicture,changePassword,singleadmin,getSingleRole} = require('../controller/adminAuth');
+const { suadminLogin,AdminPermission,updateAdminPermission, suadminsignup, getAllAdmin, deleteAdmin, subadminsignup, updateProfilePicture,getProfilePicture,changePassword,singleadmin,getSingleRole, sendOtp, verifyOtp, dashboardCounts} = require('../controller/adminAuth');
 const router = express.Router();
 const multer = require('multer');
 const { verifyToken } = require('../helper/verifyAuth'); 
@@ -18,9 +18,13 @@ const upload = multer({ storage: storage });
 /* POST users listing. */
 router.post('/suadminLogin', suadminLogin);
 router.post('/subadminsignup', subadminsignup);
-// router.post('/suadminsignup', verifyToken, suadminsignup);
-router.get('/getalladmin', verifyToken, getAllAdmin);
-router.delete('/deleteadmin', verifyToken, deleteAdmin);
+router.post("/send-otp", sendOtp);
+router.post("/verify-otp", verifyOtp);
+router.get('/getalladmin', getAllAdmin);
+router.delete('/deleteadmin/:admin_id',deleteAdmin);
+router.get('/dashboard-counts',dashboardCounts);
+
+
 router.post('/Changepassword/:id', verifyToken, changePassword);
 router.post('/profile', verifyToken, upload.single('images'), updateProfilePicture);
 router.get('/profile', verifyToken, getProfilePicture);
