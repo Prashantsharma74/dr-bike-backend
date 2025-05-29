@@ -425,7 +425,6 @@ async function addoffer(req, res) {
       });
     }
 
-    // Check if promo code already exists
     const promo_codeCheck = await offer.findOne({ promo_code: promo_code });
     const serviceDetails = await adminservices.findById(service_id);
 

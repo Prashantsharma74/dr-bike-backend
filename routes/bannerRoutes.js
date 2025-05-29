@@ -41,7 +41,7 @@ const upload = multer({
 
 
 /* POST users listing. */
-router.post("/addbanner",verifyToken, upload.single("images"),addbanner);
+router.post("/addbanner", upload.single("images"),addbanner);
 router.get("/bannerlist", bannerlist);
 router.delete("/deletebanner", deletebanner);
 router.put("/editbanner", editbanner);
