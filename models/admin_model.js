@@ -17,6 +17,11 @@ const suadminSchema = new mongoose.Schema(
     mobile: { type: String, required: true },
     image: { type: String },
     employeeId: { type: String, unique: true, required: true },
+    status: {
+      type: String,
+      enum: ["active", "inactive"],
+      default: "active"
+    }
   },
   {
     timestamps: true,

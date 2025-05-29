@@ -151,71 +151,151 @@ const updateAdminPermission = async (req, res) => {
 };
 
 //user_type = (1=admin, 2=admin, 4=customer )
+// async function suadminLogin(req, res) {
+//   const { email, password } = req.body;
+
+//   if (!email || !password) {
+//     return res.status(201).json({
+//       status: 201,
+//       message: 'Email and password cannot be empty!',
+//     });
+//   }
+
+//   try {
+//     const userRes = await admin.findOne({ email }).select("+password");
+//     if (!userRes) {
+//       return res.status(201).json({
+//         status: 201,
+//         message: 'Email does not exist',
+//       });
+//     }
+
+//     if (validation.comparePassword(userRes.password, password)) {
+//       if (userRes.role === "Admin") {
+//         const token = validation.generateUserToken(userRes._id, 'logged', 1);
+//         return res.status(200).cookie("token", token, {
+//           expires: new Date(Date.now() + 60000 * 24 * 60 * 60 * 1000),
+//           httpOnly: true,
+//         }).json({
+//           status: 200,
+//           message: 'Admin login successful',
+//           token,
+//         });
+//       }
+
+//       console.log(userRes.role, "user")
+//       // SubAdmin login, send OTP
+//       if (userRes.role === "SubAdmin") {
+//         const otpData = await otpAuth.otp(userRes.mobile); // Assuming otpAuth.otp sends OTP and returns data
+//         if (!otpData || !otpData.otp) {
+//           return res.status(201).json({
+//             status: 500,
+//             message: 'Failed to generate OTP'
+//           });
+//         }
+
+//         // Save the OTP to the user's record in the database
+//         userRes.otp = otpData.otp;
+//         await userRes.save();
+//         return res.status(200).json({
+//           status: 200,
+//           message: 'OTP sent successfully for SubAdmin',
+//           mobile: userRes.mobile
+//         });
+//       }
+
+//       // If user type is not recognized
+//       return res.status(400).json({
+//         status: 400,
+//         message: 'User type not supported for login',
+//       });
+//     } else {
+//       return res.status(201).json({
+//         status: 201,
+//         message: 'Incorrect password',
+//       });
+//     }
+//   } catch (error) {
+//     console.error("Login error:", error);
+//     return res.status(500).json({
+//       status: 500,
+//       message: 'Login failed. Please try again.',
+//     });
+//   }
+// }
+
 async function suadminLogin(req, res) {
   const { email, password } = req.body;
 
   if (!email || !password) {
-    return res.status(201).json({
-      status: 201,
+    return res.status(400).json({
+      status: 400,
       message: 'Email and password cannot be empty!',
     });
   }
 
   try {
     const userRes = await admin.findOne({ email }).select("+password");
+
     if (!userRes) {
-      return res.status(201).json({
-        status: 201,
+      return res.status(404).json({
+        status: 404,
         message: 'Email does not exist',
       });
     }
 
-    if (validation.comparePassword(userRes.password, password)) {
-      // Admin login, no OTP needed
-      if (userRes.role === "Admin") {
-        const token = validation.generateUserToken(userRes._id, 'logged', 1);
-        return res.status(200).cookie("token", token, {
-          expires: new Date(Date.now() + 60000 * 24 * 60 * 60 * 1000),
-          httpOnly: true,
-        }).json({
-          status: 200,
-          message: 'Admin login successful',
-          token,
-        });
-      }
-
-      console.log(userRes.role, "user")
-      // SubAdmin login, send OTP
-      if (userRes.role === "SubAdmin") {
-        const otpData = await otpAuth.otp(userRes.mobile); // Assuming otpAuth.otp sends OTP and returns data
-        if (!otpData || !otpData.otp) {
-          return res.status(201).json({
-            status: 500,
-            message: 'Failed to generate OTP'
-          });
-        }
-
-        // Save the OTP to the user's record in the database
-        userRes.otp = otpData.otp;
-        await userRes.save();
-        return res.status(200).json({
-          status: 200,
-          message: 'OTP sent successfully for SubAdmin',
-          mobile: userRes.mobile
-        });
-      }
-
-      // If user type is not recognized
-      return res.status(400).json({
-        status: 400,
-        message: 'User type not supported for login',
+    // Check if the user is active
+    if (userRes.status !== "active") {
+      return res.status(403).json({
+        status: 403,
+        message: 'User is inactive. Please contact admin.',
       });
-    } else {
-      return res.status(201).json({
-        status: 201,
+    }
+
+    const isPasswordValid = validation.comparePassword(userRes.password, password);
+    if (!isPasswordValid) {
+      return res.status(401).json({
+        status: 401,
         message: 'Incorrect password',
       });
     }
+
+    if (userRes.role === "Admin") {
+      const token = validation.generateUserToken(userRes._id, 'logged', 1);
+      return res.status(200).cookie("token", token, {
+        expires: new Date(Date.now() + 24 * 60 * 60 * 1000), // 1 day
+        httpOnly: true,
+      }).json({
+        status: 200,
+        message: 'Admin login successful',
+        token,
+      });
+    }
+
+    if (userRes.role === "SubAdmin") {
+      const otpData = await otpAuth.otp(userRes.mobile);
+      if (!otpData || !otpData.otp) {
+        return res.status(500).json({
+          status: 500,
+          message: 'Failed to generate OTP'
+        });
+      }
+
+      userRes.otp = otpData.otp;
+      await userRes.save();
+
+      return res.status(200).json({
+        status: 200,
+        message: 'OTP sent successfully for SubAdmin',
+        mobile: userRes.mobile
+      });
+    }
+
+    return res.status(400).json({
+      status: 400,
+      message: 'User role not supported for login',
+    });
+
   } catch (error) {
     console.error("Login error:", error);
     return res.status(500).json({
@@ -224,7 +304,6 @@ async function suadminLogin(req, res) {
     });
   }
 }
-
 
 async function verifyOtpAdmin(req, res) {
   try {
@@ -440,6 +519,7 @@ const getSingleRole = async (req, res) => {
 // By Prashant 
 
 const twilio = require('twilio');
+const { log } = require('console');
 const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
 const otpStore = new Map();
 
@@ -569,6 +649,10 @@ const verifyOtp = async (req, res) => {
       return res.status(404).json({ message: "User not found with this number" });
     }
 
+    if (user.status !== "active") {
+      return res.status(403).json({ message: "User is inactive. Please contact admin." });
+    }
+
     const token = jwt.sign(
       { id: user._id, role: user.role },
       'your_super_secret_key_here',
@@ -663,6 +747,41 @@ const dashboardCounts = async (req, res) => {
   }
 };
 
+// Update Status of User
+const updateStatus = async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+  console.log(id);
+  console.log(status);
+
+  // Validate input
+  if (!["active", "inactive"].includes(status)) {
+    return res.status(400).json({ error: "Invalid status value. Must be 'active' or 'inactive'." });
+  }
+
+  try {
+    const admins = await admin.findByIdAndUpdate(
+      id,
+      { status },
+      { new: true }
+    );
+
+    if (!admins) {
+      return res.status(404).json({ error: "Admin not found" });
+    }
+
+    return res.status(200).json({
+      status: true,
+      message: "Status updated successfully",
+      data: admins,
+    });
+  } catch (err) {
+    console.error("Status update error:", err);
+    return res.status(500).json({ status: false, error: "Internal server error" });
+  }
+};
+
+
 module.exports = {
   suadminLogin,
   subadminsignup,
@@ -677,6 +796,7 @@ module.exports = {
   updateAdminPermission,
   getSingleRole,
   // sendOtpAdmin,
+  updateStatus,
   verifyOtpAdmin,
   verifyOtp,
   sendOtp,

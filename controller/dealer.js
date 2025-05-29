@@ -1561,39 +1561,66 @@ const getAllDealersWithDocFalse = async (req, res) => {
   }
 }
 
+// const getAllDealersWithVerifyFalse = async (req, res) => {
+//   try{
+//     const data = jwt_decode(req.headers.token);
+//     const user_type = data.user_type;
+//     if(user_type === 1){
+//       const allDealers = await Dealer.find({isVerify: false});
+//       if(!allDealers){
+//         return res.status(404).json({
+//           success: false,
+//           message: "No Dealer found in the collection."
+//         })
+//       }
+//       return res.status(200).json({
+//         succcess: true,
+//         message: "Dealers list fetched successfully",
+//         data: allDealers
+//       })
+//     }
+//       else{
+//         return res.status(403).json({
+//           success: false,
+//           message: "Unauthorised access!"
+//         })
+//       }
+//   }
+//   catch(err){
+//     console.error("Error fetching Dealers details:", err);
+//     return res.status(500).json({
+//       status: false,
+//       message: "Internal server error"
+//     });
+//   }
+// }
+
 const getAllDealersWithVerifyFalse = async (req, res) => {
-  try{
-    const data = jwt_decode(req.headers.token);
-    const user_type = data.user_type;
-    if(user_type === 1){
-      const allDealers = await Dealer.find({isVerify: false});
-      if(!allDealers){
-        return res.status(404).json({
-          success: false,
-          message: "No Dealer found in the collection."
-        })
-      }
-      return res.status(200).json({
-        succcess: true,
-        message: "Dealers list fetched successfully",
-        data: allDealers
-      })
+  try {
+    const allDealers = await Dealer.find({ isVerify: false });
+
+    if (!allDealers || allDealers.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No Dealer found in the collection."
+      });
     }
-      else{
-        return res.status(403).json({
-          success: false,
-          message: "Unauthorised access!"
-        })
-      }
-  }
-  catch(err){
+
+    return res.status(200).json({
+      success: true,
+      message: "Dealers list fetched successfully",
+      data: allDealers
+    });
+
+  } catch (err) {
     console.error("Error fetching Dealers details:", err);
     return res.status(500).json({
-      status: false,
+      success: false,
       message: "Internal server error"
     });
   }
-}
+};
+
 
 const updateDealerDocStatus = async (req, res) =>{
   try{

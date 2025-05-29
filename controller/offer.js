@@ -29,127 +29,81 @@ async function checkPermission(user_id, requiredPermission) {
     }
   }
   
-async function addoffer(req, res) {
-    try {
+// async function addoffer(req, res) {
+//     try {
 
-        const data = jwt_decode(req.headers.token);
-        const user_id = data.user_id;
-        const user_type = data.user_type;
-        const type = data.type;
-        if (user_id == null || user_type != 1 && user_type != 3) {
-            var response = {
-                status: 401,
-                message: 'User is un-authorised !'
+//         const data = jwt_decode(req.headers.token);
+//         const user_id = data.user_id;
+//         const user_type = data.user_type;
+//         const type = data.type;
+//         if (user_id == null || user_type != 1 && user_type != 3) {
+//             var response = {
+//                 status: 401,
+//                 message: 'User is un-authorised !'
 
-            };
-            return res.status(401).send(response);
-        }
+//             };
+//             return res.status(401).send(response);
+//         }
 
-        if (req.body.promo_code != '') {
-            var promo_codeCheck = await offer.findOne({ promo_code: req.body.promo_code });
+//         if (req.body.promo_code != '') {
+//             var promo_codeCheck = await offer.findOne({ promo_code: req.body.promo_code });
             
-			const services = await service.findById(req.body.service_id);
+// 			const services = await service.findById(req.body.service_id);
 
-            if (!promo_codeCheck) {
-                const data = {
-                    service_id: req.body.service_id,
-                    promo_code: req.body.promo_code,
-					// city:services.city,
-                    start_date: req.body.start_date,
-                    end_date: req.body.end_date,
-                    // noofuses: req.body.noofuses,
-                    discount: req.body.discount,
-                    minorderamt: req.body.minorderamt,
-                };
-                const promoResposnse = await offer.create(data);
-                if (promoResposnse) {
-                   var response = {
-                        status: 200,
-                        message: 'Offer Added successfully',
-                        data: promoResposnse,
-                    };
-                    return res.status(200).send(response);
+//             if (!promo_codeCheck) {
+//                 const data = {
+//                     service_id: req.body.service_id,
+//                     promo_code: req.body.promo_code,
+// 					// city:services.city,
+//                     start_date: req.body.start_date,
+//                     end_date: req.body.end_date,
+//                     // noofuses: req.body.noofuses,
+//                     discount: req.body.discount,
+//                     minorderamt: req.body.minorderamt,
+//                 };
+//                 const promoResposnse = await offer.create(data);
+//                 if (promoResposnse) {
+//                    var response = {
+//                         status: 200,
+//                         message: 'Offer Added successfully',
+//                         data: promoResposnse,
+//                     };
+//                     return res.status(200).send(response);
                     
-                } else {
-                    var response = {
-                        status: 201,
-                        message: 'Offer Added failed',
+//                 } else {
+//                     var response = {
+//                         status: 201,
+//                         message: 'Offer Added failed',
 
-                    };
-                    return res.status(201).send(response);
-                }
+//                     };
+//                     return res.status(201).send(response);
+//                 }
 
-            } else {
-                var response = {
-                    status: 201,
-                    message: 'Promo code already exist',
-                };
-                return res.status(201).send(response);
-            }
-        } else {
-            var response = {
-                status: 201,
-                message: 'Promo code not be empty!',
-            };
+//             } else {
+//                 var response = {
+//                     status: 201,
+//                     message: 'Promo code already exist',
+//                 };
+//                 return res.status(201).send(response);
+//             }
+//         } else {
+//             var response = {
+//                 status: 201,
+//                 message: 'Promo code not be empty!',
+//             };
 
-            return res.status(201).send(response);
-        }
-    } catch (error) {
-        console.log("error", error);
-        response = {
-            status: 201,
-            message: 'Operation was not successful',
-        };
+//             return res.status(201).send(response);
+//         }
+//     } catch (error) {
+//         console.log("error", error);
+//         response = {
+//             status: 201,
+//             message: 'Operation was not successful',
+//         };
 
-        return res.status(201).send(response);
-    }
-} 
-
-
-async function offerlist(req, res) {
-    try {
-
-        const data = jwt_decode(req.headers.token);
-        const user_id = data.user_id;
-        const user_type = data.user_type;
-        if (user_id == null || user_type != 1 && user_type != 2 && user_type != 3 && user_type != 4) {
-            var response = {
-                status: 401,
-                message:  'offer is un-authorised !'
-
-            };
-            return res.status(401).send(response);
-        }
-
-        var offerResposnse = await offer.find(req.query).populate({path:"service_id",select: ['name', 'image', 'description']}).sort( { "_id": -1 } );
-        //console.log('offerResposnse: ', offerResposnse);
-        if (offerResposnse) {
-            var response = {
-              status: 200,
-              message: "successfull",
-              data: offerResposnse,
-              image_base_url: process.env.BASE_URL,
-            };
-            return res.status(200).send(response);
-          } else {
-            var response = {
-              status: 201,
-              offerResposnse,
-              message: "No PromoCode Found",
-            };
-            return res.status(201).send(response);
-          }
-
-    } catch (error) {
-        console.log("error", error);
-        response = {
-            status: 201,
-            message: 'Operation was not successful',
-        };
-
-        return res.status(201).send(response);
-    }
-}
+//         return res.status(201).send(response);
+//     }
+// } 
 
 async function Singleoffer(req, res) {
     try {
@@ -428,7 +382,93 @@ async function applyPromoCode(req, res) {
     }
 }
 
+// By Prashant  
+async function offerlist(req, res) {
+  try {
+    const offerResponse = await offer
+      .find(req.query)
+      .populate({ path: "service_id", select: ["name", "image", "description"] })
+      .sort({ _id: -1 });
 
+    if (offerResponse && offerResponse.length > 0) {
+      return res.status(200).send({
+        status: 200,
+        message: "Successful",
+        data: offerResponse,
+        image_base_url: process.env.BASE_URL,
+      });
+    } else {
+      return res.status(200).send({
+        status: 200,
+        message: "No PromoCode Found",
+        data: [],
+      });
+    }
+  } catch (error) {
+    console.error("Error in offerlist:", error);
+    return res.status(500).send({
+      status: 500,
+      message: "Operation was not successful",
+    });
+  }
+}
+
+async function addoffer(req, res) {
+  try {
+    // Optional: Validate required fields
+    const { promo_code, service_id, start_date, end_date, discount, minorderamt } = req.body;
+
+    if (!promo_code || promo_code.trim() === '') {
+      return res.status(400).send({
+        status: 400,
+        message: 'Promo code must not be empty!',
+      });
+    }
+
+    // Check if promo code already exists
+    const promo_codeCheck = await offer.findOne({ promo_code: promo_code });
+    const serviceDetails = await adminservices.findById(service_id);
+
+    if (!serviceDetails) {
+      return res.status(404).send({
+        status: 404,
+        message: 'Service not found!',
+      });
+    }
+
+    if (promo_codeCheck) {
+      return res.status(409).send({
+        status: 409,
+        message: 'Promo code already exists',
+      });
+    }
+
+    // Create the offer
+    const newOffer = {
+      service_id,
+      promo_code,
+      start_date,
+      end_date,
+      discount,
+      minorderamt,
+    };
+
+    const offerResponse = await offer.create(newOffer);
+
+    return res.status(200).send({
+      status: 200,
+      message: 'Offer added successfully',
+      data: offerResponse,
+    });
+
+  } catch (error) {
+    console.error("Error adding offer:", error);
+    return res.status(500).send({
+      status: 500,
+      message: 'An unexpected error occurred while adding the offer.',
+    });
+  }
+}
 
 module.exports = {
     addoffer,

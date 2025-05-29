@@ -1,5 +1,5 @@
 const express = require('express');
-const { suadminLogin,AdminPermission,updateAdminPermission, suadminsignup, getAllAdmin, deleteAdmin, subadminsignup, updateProfilePicture,getProfilePicture,changePassword,singleadmin,getSingleRole, sendOtp, verifyOtp, dashboardCounts} = require('../controller/adminAuth');
+const { suadminLogin,AdminPermission,updateAdminPermission, suadminsignup, getAllAdmin, deleteAdmin, subadminsignup, updateProfilePicture,getProfilePicture,changePassword,singleadmin,getSingleRole, sendOtp, verifyOtp, dashboardCounts, updateStatus} = require('../controller/adminAuth');
 const router = express.Router();
 const multer = require('multer');
 const { verifyToken } = require('../helper/verifyAuth'); 
@@ -21,6 +21,7 @@ router.post('/subadminsignup', subadminsignup);
 router.post("/send-otp", sendOtp);
 router.post("/verify-otp", verifyOtp);
 router.get('/getalladmin', getAllAdmin);
+router.post('/update-status/:id', updateStatus);
 router.delete('/deleteadmin/:admin_id',deleteAdmin);
 router.get('/dashboard-counts',dashboardCounts);
 
