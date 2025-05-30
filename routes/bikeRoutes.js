@@ -50,11 +50,11 @@ router.get("/bikeList", bikeList);
 router.put("/editBike/:id", editBike);
 router.delete("/deleteBike", deleteBike);
 router.get("/getBike/:id", getBike);
-router.post("/add-bike-company", addBikeCompany); // Add bike company
-router.post("/add-bike-model", addBikeModel); // Add bike model
-router.post("/add-bike-variant", addBikeVariant); // Add bike variant
-router.get("/get-bike-companies", getBikeCompanies); // Get all bike companies
-router.get("/get-bike-models/:company_id", getBikeModels); // Get models by company
+router.post("/add-bike-company", addBikeCompany);
+router.post("/add-bike-model", addBikeModel); 
+router.post("/add-bike-variant", addBikeVariant); 
+router.get("/get-bike-companies", getBikeCompanies);
+router.get("/get-bike-models/:company_id", getBikeModels);
 router.get("/get-bike-variants/:model_id", getBikeVariants); // Get variants by model
 router.get("/bikes", getAllBikes);
 module.exports = router;

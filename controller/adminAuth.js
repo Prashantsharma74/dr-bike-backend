@@ -5,6 +5,7 @@ require('dotenv').config();
 const jwt = require("jsonwebtoken")
 
 const admin = require('../models/admin_model');
+const offer = require('../models/offer_model');
 var bcrypt = require('bcryptjs');
 const jwt_decode = require("jwt-decode");
 const Role = require("../models/Roles_modal")
@@ -729,12 +730,14 @@ async function deleteAdmin(req, res) {
 const dashboardCounts = async (req, res) => {
   try {
     const adminCount = await admin.countDocuments();
+    const offersCount = await offer.countDocuments();
 
     res.status(200).json({
       status: 200,
       message: "Counts fetched successfully",
       data: {
         totalAdmins: adminCount,
+        totalOffers: offersCount,
       },
     });
   } catch (error) {

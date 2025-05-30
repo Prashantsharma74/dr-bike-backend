@@ -1,28 +1,28 @@
 const Reward = require('../models/reward');
 const jwt_decode = require('jwt-decode');
-const Booking  = require('../models/Booking')
-const Customer  = require('../models/customer_model')
+const Booking = require('../models/Booking')
+const Customer = require('../models/customer_model')
 
 const createReward = async (req, res) => {
     try {
         const data = jwt_decode(req.headers.token);
         const user_type = data.user_type;
-        
 
-        if (user_type !== 1) { 
+
+        if (user_type !== 1) {
             return res.status(200).json({ status: 200, message: 'Unauthorized access!' });
         }
 
         const { user_id, booking_id } = req.body;
 
-        
+
         const existingReward = await Reward.findOne({ user_id, booking_id });
 
         if (existingReward) {
             return res.status(200).json({ status: 200, message: 'Reward already exists for this service!' });
         }
 
-        
+
         const reward_points = Math.floor(Math.random() * (50 - 10 + 1)) + 10;
 
         const reward = new Reward({
@@ -131,42 +131,13 @@ async function handleBookingCompletion(booking) {
     });
 
     await reward.save();
-    
-    await Customer.findByIdAndUpdate(booking.user_id, { 
-        $inc: { reward_points: reward_points } 
+
+    await Customer.findByIdAndUpdate(booking.user_id, {
+        $inc: { reward_points: reward_points }
     });
 
     console.log("✅ Reward Created Successfully:", reward);
 }
-
-const getRewards = async (req, res) => {
-    try {
-        const data = jwt_decode(req.headers.token);
-        const user_id = data.user_id;
-
-        if (!user_id) {
-            return res.status(200).json({ status: 200, message: 'User is unauthorized!' });
-        }
-
-        const rewards = await Reward.find().populate("user_id").populate({
-            path: "booking_id",
-            populate: {
-              path: "services"
-            }
-          });
-
-        return res.status(200).json({
-            status: 200,
-            rewards
-            
-        });
-
-    } catch (error) {
-        console.error('Error:', error);
-        return res.status(500).json({ status: 500, message: 'Something went wrong' });
-    }
-};
-
 
 const getRewardPoints = async (req, res) => {
     try {
@@ -217,6 +188,30 @@ const getRewardPoints = async (req, res) => {
     }
 };
 
+// By Prashant 
+const getRewards = async (req, res) => {
+    try {
+        const rewards = await Reward.find()
+            .populate("user_id")
+            .populate({
+                path: "booking_id",
+                populate: {
+                    path: "services",
+                },
+            });
+
+        return res.status(200).json({
+            status: true,
+            rewards,
+        });
+    } catch (error) {
+        console.error("Error:", error);
+        return res.status(500).json({
+            status: false,
+            message: "Something went wrong",
+        });
+    }
+};
 
 
 module.exports = {

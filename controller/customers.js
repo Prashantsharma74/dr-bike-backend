@@ -240,41 +240,7 @@ const deleteMyBike = async (req, res) => {
 
 
 
-async function customerlist(req, res) {
-  try {
-    const data = jwt_decode(req.headers.token);
-    const user_id = data.user_id;
-    const user_type = data.user_type;
-    const type = data.type;
-    if (user_id == null || user_type != 1 && user_type != 3) {
-      var response = {
-        status: 401,
-        message: "admin is un-authorised !",
-      };
-      return res.status(401).send(response);
-    }
 
-    // var customerResposnse = await customers.find().sort( { "_id": -1 } );
-    var customerResposnse = await customers.find();
-    //console.log('customerResposnse: ', customerResposnse);
-
-    var response = {
-      status: 200,
-      message: "success",
-      data: customerResposnse,
-      image_base_url: process.env.BASE_URL,
-    };
-    return res.status(200).send(response);
-  } catch (error) {
-    console.log("error", error);
-    response = {
-      status: 201,
-      message: "Operation was not successful",
-    };
-
-    return res.status(201).send(response);
-  }
-}
 
 
 async function getcustomer(req, res) {
@@ -582,7 +548,62 @@ const addUserBike = async (req, res) => {
   }
 };
 
+// By prashant 
+async function customerlist(req, res) {
+  try {
+    const customerResponse = await customers.find();
 
+    const response = {
+      status: 200,
+      message: "success",
+      data: customerResponse,
+      image_base_url: process.env.BASE_URL,
+    };
+    return res.status(200).send(response);
+  } catch (error) {
+    console.log("error", error);
+    const response = {
+      status: 500,
+      message: "Operation was not successful",
+    };
+    return res.status(500).send(response);
+  }
+}
+
+async function deletecustomer(req, res) {
+  try {
+    const { customer_id } = req.body;
+
+    if (!customer_id) {
+      return res.status(400).send({
+        status: 400,
+        message: "customer_id is required",
+      });
+    }
+
+    const customerRes = await customers.findOne({ _id: customer_id });
+
+    if (!customerRes) {
+      return res.status(404).send({
+        status: 404,
+        message: "Customer not found",
+      });
+    }
+
+    await customers.findByIdAndDelete(customer_id);
+
+    return res.status(200).send({
+      status: 200,
+      message: "Customer deleted successfully",
+    });
+  } catch (error) {
+    console.log("error", error);
+    return res.status(500).send({
+      status: 500,
+      message: "Operation was not successful",
+    });
+  }
+}
 
 module.exports = {
   addProfile,

@@ -1,5 +1,5 @@
 const express = require('express');
-const  { verifyToken } = require('../helper/verifyAuth');
+const { verifyToken } = require('../helper/verifyAuth');
 const router = express.Router();
 
 
@@ -28,43 +28,43 @@ const rating = require("./ratingRoutes");
 const report = require("./reportRoutes")
 const { geocode, geo_place } = require('../controller/map');
 const { Returnurl, ReturnurlNew } = require('../controller/payment');
-const {verifyOtpAdmin,sendOtpAdmin} = require("../controller/adminAuth");
+const { verifyOtpAdmin, sendOtpAdmin } = require("../controller/adminAuth");
 const reward = require('../routes/rewardRoutes');
 const ticket = require("../routes/ticketRoutes");
 const notification = require("../routes/notification")
 // User App Admin
-router.use('/tokenGenrate',genrateToken);
-router.use('/adminauth',adminauth);
+router.use('/tokenGenrate', genrateToken);
+router.use('/adminauth', adminauth);
 // router.use('/employee',verifyToken,employee);
-router.use('/customers',customers);
-router.use('/service',service);
-router.use('/ticket',verifyToken,ticket);
-router.use('/servicefeature',verifyToken,servicefeature);
-router.use('/servicesalientfeature',verifyToken,servicesalientfeature);
-router.use('/bike',verifyToken,bikes);
-router.use('/locations',verifyToken,locations);
-router.use('/dealer',dealers);
+router.use('/customers', customers);
+router.use('/service', service);
+router.use('/ticket', verifyToken, ticket);
+router.use('/servicefeature', verifyToken, servicefeature);
+router.use('/servicesalientfeature', verifyToken, servicesalientfeature);
+router.use('/bike', bikes);
+router.use('/locations', verifyToken, locations);
+router.use('/dealer', dealers);
 router.use('/userAuth', userauth);
-router.use('/banner',banner);
-router.use('/offer',offer);
-router.use('/additionalOptions',verifyToken,additionalOption);
-router.use('/bookings',verifyToken,booking);
-router.use('/trackings',verifyToken,tracking);
-router.use('/pickndrop',verifyToken,pickndrop);
-router.use('/payment',verifyToken,payment);
-router.get('/returnurl',Returnurl); 
-router.get('/returnurlnew',ReturnurlNew); 
-router.use('/statencity',statencity);
-router.use('/notification',notification);
+router.use('/banner', banner);
+router.use('/offer', offer);
+router.use('/additionalOptions', verifyToken, additionalOption);
+router.use('/bookings', verifyToken, booking);
+router.use('/trackings', verifyToken, tracking);
+router.use('/pickndrop', verifyToken, pickndrop);
+router.use('/payment', verifyToken, payment);
+router.get('/returnurl', Returnurl);
+router.get('/returnurlnew', ReturnurlNew);
+router.use('/statencity', statencity);
+router.use('/notification', notification);
 
-router.use('/bank',verifyToken,bank);
-router.use('/report',verifyToken,report);
-router.use('/reward',verifyToken,reward);
-router.use('/rating',rating);
+router.use('/bank', verifyToken, bank);
+router.use('/report', verifyToken, report);
+router.use('/reward', reward);
+router.use('/rating', rating);
 
 // Map
-router.post('/geocode',geocode);
-router.post('/geo_place',geo_place);
+router.post('/geocode', geocode);
+router.post('/geo_place', geo_place);
 
 // otp
 // router.post('/send-otp', sendOtpAdmin);
@@ -72,7 +72,7 @@ router.post('/geo_place',geo_place);
 router.post('/verify-otp', verifyOtpAdmin);
 
 // Provider APP
-router.use('/dealerAuth',dealerauth);
+router.use('/dealerAuth', dealerauth);
 
 
 module.exports = router;
