@@ -83,8 +83,6 @@ app.post('/upload', (req, res) => {
   
 });
 
-//test
-
 app.use("/bikedoctor", apiRouter);
 // --------------------------------------
 app.use("/location", require("./routes/stateAndCityRoute"));
