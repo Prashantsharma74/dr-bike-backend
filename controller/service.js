@@ -1,47 +1,7 @@
 const service = require("../models/service_model");
 const jwt_decode = require("jwt-decode");
 const adminservices = require("../models/adminService");
-
-// async function addservice(req, res) {
-//   try {
-//     const data = jwt_decode(req.headers.token);
-//     const user_id = data.user_id;
-//     if (!user_id) {
-//       return res.status(200).send({ status: 401, message: "Unauthorized!" });
-//     }
-
-//     const { name, description, dealer_id, bikes } = req.body;
-
-//     if (!req.file || !name || !dealer_id) {
-//       return res.status(200).send({ status: 400, message: "Name, image, and dealer ID are required!" });
-//     }
-
-//     let parsedBikes = [];
-//     try {
-//       parsedBikes = JSON.parse(bikes);
-//     } catch (error) {
-//       return res.status(200).send({ status: 400, message: "Invalid bikes data format!" });
-//     }
-
-//     const newService = await service.create({
-//       name,
-//       image: req.file.filename,
-//       description,
-//       dealer_id,
-//       bikes: parsedBikes,
-//     });
-
-//     return res.status(200).send({
-//       status: 200,
-//       message: "Service added successfully",
-//       data: newService,
-//     });
-//   } catch (error) {
-//     console.error("Error adding service:", error);
-//     return res.status(200).send({ status: 500, message: "Internal Server Error" });
-//   }
-// }
-
+const mongoose = require("mongoose");
 
 async function servicelist(req, res) {
   try {
@@ -206,31 +166,96 @@ async function listAdminServices(req, res) {
 }
 
 // By Prashant 
+
 async function addservice(req, res) {
   try {
     const { name, description, dealer_id, bikes } = req.body;
 
-    if (!req.file || !name || !dealer_id) {
+    // Validate: name
+    if (!name || name.trim() === "") {
       return res.status(200).send({
         status: 400,
-        message: "Name, image, and dealer ID are required!",
+        message: "Service name is required.",
+        field: "name",
       });
     }
 
+    // Validate: dealer_id
+    if (!dealer_id || !mongoose.Types.ObjectId.isValid(dealer_id)) {
+      return res.status(200).send({
+        status: 400,
+        message: "Valid dealer ID is required.",
+        field: "dealer_id",
+      });
+    }
+
+    // Validate and parse bikes
     let parsedBikes = [];
-    try {
-      parsedBikes = JSON.parse(bikes);
-    } catch (error) {
+
+    if (!bikes) {
       return res.status(200).send({
         status: 400,
-        message: "Invalid bikes data format!",
+        message: "Bikes field is required.",
+        field: "bikes",
       });
     }
 
+    try {
+      if (typeof bikes === "string") {
+        if (bikes.trim() === "") {
+          return res.status(200).send({
+            status: 400,
+            message: "Bikes field is required.",
+            field: "bikes",
+          });
+        }
+        parsedBikes = JSON.parse(bikes);
+      } else {
+        parsedBikes = bikes;
+      }
+
+      if (!Array.isArray(parsedBikes) || parsedBikes.length === 0) {
+        return res.status(200).send({
+          status: 400,
+          message: "Bikes must be a non-empty array.",
+          field: "bikes",
+        });
+      }
+
+      for (let i = 0; i < parsedBikes.length; i++) {
+        const bike = parsedBikes[i];
+
+        // Convert to numbers
+        bike.cc = Number(bike.cc);
+        bike.price = Number(bike.price);
+
+        if (
+          isNaN(bike.cc) ||
+          isNaN(bike.price)
+        ) {
+          return res.status(200).send({
+            status: 400,
+            message: `Bike at index ${i} must have numeric 'cc' and 'price' values.`,
+            field: "bikes",
+          });
+        }
+      }
+    } catch (err) {
+      return res.status(200).send({
+        status: 400,
+        message: "Invalid bikes format. Must be JSON array.",
+        field: "bikes",
+      });
+    }
+
+    // Handle image
+    const image = req.file?.filename || ""; // multer will save image file
+
+    // Create service
     const newService = await service.create({
-      name,
-      image: req.file.filename,
-      description,
+      name: name.trim(),
+      description: description?.trim() || "",
+      image,
       dealer_id,
       bikes: parsedBikes,
     });
@@ -248,6 +273,7 @@ async function addservice(req, res) {
     });
   }
 }
+
 
 module.exports = {
   addservice,

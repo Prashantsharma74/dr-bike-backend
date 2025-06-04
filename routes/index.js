@@ -32,6 +32,8 @@ const { verifyOtpAdmin, sendOtpAdmin } = require("../controller/adminAuth");
 const reward = require('../routes/rewardRoutes');
 const ticket = require("../routes/ticketRoutes");
 const notification = require("../routes/notification")
+
+
 // User App Admin
 router.use('/tokenGenrate', genrateToken);
 router.use('/adminauth', adminauth);
