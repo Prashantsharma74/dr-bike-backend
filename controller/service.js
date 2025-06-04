@@ -166,7 +166,7 @@ async function listAdminServices(req, res) {
 }
 
 // By Prashant 
-
+// add service
 async function addservice(req, res) {
   try {
     const { name, description, dealer_id, bikes } = req.body;
