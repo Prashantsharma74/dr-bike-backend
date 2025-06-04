@@ -85,30 +85,30 @@ router.put("/admin/:id", async (req, res) => {
         }
 
         // Find admin by ID and include password for update if needed
-        const admin = await amin.findById(id).select("+password");
-        if (!admin) {
+        const Admin = await admin.findById(id).select("+password");
+        if (!Admin) {
             return res.status(404).json({ message: "Admin not found." });
         }
 
         // Update fields
-        admin.name = name;
-        admin.email = email;
-        admin.role = role;
-        admin.mobile = mobile;
+        Admin.name = name;
+        Admin.email = email;
+        Admin.role = role;
+        Admin.mobile = mobile;
 
         if (password) {
             const saltRounds = 10;
             const hashedPassword = await bcrypt.hash(password, saltRounds);
-            admin.password = hashedPassword;
+            Admin.password = hashedPassword;
         }
 
-        await admin.save();
+        await Admin.save();
 
         // Remove password from response
-        const adminObj = admin.toObject();
-        delete adminObj.password;
+        const AdminObj = Admin.toObject();
+        delete AdminObj.password;
 
-        return res.json({ message: "Admin updated successfully", admin: adminObj });
+        return res.json({ message: "Admin updated successfully", Admin: AdminObj });
     } catch (error) {
         console.error(error);
         if (error.code === 11000) {
