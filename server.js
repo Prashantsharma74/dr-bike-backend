@@ -59,6 +59,10 @@ app.use(bodyParser.urlencoded({ extended: true }));
 //   res.render('index', { title: 'Cashfree PG simulator' });
 // });
 
+app.get('/', (req, res) => {
+  res.send('API is running...');
+});
+
 
  app.get("/bikedoctor",(req,res)=>{
   res.status(200).json({message:"Bikedoctor API Working"})

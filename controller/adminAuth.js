@@ -13,6 +13,55 @@ const otpAuth = require("../helper/otpAuth");
 const { getRoleCode, generateRandomSuffix } = require('../helper/helper');
 
 
+exports.registerNewAdmin = async (req, res) => {
+  try {
+    const { name, email, password, mobile, role, image } = req.body;
+
+    // Validate required fields
+    if (!name || !email || !password || !mobile || !role) {
+      return res.status(400).json({ message: "All required fields must be provided." });
+    }
+
+    // Check if email already exists
+    const existing = await admin.findOne({ email });
+    if (existing) {
+      return res.status(409).json({ message: "Email already registered." });
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create new admin
+    const newAdmin = new admin({
+      name,
+      email,
+      password: hashedPassword,
+      mobile,
+      role,
+      image,
+    });
+
+    await newAdmin.save();
+
+    res.status(201).json({
+      message: "Admin registered successfully.",
+      data: {
+        _id: newAdmin._id,
+        name: newAdmin.name,
+        email: newAdmin.email,
+        role: newAdmin.role,
+        mobile: newAdmin.mobile,
+        employeeId: newAdmin.employeeId,
+        status: newAdmin.status,
+      },
+    });
+
+  } catch (error) {
+    console.error("Register Error:", error);
+    res.status(500).json({ message: "Server error during registration." });
+  }
+};
+
 //user_type = (1=admin, 2=admin,3=subAdmin 4=customer )
 // Admin Signup
 async function suadminsignup(req, res) {
@@ -784,6 +833,59 @@ const updateStatus = async (req, res) => {
   }
 };
 
+// Update admin details
+exports.updateAdmin = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, email, role, mobile, password } = req.body;
+
+    // Basic validation
+    if (!name || !email || !role || !mobile) {
+      return res.status(400).json({ message: "Name, email, role, and mobile are required." });
+    }
+
+    // Validate role
+    const validRoles = ["Telecaller", "Manager", "Admin", "Subadmin", "Executive"];
+    if (!validRoles.includes(role)) {
+      return res.status(400).json({ message: "Invalid role." });
+    }
+
+    // Find admin by ID and include password for update if needed
+    const admin = await Admin.findById(id).select("+password");
+    if (!admin) {
+      return res.status(404).json({ message: "Admin not found." });
+    }
+
+    // Update fields
+    admin.name = name;
+    admin.email = email;
+    admin.role = role;
+    admin.mobile = mobile;
+
+    // If password is provided, hash it
+    if (password) {
+      const saltRounds = 10;
+      const hashedPassword = await bcrypt.hash(password, saltRounds);
+      admin.password = hashedPassword;
+    }
+
+    await admin.save();
+
+    // Remove password from response
+    const adminObj = admin.toObject();
+    delete adminObj.password;
+
+    return res.json({ message: "Admin updated successfully", admin: adminObj });
+  } catch (error) {
+    console.error(error);
+    if (error.code === 11000) {
+      // Duplicate email or employeeId error
+      return res.status(400).json({ message: "Email or Employee ID already exists." });
+    }
+    return res.status(500).json({ message: "Server error." });
+  }
+};
+
 
 module.exports = {
   suadminLogin,
@@ -800,6 +902,7 @@ module.exports = {
   getSingleRole,
   // sendOtpAdmin,
   updateStatus,
+  updateAdmin,
   verifyOtpAdmin,
   verifyOtp,
   sendOtp,

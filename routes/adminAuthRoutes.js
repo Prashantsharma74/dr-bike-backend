@@ -1,8 +1,10 @@
 const express = require('express');
-const { suadminLogin,AdminPermission,updateAdminPermission, suadminsignup, getAllAdmin, deleteAdmin, subadminsignup, updateProfilePicture,getProfilePicture,changePassword,singleadmin,getSingleRole, sendOtp, verifyOtp, dashboardCounts, updateStatus} = require('../controller/adminAuth');
+const { suadminLogin, AdminPermission, updateAdminPermission, suadminsignup, getAllAdmin, deleteAdmin, subadminsignup, updateProfilePicture, getProfilePicture, changePassword, singleadmin, getSingleRole, sendOtp, verifyOtp, dashboardCounts, updateStatus, registerNewAdmin, updateAdmin } = require('../controller/adminAuth');
 const router = express.Router();
 const multer = require('multer');
-const { verifyToken } = require('../helper/verifyAuth'); 
+const { verifyToken } = require('../helper/verifyAuth');
+const admin = require('../models/admin_model');
+var bcrypt = require('bcryptjs');
 
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
@@ -16,22 +18,72 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 /* POST users listing. */
+router.post('/register-admin', async (req, res) => {
+    try {
+        const { name, email, password, mobile, role, image } = req.body;
+
+        // Validate required fields
+        if (!name || !email || !password || !mobile || !role) {
+            return res.status(400).json({ message: "All required fields must be provided." });
+        }
+
+        // Check if email already exists
+        const existing = await admin.findOne({ email });
+        if (existing) {
+            return res.status(409).json({ message: "Email already registered." });
+        }
+
+        // Hash password
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        // Create new admin
+        const newAdmin = new admin({
+            name,
+            email,
+            password: hashedPassword,
+            mobile,
+            role,
+            image,
+        });
+
+        await newAdmin.save();
+
+        res.status(201).json({
+            message: "Admin registered successfully.",
+            data: {
+                _id: newAdmin._id,
+                name: newAdmin.name,
+                email: newAdmin.email,
+                role: newAdmin.role,
+                mobile: newAdmin.mobile,
+                employeeId: newAdmin.employeeId,
+                status: newAdmin.status,
+            },
+        });
+
+    } catch (error) {
+        console.error("Register Error:", error);
+        res.status(500).json({ message: "Server error during registration." });
+    }
+});
+
 router.post('/suadminLogin', suadminLogin);
+router.put("/admin/:id", updateAdmin);
 router.post('/subadminsignup', subadminsignup);
 router.post("/send-otp", sendOtp);
 router.post("/verify-otp", verifyOtp);
 router.get('/getalladmin', getAllAdmin);
 router.post('/update-status/:id', updateStatus);
-router.delete('/deleteadmin/:admin_id',deleteAdmin);
-router.get('/dashboard-counts',dashboardCounts);
+router.delete('/deleteadmin/:admin_id', deleteAdmin);
+router.get('/dashboard-counts', dashboardCounts);
 
 
 router.post('/Changepassword/:id', verifyToken, changePassword);
 router.post('/profile', verifyToken, upload.single('images'), updateProfilePicture);
 router.get('/profile', verifyToken, getProfilePicture);
 router.get('/singleAdmin/:id', verifyToken, singleadmin);
-router.post('/AdminPermission/:id', verifyToken,AdminPermission);
-router.post('/updatePermission/:id', verifyToken,updateAdminPermission);
-router.get('/SinglePermission/:id', verifyToken,getSingleRole);
+router.post('/AdminPermission/:id', verifyToken, AdminPermission);
+router.post('/updatePermission/:id', verifyToken, updateAdminPermission);
+router.get('/SinglePermission/:id', verifyToken, getSingleRole);
 
 module.exports = router;
