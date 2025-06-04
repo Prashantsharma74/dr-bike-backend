@@ -68,7 +68,57 @@ router.post('/register-admin', async (req, res) => {
 });
 
 router.post('/suadminLogin', suadminLogin);
-router.put("/admin/:id", updateAdmin);
+router.put("/admin/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { name, email, role, mobile, password } = req.body;
+
+        // Basic validation
+        if (!name || !email || !role || !mobile) {
+            return res.status(400).json({ message: "Name, email, role, and mobile are required." });
+        }
+
+        // Validate role
+        const validRoles = ["Telecaller", "Manager", "Admin", "Subadmin", "Executive"];
+        if (!validRoles.includes(role)) {
+            return res.status(400).json({ message: "Invalid role." });
+        }
+
+        // Find admin by ID and include password for update if needed
+        const admin = await amin.findById(id).select("+password");
+        if (!admin) {
+            return res.status(404).json({ message: "Admin not found." });
+        }
+
+        // Update fields
+        admin.name = name;
+        admin.email = email;
+        admin.role = role;
+        admin.mobile = mobile;
+
+        // If password is provided, hash it
+        if (password) {
+            const saltRounds = 10;
+            const hashedPassword = await bcrypt.hash(password, saltRounds);
+            admin.password = hashedPassword;
+        }
+
+        await admin.save();
+
+        // Remove password from response
+        const adminObj = admin.toObject();
+        delete adminObj.password;
+
+        return res.json({ message: "Admin updated successfully", admin: adminObj });
+    } catch (error) {
+        console.error(error);
+        if (error.code === 11000) {
+            // Duplicate email or employeeId error
+            return res.status(400).json({ message: "Email or Employee ID already exists." });
+        }
+        return res.status(500).json({ message: "Server error." });
+    }
+});
 router.post('/subadminsignup', subadminsignup);
 router.post("/send-otp", sendOtp);
 router.post("/verify-otp", verifyOtp);
