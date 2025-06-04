@@ -5,7 +5,7 @@ const bikeCompanySchema = new mongoose.Schema(
     name: {
       type: String,
       required: true,
-      unique: true, // Prevents duplicate companies
+      unique: true, 
     },
   },
   { timestamps: true }
