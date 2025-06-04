@@ -902,7 +902,7 @@ module.exports = {
   getSingleRole,
   // sendOtpAdmin,
   updateStatus,
-  updateAdmin,
+  // updateAdmin,
   verifyOtpAdmin,
   verifyOtp,
   sendOtp,

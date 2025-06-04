@@ -1,5 +1,5 @@
 const express = require('express');
-const { suadminLogin, AdminPermission, updateAdminPermission, suadminsignup, getAllAdmin, deleteAdmin, subadminsignup, updateProfilePicture, getProfilePicture, changePassword, singleadmin, getSingleRole, sendOtp, verifyOtp, dashboardCounts, updateStatus, registerNewAdmin, updateAdmin } = require('../controller/adminAuth');
+const { suadminLogin, AdminPermission, updateAdminPermission, suadminsignup, getAllAdmin, deleteAdmin, subadminsignup, updateProfilePicture, getProfilePicture, changePassword, singleadmin, getSingleRole, sendOtp, verifyOtp, dashboardCounts, updateStatus } = require('../controller/adminAuth');
 const router = express.Router();
 const multer = require('multer');
 const { verifyToken } = require('../helper/verifyAuth');
@@ -96,7 +96,6 @@ router.put("/admin/:id", async (req, res) => {
         admin.role = role;
         admin.mobile = mobile;
 
-        // If password is provided, hash it
         if (password) {
             const saltRounds = 10;
             const hashedPassword = await bcrypt.hash(password, saltRounds);
