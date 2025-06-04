@@ -48,7 +48,7 @@ const upload = multer({
 
 // Define Routes
 router.post("/addservice", upload.single("images"), addservice);
-router.post("/addservice",  addservice);
+// router.post("/addservice",  addservice);
 router.get("/servicelist", servicelist);
 router.put(
   "/updateservice",
