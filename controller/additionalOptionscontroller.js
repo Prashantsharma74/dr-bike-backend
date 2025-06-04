@@ -292,48 +292,6 @@ const jwt_decode = require("jwt-decode");
 // };
 
 
-
-async function addservice(req, res) {
-  try {
-    const data = jwt_decode(req.headers.token);
-    const user_id = data.user_id;
-    if (!user_id) {
-      return res.status(200).send({ status: 401, message: "Unauthorized!" });
-    }
-
-    const { name, description, dealer_id, bikes } = req.body;
-
-    if (!req.file || !name || !dealer_id) {
-      return res.status(200).send({ status: 400, message: "Name, image, and dealer ID are required!" });
-    }
-
-    let parsedBikes = [];
-    try {
-      parsedBikes = JSON.parse(bikes);
-    } catch (error) {
-      return res.status(200).send({ status: 400, message: "Invalid bikes data format!" });
-    }
-
-    const newService = await service.create({
-      name,
-      image: req.file.filename,
-      description,
-      dealer_id,
-      bikes: parsedBikes,
-    });
-
-    return res.status(200).send({
-      status: 200,
-      message: "Service added successfully",
-      data: newService,
-    });
-  } catch (error) {
-    console.error("Error adding service:", error);
-    return res.status(200).send({ status: 500, message: "Internal Server Error" });
-  }
-}
-
-
 async function servicelist(req, res) {
   try {
     const services = await service
@@ -450,6 +408,48 @@ async function getServicesByDealer(req, res) {
   }
 }
 
+async function addservice(req, res) {
+  try {
+    const { name, description, dealer_id, bikes } = req.body;
+
+    if (!req.file || !name || !dealer_id) {
+      return res.status(200).send({
+        status: 400,
+        message: "Name, image, and dealer ID are required!",
+      });
+    }
+
+    let parsedBikes = [];
+    try {
+      parsedBikes = JSON.parse(bikes);
+    } catch (error) {
+      return res.status(200).send({
+        status: 400,
+        message: "Invalid bikes data format!",
+      });
+    }
+
+    const newService = await service.create({
+      name,
+      image: req.file.filename,
+      description,
+      dealer_id,
+      bikes: parsedBikes,
+    });
+
+    return res.status(200).send({
+      status: 200,
+      message: "Service added successfully",
+      data: newService,
+    });
+  } catch (error) {
+    console.error("Error adding service:", error);
+    return res.status(200).send({
+      status: 500,
+      message: "Internal Server Error",
+    });
+  }
+}
 
 module.exports = {
   addservice,
