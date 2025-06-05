@@ -409,7 +409,7 @@ const addBikeModel = async (req, res) => {
     }
 
     // Check if model already exists
-    const existingModel = await BikeModel.findOne({ model_name });
+    const existingModel = await BikeModel.findOne({company_id, model_name });
 
     if (existingModel) {
       return res.status(200).json({ status: 200, message: "Bike model already exists!", data: [] });
