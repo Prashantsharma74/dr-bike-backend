@@ -6,6 +6,8 @@ const jwt = require("jsonwebtoken")
 
 const admin = require('../models/admin_model');
 const offer = require('../models/offer_model');
+const bikeCompanySchema = require('../models/bikeCompanyModel');
+
 var bcrypt = require('bcryptjs');
 const jwt_decode = require("jwt-decode");
 const Role = require("../models/Roles_modal")
@@ -780,6 +782,7 @@ const dashboardCounts = async (req, res) => {
   try {
     const adminCount = await admin.countDocuments();
     const offersCount = await offer.countDocuments();
+    const bikeCompanyCount = await bikeCompanySchema.countDocuments();
 
     res.status(200).json({
       status: 200,
@@ -787,6 +790,7 @@ const dashboardCounts = async (req, res) => {
       data: {
         totalAdmins: adminCount,
         totalOffers: offersCount,
+        totalBikeCompany: bikeCompanyCount,
       },
     });
   } catch (error) {
