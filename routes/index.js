@@ -53,7 +53,7 @@ router.use('/additionalOptions', verifyToken, additionalOption);
 router.use('/bookings', verifyToken, booking);
 router.use('/trackings', verifyToken, tracking);
 router.use('/pickndrop', verifyToken, pickndrop);
-router.use('/payment', verifyToken, payment);
+router.use('/payment', payment);
 router.get('/returnurl', Returnurl);
 router.get('/returnurlnew', ReturnurlNew);
 router.use('/statencity', statencity);

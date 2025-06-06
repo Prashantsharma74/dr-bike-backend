@@ -357,126 +357,6 @@ async function GetPayment(req, res) {
 }
 
 
-async function GetAllPayment(req, res) {
-  try {
-
-    const data = jwt_decode(req.headers.token);
-    const user_id = data.user_id;
-    const user_type = data.user_type;
-    if (user_id == null || user_type != 1 && user_type != 3 && user_type != 2) {
-      var response = {
-        status: 200,
-        message: "admin is un-authorised !",
-      };
-      return res.status(200).send(response);
-    }
-
-    const payment = await Payment.find(req.query)
-      .populate({ path: "user_id", select: ['first_name', 'last_name',"id"] })
-      .populate({ path: "booking_id", select: ['id'] })
-      .populate({ path: "dealer_id", select: ['name',"id"] })
-      
-      .sort({ "_id": -1 });
-
-    if (payment) {
-
-      // payment.forEach(async (data) => {
-
-      //   if (data.dealer_id && data.dealer_id.wallet) {
-      //     // You can now access the 'Total' field like this:
-      //     const dealerTotalAmount = data.dealer_id.wallet.Total;
-      //     console.log("Total Wallet Amount for Dealer:", dealerTotalAmount);
-      //   }
-
-        // for Production
-        // sdk.server('https://api.cashfree.com/pg');
-        //console.log(order_id);
-        // for testing
-        // https://sandbox.cashfree.com/pg/orders/${data.orderId}
-        // const payment_id = data._id
-        // testing 
-        // await axios.get(`https://sandbox.cashfree.com/pg/orders/${data.orderId}`,
-
-        // production
-      //   await axios.get(`https://api.cashfree.com/pg/orders/${data.orderId}`,
-      //     {
-      //       headers: {
-      //         'Content-Type': 'application/json',
-      //         'x-client-id': process.env.APP_ID,
-      //         'x-client-secret': process.env.SECRET_KEY,
-      //         'x-api-version': "2022-01-01"
-      //       }
-      //     })
-      //     .then(async (datas) => {
-
-      //       if (datas.data.order_status == "PAID") {
-
-      //         // datas.data.order_status = "PAID"
-      //         // await datas.save();
-
-      //         const dataz =
-      //         {
-      //           status: "payment",
-      //         };
-
-      //         const datazz =
-      //         {
-      //           status: "Payment",
-      //         };
-
-      //         const datazs =
-      //         {
-      //           order_status: "PAID",
-      //         };
-
-      //         await Payment.findByIdAndUpdate(
-      //           { _id: payment_id },
-      //           { $set: datazs },
-      //           { new: true });
-
-
-      //         await Booking.findByIdAndUpdate(
-      //           { _id: data.booking_id },
-      //           { $set: dataz },
-      //           { new: true });
-
-      //         const tracks = await Tracking.findOne({ booking_id: data.booking_id });
-
-      //         await Tracking.findByIdAndUpdate(
-      //           { _id: tracks._id },
-      //           { $set: datazz },
-      //           { new: true });
-      //       }
-      //     })
-      //     .catch(err => console.log(err.stack));
-      // })
-      var response = {
-        status: 200,
-        message: "successfull",
-        data: payment,
-      };
-      return res.status(200).send(response);
-    } else {
-      var response = {
-        status: 201,
-        data: [],
-        message: "No payment Found",
-      };
-      return res.status(201).send(response);
-    }
-  } catch (error) {
-
-    response = {
-      status: 201,
-      message: "Operation was not successful",
-      error: error
-    };
-
-    return res.status(201).send(response);
-  }
-}
-
-
 // async function payment(req, res) {
 //   try {
 
@@ -2550,7 +2430,37 @@ async function bookingPaymentReturn(req, res) {
   }
 }
 
+// By Prashant 
+async function GetAllPayment(req, res) {
+  try {
+    // Fetch payments with related user, booking, and dealer data
+    const payment = await Payment.find(req.query)
+      .populate({ path: "user_id", select: ['first_name', 'last_name', 'id'] })
+      .populate({ path: "booking_id", select: ['id'] })
+      .populate({ path: "dealer_id", select: ['name', 'id'] })
+      .sort({ "_id": -1 });
 
+    if (payment && payment.length > 0) {
+      return res.status(200).send({
+        status: 200,
+        message: "Successful",
+        data: payment,
+      });
+    } else {
+      return res.status(200).send({
+        status: 200,
+        message: "No payment found",
+        data: [],
+      });
+    }
+  } catch (error) {
+    return res.status(500).send({
+      status: 500,
+      message: "Operation was not successful",
+      error: error.message || error,
+    });
+  }
+}
 
 module.exports = {
   paymentRequest,
