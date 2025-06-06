@@ -9,29 +9,29 @@ const Dealer = require("../models/Dealer");
 const Role = require('../models/Roles_modal')
 const Admin = require('../models/admin_model')
 const { Notification } = require("../helper/pushNotification");
-const {handleBookingCompletion} = require("../controller/reward")
+const { handleBookingCompletion } = require("../controller/reward")
 
 
 async function checkPermission(user_id, requiredPermission) {
   try {
-      const userRole = await Role.findOne({ subAdmin: user_id });
-      console.log(userRole,"1")
-      if (!userRole) {
-          return false;
-      }
-      const permissions = userRole.permissions;
-      console.log(permissions,"2")
-
-      const [module, permission] = requiredPermission.split('.');
-    
-      // Check if the module and permission exist in permissions object
-      if (!permissions || !permissions[module] || !permissions[module][permission]) {
-        return false;
-      }
-      return true;
-  } catch (error) {
-      console.error("Error while checking permission:", error);
+    const userRole = await Role.findOne({ subAdmin: user_id });
+    console.log(userRole, "1")
+    if (!userRole) {
       return false;
+    }
+    const permissions = userRole.permissions;
+    console.log(permissions, "2")
+
+    const [module, permission] = requiredPermission.split('.');
+
+    // Check if the module and permission exist in permissions object
+    if (!permissions || !permissions[module] || !permissions[module][permission]) {
+      return false;
+    }
+    return true;
+  } catch (error) {
+    console.error("Error while checking permission:", error);
+    return false;
   }
 }
 
@@ -60,23 +60,23 @@ async function addbooking(req, res) {
     const dealerIdToCheck = servicelist[0]?.dealerId;
 
 
-if (!servicelist.every(service => service.dealerId === dealerIdToCheck)) {
-  return res.status(400).json({ message: 'All dealerId should be from the same dealer.' });
-}
+    if (!servicelist.every(service => service.dealerId === dealerIdToCheck)) {
+      return res.status(400).json({ message: 'All dealerId should be from the same dealer.' });
+    }
 
 
-// const serviceIds = servicelist.map(service => service._id);
-// console.log(serviceIds);
+    // const serviceIds = servicelist.map(service => service._id);
+    // console.log(serviceIds);
 
-// // Check if any of the services do not exist
-// const nonExistingServices = await service.find({ _id: { $nin: serviceIds } });
+    // // Check if any of the services do not exist
+    // const nonExistingServices = await service.find({ _id: { $nin: serviceIds } });
 
-// if (nonExistingServices.length > 0) {
-//   console.log(`Services not found for IDs:`);
-//   const nonExistingServiceIds = nonExistingServices.map(service => service._id.toString());
-//   res.status(400).json({ error: `Services not found for IDs: ${nonExistingServiceIds.join(', ')}` });
-//   return;
-// }
+    // if (nonExistingServices.length > 0) {
+    //   console.log(`Services not found for IDs:`);
+    //   const nonExistingServiceIds = nonExistingServices.map(service => service._id.toString());
+    //   res.status(400).json({ error: `Services not found for IDs: ${nonExistingServiceIds.join(', ')}` });
+    //   return;
+    // }
 
 
     // if (!services) {
@@ -84,7 +84,7 @@ if (!servicelist.every(service => service.dealerId === dealerIdToCheck)) {
     //   return;
     // }
 
-    const { bullet_points, additonal_options, bike_id, area, city, address, description, estimated_cost,Servicelist,additonal_data_moveable } = req.body;
+    const { bullet_points, additonal_options, bike_id, area, city, address, description, estimated_cost, Servicelist, additonal_data_moveable } = req.body;
 
     let bikes = await bike.findById(bike_id)
     if (!bikes) {
@@ -112,8 +112,8 @@ if (!servicelist.every(service => service.dealerId === dealerIdToCheck)) {
             //console.log(extra_charges);
             if (count == size) {
               const data = {
-               // service_id: services._id,
-               services: Servicelist,
+                // service_id: services._id,
+                services: Servicelist,
                 bullet_points: bullet_points,
                 additonal_options: additonal_options,
                 model: bikes.model,
@@ -134,10 +134,10 @@ if (!servicelist.every(service => service.dealerId === dealerIdToCheck)) {
 
               const bookingresponce = await booking.create(data);
 
-              
-              
+
+
               if (bookingresponce) {
-                
+
                 // Add booking for tracking
                 const datas = {
                   // service_id: services._id,
@@ -149,7 +149,7 @@ if (!servicelist.every(service => service.dealerId === dealerIdToCheck)) {
                 const traking = await Tracking.create(datas)
                 setTimeout(async () => {
                   const updatedBooking = await booking.findById(bookingresponce._id);
-                
+
                   if (updatedBooking && updatedBooking.status === 'pending') {
                     await booking.findByIdAndUpdate(bookingresponce._id, { status: 'rejected' });
                     await Tracking.updateOne({ _id: traking._id }, { $set: { status: 'rejected' } });
@@ -162,7 +162,7 @@ if (!servicelist.every(service => service.dealerId === dealerIdToCheck)) {
 
                 // send Push notification to  nearer dealer 
                 if (dealers) {
-                    Notification(dealers[0].device_token, `Hi ${data.name}, New Booking is Arrived for ${bikes?.name} ${bikes?.model} ${bikes?.bike_cc} Bike`, dealers[0].id)
+                  Notification(dealers[0].device_token, `Hi ${data.name}, New Booking is Arrived for ${bikes?.name} ${bikes?.model} ${bikes?.bike_cc} Bike`, dealers[0].id)
                 }
 
                 var response = {
@@ -184,8 +184,8 @@ if (!servicelist.every(service => service.dealerId === dealerIdToCheck)) {
         })
       } else {
         const data = {
-         // service_id: services._id,
-         services: Servicelist,
+          // service_id: services._id,
+          services: Servicelist,
           bullet_points: bullet_points,
           additonal_options: additonal_options,
           model: bikes.model,
@@ -206,7 +206,7 @@ if (!servicelist.every(service => service.dealerId === dealerIdToCheck)) {
         const bookingresponce = await booking.create(data);
 
         if (bookingresponce) {
-          
+
           // Add booking for tracking
           const datas = {
             // service_id: services._id,
@@ -218,7 +218,7 @@ if (!servicelist.every(service => service.dealerId === dealerIdToCheck)) {
           const traking = await Tracking.create(datas)
           setTimeout(async () => {
             const updatedBooking = await booking.findById(bookingresponce._id);
-          
+
             if (updatedBooking && updatedBooking.status === 'pending') {
               await booking.findByIdAndUpdate(bookingresponce._id, { status: 'rejected' });
               await Tracking.updateOne({ _id: traking._id }, { $set: { status: 'rejected' } });
@@ -228,8 +228,8 @@ if (!servicelist.every(service => service.dealerId === dealerIdToCheck)) {
             // console.log({message : "booking 2222222",traking,customer,});
           }, timeout);
 
-          
-          console.log("dealers11" , dealers);
+
+          console.log("dealers11", dealers);
 
           // send Push notification to  nearer dealer 
           if (dealers) {
@@ -257,8 +257,8 @@ if (!servicelist.every(service => service.dealerId === dealerIdToCheck)) {
     }
     else {
       const data = {
-       // service_id: services._id,
-       services: Servicelist,
+        // service_id: services._id,
+        services: Servicelist,
         bullet_points: bullet_points,
         //additonal_options:additonal_options,
         model: bikes.model,
@@ -278,9 +278,9 @@ if (!servicelist.every(service => service.dealerId === dealerIdToCheck)) {
       };
       const bookingresponce = await booking.create(data);
 
-      
+
       if (bookingresponce) {
-        
+
         // Add booking for tracking
         const datas = {
           // service_id: services._id,
@@ -292,7 +292,7 @@ if (!servicelist.every(service => service.dealerId === dealerIdToCheck)) {
         const traking = await Tracking.create(datas)
         setTimeout(async () => {
           const updatedBooking = await booking.findById(bookingresponce._id);
-        
+
           if (updatedBooking && updatedBooking.status === 'pending') {
             await booking.findByIdAndUpdate(bookingresponce._id, { status: 'rejected' });
             await Tracking.updateOne({ _id: traking._id }, { $set: { status: 'rejected' } });
@@ -302,8 +302,8 @@ if (!servicelist.every(service => service.dealerId === dealerIdToCheck)) {
           // console.log({message : "booking 3333333",traking,customer,});
         }, timeout);
 
-        console.log("dealers2" , dealers);
-        console.log("dealername" , dealers[0].name);
+        console.log("dealers2", dealers);
+        console.log("dealername", dealers[0].name);
         const testt = "c9HJP6A2RLqjGzHjemYT6Z:APA91bFrGTGQnL0OdQpcv-8lTJWtlVan7E54ofXhGuUB2Hz2wMwMQ5hq18PQeP8AAS1T1ilNQ3HFI72dBTFMbdT9ts8FJHR0CNYORYQ4sY7RW4HBLo6eInezbEwCyFlDv2LBDZ-uR1GS"
 
 
@@ -338,51 +338,6 @@ if (!servicelist.every(service => service.dealerId === dealerIdToCheck)) {
     return res.status(201).send(response);
   }
 }
-
-
-async function getallbookings(req, res) {
-  try {
-    const data = jwt_decode(req.headers.token);
-    const user_id = data.user_id;
-    const user_type = data.user_type;
-
-    if (!user_id || (user_type !== 1 && user_type !== 2 && user_type !== 3)) {
-      return res.status(200).json({ status: 200, message: "Unauthorized access!" });
-    }
-
-    // Fetch all bookings and populate required fields
-    const bookingresponce = await booking
-      .find(req.query)
-      .populate("services") // Fetch service details
-      .populate("dealer_id") // Fetch dealer details
-      .populate("pickupAndDropId") // Fetch pickup & drop details
-      .populate("user_id") // Fetch user details
-      .sort({ "_id": -1 });
-
-    if (bookingresponce.length > 0) {
-      return res.status(200).json({
-        status: 200,
-        message: "Successfully retrieved bookings",
-        data: bookingresponce,
-        image_base_url: process.env.BASE_URL,
-      });
-    } else {
-      return res.status(200).json({
-        status: 200,
-        message: "No bookings found",
-        data: [],
-      });
-    }
-  } catch (error) {
-    console.error("Error fetching bookings:", error);
-    return res.status(500).json({
-      status: 500,
-      message: "Internal Server Error",
-    });
-  }
-}
-
-
 
 async function getbooking(req, res) {
   try {
@@ -490,7 +445,7 @@ const getuserbookings = async (req, res) => {
     const user_type = data.user_type;
     const type = data.type;
 
-    console.log(user_type,"user_type")
+    console.log(user_type, "user_type")
     if (!user_id) {
       return res.status(200).json({ status: 200, message: "Unauthorized access!" });
     }
@@ -504,7 +459,7 @@ const getuserbookings = async (req, res) => {
     } else {
       return res.status(200).json({ status: 200, message: "Access denied!" });
     }
-    console.log(filter,"filter")
+    console.log(filter, "filter")
 
     // Fetch bookings for the user and populate related fields
     const userBookings = await booking.find(filter)
@@ -541,22 +496,11 @@ async function deletebooking(req, res) {
     const type = data.type;
 
     if (user_id == null || user_type != 1) {
-  
-    
-      if(user_type === 3){
-      const subAdmin = await Admin.findById(user_id)
-      
-      if (!subAdmin) {
-        var response = {
-          status: 401,
-          message: "Subadmin not found!",
-        };
-        return res.status(401).send(response);
-      }
 
-      if(user_type === 3){
+
+      if (user_type === 3) {
         const subAdmin = await Admin.findById(user_id)
-        
+
         if (!subAdmin) {
           var response = {
             status: 401,
@@ -564,19 +508,30 @@ async function deletebooking(req, res) {
           };
           return res.status(401).send(response);
         }
-      }
-  
-      const isAllowed = await checkPermission(user_id, "Booking.delete");
 
-      if (!isAllowed) {
-        var response = {
-          status: 401,
-          message: "Subadmin does not have permission to add Booking!",
-        };
-        return res.status(401).send(response);
-      }
+        if (user_type === 3) {
+          const subAdmin = await Admin.findById(user_id)
 
-    }
+          if (!subAdmin) {
+            var response = {
+              status: 401,
+              message: "Subadmin not found!",
+            };
+            return res.status(401).send(response);
+          }
+        }
+
+        const isAllowed = await checkPermission(user_id, "Booking.delete");
+
+        if (!isAllowed) {
+          var response = {
+            status: 401,
+            message: "Subadmin does not have permission to add Booking!",
+          };
+          return res.status(401).send(response);
+        }
+
+      }
 
     }
 
@@ -633,10 +588,10 @@ async function updatebooking(req, res) {
       return res.status(401).send(response);
     }
 
-    const { status, dealer_id, additonal_options, estimated_cost, final_cost,additonal_data_moveable } = req.body;
+    const { status, dealer_id, additonal_options, estimated_cost, final_cost, additonal_data_moveable } = req.body;
 
     let bookings = await booking.findById(req.params.id);
-    
+
     if (!bookings) {
       res.status(201).json({ status: 201, error: "No Booking Found" });
       return;
@@ -644,14 +599,14 @@ async function updatebooking(req, res) {
 
     const user = await customers.findById(bookings.created_by).exec();
 
-    if(bookings.status === status){
+    if (bookings.status === status) {
       res.status(201).json({ status: 201, message: `Booking is Already ${status}` });
       return;
     }
 
     if (status === "completed") {
       await handleBookingCompletion(bookings);
-  }
+    }
 
     let dealers = await Dealer.findOne({ _id: dealer_id }); // changes
 
@@ -696,10 +651,10 @@ async function updatebooking(req, res) {
           // docs.otp = data.otp
 
           // push notification on booking update
-          if(status == "rejected"){
-            Notification( user?.device_token || user?.ftoken, `Sorry ${user?.first_name} , Your Booking of ${bookings?.brand} ${bookings?.model} has been Rejected`, user?.id);
-          }else{
-            Notification( user?.device_token || user?.ftoken, `Hi ${user?.first_name} , Your Booking of ${bookings?.brand} ${bookings?.model} ${status} successfully`, user?.id);
+          if (status == "rejected") {
+            Notification(user?.device_token || user?.ftoken, `Sorry ${user?.first_name} , Your Booking of ${bookings?.brand} ${bookings?.model} has been Rejected`, user?.id);
+          } else {
+            Notification(user?.device_token || user?.ftoken, `Hi ${user?.first_name} , Your Booking of ${bookings?.brand} ${bookings?.model} ${status} successfully`, user?.id);
           }
 
           var response = {
@@ -728,8 +683,8 @@ async function createBooking(req, res) {
   try {
     const data = jwt_decode(req.headers.token);
     const user_id = data.user_id;
-    
-    const { dealer_id, services, pickupAndDropId,userBike_id,pickupDate } = req.body;
+
+    const { dealer_id, services, pickupAndDropId, userBike_id, pickupDate } = req.body;
     if (!dealer_id || !services || services.length === 0) {
       return res.status(400).json({ success: false, message: "Dealer and at least one service are required" });
     }
@@ -738,7 +693,7 @@ async function createBooking(req, res) {
       user_id,
       dealer_id,
       services,
-      pickupAndDropId:pickupAndDropId || null,
+      pickupAndDropId: pickupAndDropId || null,
       userBike_id,
       pickupDate
     });
@@ -843,13 +798,13 @@ async function updateBookingStatus(req, res) {
 
     if (status === "completed") {
       await handleBookingCompletion(existingBooking);
-  }
+    }
 
 
     // Fetch customer details
     const customer = await customers.findById(existingBooking.user_id);
     if (customer && customer.device_token) {
-      Notification(customer.device_token, `Your booking status has been updated to: ${status}`,customer._id.toString());
+      Notification(customer.device_token, `Your booking status has been updated to: ${status}`, customer._id.toString());
     }
 
     res.status(200).json({ success: true, message: "Booking status updated successfully", data: existingBooking });
@@ -862,100 +817,100 @@ async function updateBookingStatus(req, res) {
 
 const sendBookingOTP = async (req, res) => {
   try {
-      const { bookingId } = req.body;
-      if (!bookingId) {
-          return res.status(200).json({ success: false, message: "Booking ID is required" });
-      }
+    const { bookingId } = req.body;
+    if (!bookingId) {
+      return res.status(200).json({ success: false, message: "Booking ID is required" });
+    }
 
-      // Booking aur Dealer ka data fetch karna
-      const bookingData = await booking.findById(bookingId).populate("dealer_id");
-      if (!bookingData) {
-          return res.status(200).json({ success: false, message: "Booking not found" });
-      }
+    // Booking aur Dealer ka data fetch karna
+    const bookingData = await booking.findById(bookingId).populate("dealer_id");
+    if (!bookingData) {
+      return res.status(200).json({ success: false, message: "Booking not found" });
+    }
 
-      const dealer = await Dealer.findById(bookingData.dealer_id);
-      if (!dealer || !dealer.phone) {
-          return res.status(200).json({ success: false, message: "Dealer phone number not found" });
-      }
+    const dealer = await Dealer.findById(bookingData.dealer_id);
+    if (!dealer || !dealer.phone) {
+      return res.status(200).json({ success: false, message: "Dealer phone number not found" });
+    }
 
-      const phoneNumber = dealer.phone; // Dealer ka phone number
+    const phoneNumber = dealer.phone; // Dealer ka phone number
 
-      // OTP Generate karna
-      const otp = Math.floor(100000 + Math.random() * 900000);
+    // OTP Generate karna
+    const otp = Math.floor(100000 + Math.random() * 900000);
 
-      // OTP ko database me save karna
-      bookingData.otp = 9999;
-      await bookingData.save();
+    // OTP ko database me save karna
+    bookingData.otp = 9999;
+    await bookingData.save();
 
-      // Twilio ya SMS API se OTP bhejna
-      // const otpResponse = await sendotp(phoneNumber);
+    // Twilio ya SMS API se OTP bhejna
+    // const otpResponse = await sendotp(phoneNumber);
 
-      res.status(200).json({ success: true, message: "OTP sent successfully to dealer" });
+    res.status(200).json({ success: true, message: "OTP sent successfully to dealer" });
   } catch (error) {
-      console.error(error);
-      res.status(500).json({ success: false, message: "Internal Server Error" });
+    console.error(error);
+    res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
 
 
 const verifyBookingOTP = async (req, res) => {
   try {
-      const { bookingId, otp } = req.body;
-      if (!bookingId || !otp) {
-          return res.status(200).json({ success: false, message: "Booking ID and OTP are required" });
-      }
+    const { bookingId, otp } = req.body;
+    if (!bookingId || !otp) {
+      return res.status(200).json({ success: false, message: "Booking ID and OTP are required" });
+    }
 
-      // Booking ka data fetch karna
-      const bookingData = await booking.findById(bookingId).populate("dealer_id");
-      if (!bookingData) {
-          return res.status(200).json({ success: false, message: "Booking not found" });
-      }
+    // Booking ka data fetch karna
+    const bookingData = await booking.findById(bookingId).populate("dealer_id");
+    if (!bookingData) {
+      return res.status(200).json({ success: false, message: "Booking not found" });
+    }
 
-      // OTP Check karna
-      if (bookingData.otp !== otp) {
-          return res.status(200).json({ success: false, message: "Invalid OTP" });
-      }
+    // OTP Check karna
+    if (bookingData.otp !== otp) {
+      return res.status(200).json({ success: false, message: "Invalid OTP" });
+    }
 
-      // OTP Verify hone ke baad null kar dena
-      bookingData.otp = null;
-      await bookingData.save();
+    // OTP Verify hone ke baad null kar dena
+    bookingData.otp = null;
+    await bookingData.save();
 
-      res.status(200).json({ success: true, message: "OTP verified successfully by dealer" });
+    res.status(200).json({ success: true, message: "OTP verified successfully by dealer" });
   } catch (error) {
-      console.error(error);
-      res.status(500).json({ success: false, message: "Internal Server Error" });
+    console.error(error);
+    res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
 
 const updatePickupStatus = async (req, res) => {
   try {
-      const { bookingId, status } = req.body;
+    const { bookingId, status } = req.body;
 
-      // Validate Input
-      if (!bookingId || !status) {
-          return res.status(200).json({ success: false, message: "Booking ID and Status are required" });
-      }
+    // Validate Input
+    if (!bookingId || !status) {
+      return res.status(200).json({ success: false, message: "Booking ID and Status are required" });
+    }
 
-      // Valid Status Values
-      const validStatuses = ["arriving", "arrived"];
-      if (!validStatuses.includes(status)) {
-          return res.status(200).json({ success: false, message: "Invalid status value" });
-      }
+    // Valid Status Values
+    const validStatuses = ["arriving", "arrived"];
+    if (!validStatuses.includes(status)) {
+      return res.status(200).json({ success: false, message: "Invalid status value" });
+    }
 
-      // Fetch Booking
-      const bookingData = await booking.findById(bookingId);
-      if (!bookingData) {
-          return res.status(200).json({ success: false, message: "Booking not found" });
-      }
+    // Fetch Booking
+    const bookingData = await booking.findById(bookingId);
+    if (!bookingData) {
+      return res.status(200).json({ success: false, message: "Booking not found" });
+    }
 
-      // Update Pickup Status
-      bookingData.pickupStatus = status;
-      await bookingData.save();
+    // Update Pickup Status
+    bookingData.pickupStatus = status;
+    await bookingData.save();
 
-      res.status(200).json({ success: true, message: "Pickup status updated successfully", data: bookingData });
+    res.status(200).json({ success: true, message: "Pickup status updated successfully", data: bookingData });
   } catch (error) {
-      console.error("Error updating pickup status:", error);
-      res.status(500).json({ success: false, message:error });
+    console.error("Error updating pickup status:", error);
+    res.status(500).json({ success: false, message: error });
   }
 };
 
@@ -963,109 +918,141 @@ const updatePickupStatus = async (req, res) => {
 
 async function addNoteToBooking(req, res) {
   try {
-      const { bookingId, note } = req.body;
+    const { bookingId, note } = req.body;
 
-      if (!bookingId || !note) {
-          return res.status(400).json({ success: false, message: "Booking ID and note are required" });
-      }
+    if (!bookingId || !note) {
+      return res.status(400).json({ success: false, message: "Booking ID and note are required" });
+    }
 
-      const updatedBooking = await booking.findByIdAndUpdate(
-          bookingId,
-          { $push: { additionalNotes: note } },
-          { new: true }
-      );
+    const updatedBooking = await booking.findByIdAndUpdate(
+      bookingId,
+      { $push: { additionalNotes: note } },
+      { new: true }
+    );
 
-      if (!updatedBooking) {
-          return res.status(404).json({ success: false, message: "Booking not found" });
-      }
+    if (!updatedBooking) {
+      return res.status(404).json({ success: false, message: "Booking not found" });
+    }
 
-      res.status(200).json({ success: true, message: "Note added successfully", data: updatedBooking.additionalNotes });
+    res.status(200).json({ success: true, message: "Note added successfully", data: updatedBooking.additionalNotes });
   } catch (error) {
-      console.error("Add Note Error:", error);
-      res.status(500).json({ success: false, message: "Internal Server Error" });
+    console.error("Add Note Error:", error);
+    res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 }
 
 async function getNotesFromBooking(req, res) {
   try {
-      const { bookingId } = req.params;
+    const { bookingId } = req.params;
 
-      if (!bookingId) {
-          return res.status(400).json({ success: false, message: "Booking ID is required" });
-      }
+    if (!bookingId) {
+      return res.status(400).json({ success: false, message: "Booking ID is required" });
+    }
 
-      const bookingData = await booking.findById(bookingId, "additionalNotes");
+    const bookingData = await booking.findById(bookingId, "additionalNotes");
 
-      if (!bookingData) {
-          return res.status(404).json({ success: false, message: "Booking not found" });
-      }
+    if (!bookingData) {
+      return res.status(404).json({ success: false, message: "Booking not found" });
+    }
 
-      res.status(200).json({ success: true, data: bookingData.additionalNotes });
+    res.status(200).json({ success: true, data: bookingData.additionalNotes });
   } catch (error) {
-      console.error("Get Notes Error:", error);
-      res.status(500).json({ success: false, message: "Internal Server Error" });
+    console.error("Get Notes Error:", error);
+    res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 }
 
 async function updateNoteInBooking(req, res) {
   try {
-      const { bookingId, noteIndex, newNote } = req.body;
+    const { bookingId, noteIndex, newNote } = req.body;
 
-      if (!bookingId || noteIndex === undefined || !newNote) {
-          return res.status(400).json({ success: false, message: "Booking ID, note index, and new note are required" });
-      }
+    if (!bookingId || noteIndex === undefined || !newNote) {
+      return res.status(400).json({ success: false, message: "Booking ID, note index, and new note are required" });
+    }
 
-      const updatedBooking = await booking.findById(bookingId);
+    const updatedBooking = await booking.findById(bookingId);
 
-      if (!updatedBooking) {
-          return res.status(404).json({ success: false, message: "Booking not found" });
-      }
+    if (!updatedBooking) {
+      return res.status(404).json({ success: false, message: "Booking not found" });
+    }
 
-      if (noteIndex < 0 || noteIndex >= updatedBooking.additionalNotes.length) {
-          return res.status(400).json({ success: false, message: "Invalid note index" });
-      }
+    if (noteIndex < 0 || noteIndex >= updatedBooking.additionalNotes.length) {
+      return res.status(400).json({ success: false, message: "Invalid note index" });
+    }
 
-      updatedBooking.additionalNotes[noteIndex] = newNote;
-      await updatedBooking.save();
+    updatedBooking.additionalNotes[noteIndex] = newNote;
+    await updatedBooking.save();
 
-      res.status(200).json({ success: true, message: "Note updated successfully", data: updatedBooking.additionalNotes });
+    res.status(200).json({ success: true, message: "Note updated successfully", data: updatedBooking.additionalNotes });
   } catch (error) {
-      console.error("Update Note Error:", error);
-      res.status(500).json({ success: false, message: "Internal Server Error" });
+    console.error("Update Note Error:", error);
+    res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 }
 
 async function deleteNoteFromBooking(req, res) {
   try {
-      const { bookingId, noteIndex } = req.body;
+    const { bookingId, noteIndex } = req.body;
 
-      if (!bookingId || noteIndex === undefined) {
-          return res.status(400).json({ success: false, message: "Booking ID and note index are required" });
-      }
+    if (!bookingId || noteIndex === undefined) {
+      return res.status(400).json({ success: false, message: "Booking ID and note index are required" });
+    }
 
-      const updatedBooking = await booking.findById(bookingId);
+    const updatedBooking = await booking.findById(bookingId);
 
-      if (!updatedBooking) {
-          return res.status(404).json({ success: false, message: "Booking not found" });
-      }
+    if (!updatedBooking) {
+      return res.status(404).json({ success: false, message: "Booking not found" });
+    }
 
-      if (noteIndex < 0 || noteIndex >= updatedBooking.additionalNotes.length) {
-          return res.status(400).json({ success: false, message: "Invalid note index" });
-      }
+    if (noteIndex < 0 || noteIndex >= updatedBooking.additionalNotes.length) {
+      return res.status(400).json({ success: false, message: "Invalid note index" });
+    }
 
-      updatedBooking.additionalNotes.splice(noteIndex, 1);
-      await updatedBooking.save();
+    updatedBooking.additionalNotes.splice(noteIndex, 1);
+    await updatedBooking.save();
 
-      res.status(200).json({ success: true, message: "Note deleted successfully", data: updatedBooking.additionalNotes });
+    res.status(200).json({ success: true, message: "Note deleted successfully", data: updatedBooking.additionalNotes });
   } catch (error) {
-      console.error("Delete Note Error:", error);
-      res.status(500).json({ success: false, message: "Internal Server Error" });
+    console.error("Delete Note Error:", error);
+    res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 }
 
 
+// By Prashant 
+async function getallbookings(req, res) {
+  try {
+    // Directly fetch bookings without auth
+    const bookingresponce = await booking
+      .find(req.query)
+      .populate("services") // Fetch service details
+      .populate("dealer_id") // Fetch dealer details
+      .populate("pickupAndDropId") // Fetch pickup & drop details
+      .populate("user_id") // Fetch user details
+      .sort({ "_id": -1 });
 
-
+    if (bookingresponce.length > 0) {
+      return res.status(200).json({
+        status: 200,
+        message: "Successfully retrieved bookings",
+        data: bookingresponce,
+        image_base_url: process.env.BASE_URL,
+      });
+    } else {
+      return res.status(200).json({
+        status: 200,
+        message: "No bookings found",
+        data: [],
+      });
+    }
+  } catch (error) {
+    console.error("Error fetching bookings:", error);
+    return res.status(500).json({
+      status: 500,
+      message: "Internal Server Error",
+    });
+  }
+}
 
 module.exports = {
   addbooking,

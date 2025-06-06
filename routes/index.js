@@ -50,7 +50,7 @@ router.use('/userAuth', userauth);
 router.use('/banner', banner);
 router.use('/offer', offer);
 router.use('/additionalOptions', verifyToken, additionalOption);
-router.use('/bookings', verifyToken, booking);
+router.use('/bookings', booking);
 router.use('/trackings', verifyToken, tracking);
 router.use('/pickndrop', verifyToken, pickndrop);
 router.use('/payment', payment);
