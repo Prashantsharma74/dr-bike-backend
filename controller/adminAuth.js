@@ -8,6 +8,8 @@ const admin = require('../models/admin_model');
 const offer = require('../models/offer_model');
 const bikeCompanySchema = require('../models/bikeCompanyModel');
 const customerSchema = require('../models/customer_model');
+const bookingSchema = require('../models/Booking');
+const servicesSchema = require('../models/service_model');
 
 var bcrypt = require('bcryptjs');
 const jwt_decode = require("jwt-decode");
@@ -785,6 +787,8 @@ const dashboardCounts = async (req, res) => {
     const offersCount = await offer.countDocuments();
     const bikeCompanyCount = await bikeCompanySchema.countDocuments();
     const customerCount = await customerSchema.countDocuments();
+    const bookingCount = await bookingSchema.countDocuments();
+    const serviceCount = await servicesSchema.countDocuments();
 
     res.status(200).json({
       status: 200,
@@ -794,6 +798,8 @@ const dashboardCounts = async (req, res) => {
         totalOffers: offersCount,
         totalBikeCompany: bikeCompanyCount,
         totalCustomers: customerCount,
+        totalBookings: bookingCount,
+        totalServices: serviceCount,
       },
     });
   } catch (error) {
