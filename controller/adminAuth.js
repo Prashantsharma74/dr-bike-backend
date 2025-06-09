@@ -819,7 +819,6 @@ const updateStatus = async (req, res) => {
   console.log(id);
   console.log(status);
 
-  // Validate input
   if (!["active", "inactive"].includes(status)) {
     return res.status(400).json({ error: "Invalid status value. Must be 'active' or 'inactive'." });
   }
