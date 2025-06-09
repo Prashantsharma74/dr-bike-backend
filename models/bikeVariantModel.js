@@ -19,4 +19,7 @@ const bikeVariantSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Unique combination: variant_name + model_id
+bikeVariantSchema.index({ model_id: 1, variant_name: 1 }, { unique: true });
+
 module.exports = mongoose.model("BikeVariant", bikeVariantSchema);

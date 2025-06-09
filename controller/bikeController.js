@@ -10,24 +10,24 @@ const BikeCompany = require("../models/bikeCompanyModel");
 
 async function checkPermission(user_id, requiredPermission) {
   try {
-      const userRole = await Role.findOne({ subAdmin: user_id });
-      console.log(userRole,"1")
-      if (!userRole) {
-          return false;
-      }
-      const permissions = userRole.permissions;
-      console.log(permissions,"2")
-
-      const [module, permission] = requiredPermission.split('.');
-    
-      // Check if the module and permission exist in permissions object
-      if (!permissions || !permissions[module] || !permissions[module][permission]) {
-        return false;
-      }
-      return true;
-  } catch (error) {
-      console.error("Error while checking permission:", error);
+    const userRole = await Role.findOne({ subAdmin: user_id });
+    console.log(userRole, "1")
+    if (!userRole) {
       return false;
+    }
+    const permissions = userRole.permissions;
+    console.log(permissions, "2")
+
+    const [module, permission] = requiredPermission.split('.');
+
+    // Check if the module and permission exist in permissions object
+    if (!permissions || !permissions[module] || !permissions[module][permission]) {
+      return false;
+    }
+    return true;
+  } catch (error) {
+    console.error("Error while checking permission:", error);
+    return false;
   }
 }
 
@@ -47,7 +47,7 @@ async function addBike(req, res) {
       return res.status(401).send(response);
     }
 
-    const { name, model, bike_cc} = req.body;
+    const { name, model, bike_cc } = req.body;
 
     // var image = req.files.image[0].filename;
     // const userdetail = await admin.findOne({_id:user_id});
@@ -126,7 +126,7 @@ async function bikeList(req, res) {
     }
 
     // var bikeRes = await bikeModel.find({}).sort({ "_id": -1 });
-    var bikeRes = await bikeModel.find({}).sort({model:1})
+    var bikeRes = await bikeModel.find({}).sort({ model: 1 })
 
     if (bikeRes.length > 0) {
       var response = {
@@ -162,10 +162,10 @@ async function deleteBike(req, res) {
     const user_type = data.user_type;
     const type = data.type;
     if (user_id == null || user_type != 1) {
-     
-        if(user_type === 3){
+
+      if (user_type === 3) {
         const subAdmin = await Admin.findById(user_id)
-        
+
         if (!subAdmin) {
           var response = {
             status: 401,
@@ -173,10 +173,10 @@ async function deleteBike(req, res) {
           };
           return res.status(401).send(response);
         }
-  
-        if(user_type === 3){
+
+        if (user_type === 3) {
           const subAdmin = await Admin.findById(user_id)
-          
+
           if (!subAdmin) {
             var response = {
               status: 401,
@@ -185,9 +185,9 @@ async function deleteBike(req, res) {
             return res.status(401).send(response);
           }
         }
-    
+
         const isAllowed = await checkPermission(user_id, "Bikes.delete");
-  
+
         if (!isAllowed) {
           var response = {
             status: 401,
@@ -195,13 +195,13 @@ async function deleteBike(req, res) {
           };
           return res.status(401).send(response);
         }
-  
+
       }
-  
+
     }
 
     const { bike_id } = req.body;
-    const bikeRes = await bikeModel.findOne({id: bike_id });
+    const bikeRes = await bikeModel.findOne({ id: bike_id });
     if (bikeRes) {
       bikeModel.findOneAndDelete({ id: bike_id }, async function (err, docs) {
         if (err) {
@@ -243,10 +243,10 @@ async function editBike(req, res) {
     const user_type = data.user_type;
     const type = data.type;
     if (user_id == null || user_type != 1) {
-     
-        if(user_type === 3){
+
+      if (user_type === 3) {
         const subAdmin = await Admin.findById(user_id)
-        
+
         if (!subAdmin) {
           var response = {
             status: 401,
@@ -254,10 +254,10 @@ async function editBike(req, res) {
           };
           return res.status(401).send(response);
         }
-  
-        if(user_type === 3){
+
+        if (user_type === 3) {
           const subAdmin = await Admin.findById(user_id)
-          
+
           if (!subAdmin) {
             var response = {
               status: 401,
@@ -266,9 +266,9 @@ async function editBike(req, res) {
             return res.status(401).send(response);
           }
         }
-    
+
         const isAllowed = await checkPermission(user_id, "Bikes.update");
-  
+
         if (!isAllowed) {
           var response = {
             status: 401,
@@ -276,9 +276,9 @@ async function editBike(req, res) {
           };
           return res.status(401).send(response);
         }
-  
+
       }
-  
+
     }
     const { name, model, bike_cc, extra_charges } = req.body;
 
@@ -374,29 +374,71 @@ async function getBike(req, res) {
   }
 }
 
+// const addBikeCompany = async (req, res) => {
+//   try {
+//     const { name } = req.body;
+
+//     if (!name) {
+//       return res.status(200).json({ status: 200, message: "Bike company name is required!", data: [] });
+//     }
+
+//     const existingCompany = await BikeCompany.findOne({ name });
+
+//     if (existingCompany) {
+//       return res.status(200).json({ status: 200, message: "Bike company already exists!", data: [] });
+//     }
+
+//     const newCompany = new BikeCompany({ name });
+//     await newCompany.save();
+
+//     res.status(200).json({ status: 200, message: "Bike company added successfully", data: newCompany });
+
+//   } catch (error) {
+//     console.error("Error adding bike company:", error);
+//     res.status(500).json({ status: 500, message: "Internal Server Error", data: [] });
+//   }
+// };
+
 const addBikeCompany = async (req, res) => {
   try {
-    const { name } = req.body;
+    let { name } = req.body;
 
     if (!name) {
-      return res.status(200).json({ status: 200, message: "Bike company name is required!", data: [] });
+      return res.status(200).json({
+        status: 200,
+        message: "Bike company name is required!",
+        data: [],
+      });
     }
 
-    // Check if company already exists
+    name = name.trim().toUpperCase(); // Normalize to uppercase
+
     const existingCompany = await BikeCompany.findOne({ name });
 
     if (existingCompany) {
-      return res.status(200).json({ status: 200, message: "Bike company already exists!", data: [] });
+      return res.status(200).json({
+        status: 200,
+        message: "Bike company already exists!",
+        data: [],
+      });
     }
 
     const newCompany = new BikeCompany({ name });
     await newCompany.save();
 
-    res.status(200).json({ status: 200, message: "Bike company added successfully", data: newCompany });
+    res.status(200).json({
+      status: 200,
+      message: "Bike company added successfully",
+      data: newCompany,
+    });
 
   } catch (error) {
     console.error("Error adding bike company:", error);
-    res.status(500).json({ status: 500, message: "Internal Server Error", data: [] });
+    res.status(500).json({
+      status: 500,
+      message: "Internal Server Error",
+      data: [],
+    });
   }
 };
 
@@ -405,27 +447,50 @@ const addBikeModel = async (req, res) => {
     const { company_id, model_name } = req.body;
 
     if (!company_id || !model_name) {
-      return res.status(200).json({ status: 200, message: "company_id and model_name are required!", data: [] });
+      return res.status(200).json({
+        status: 200,
+        message: "company_id and model_name are required!",
+        data: [],
+      });
     }
 
-    // Check if model already exists
-    const existingModel = await BikeModel.findOne({company_id, model_name });
+    const normalizedModelName = model_name.trim().toUpperCase();
+
+    // Check if model already exists for the same company (case-insensitive)
+    const existingModel = await BikeModel.findOne({
+      company_id,
+      model_name: normalizedModelName,
+    });
 
     if (existingModel) {
-      return res.status(200).json({ status: 200, message: "Bike model already exists!", data: [] });
+      return res.status(200).json({
+        status: 200,
+        message: "Bike model already exists for this company!",
+        data: [],
+      });
     }
 
-    const newModel = new BikeModel({ company_id, model_name });
+    const newModel = new BikeModel({
+      company_id,
+      model_name: normalizedModelName,
+    });
+
     await newModel.save();
 
-    res.status(200).json({ status: 200, message: "Bike model added successfully", data: newModel });
-
+    res.status(200).json({
+      status: 200,
+      message: "Bike model added successfully",
+      data: newModel,
+    });
   } catch (error) {
     console.error("Error adding bike model:", error);
-    res.status(500).json({ status: 500, message: "Internal Server Error", data: [] });
+    res.status(500).json({
+      status: 500,
+      message: "Internal Server Error",
+      data: [],
+    });
   }
 };
-
 
 const addBikeVariant = async (req, res) => {
   try {
@@ -507,34 +572,53 @@ const getBikeVariants = async (req, res) => {
   }
 };
 
+// const getAllBikes = async (req, res) => {
+//   try {
+//     const companies = await BikeCompany.find().lean();
+
+//     const bikesData = await Promise.all(
+//       companies.map(async (company) => {
+//         const models = await BikeModel.find({ company_id: company._id }).lean();
+
+//         const modelsWithVariants = await Promise.all(
+//           models.map(async (model) => {
+//             const variants = await BikeVariant.find({ model_id: model._id }).lean();
+//             return { ...model, variants };
+//           })
+//         );
+
+//         return { ...company, models: modelsWithVariants };
+//       })
+//     );
+
+//     res.status(200).json({ status: 200, message: "All bikes retrieved successfully", data: bikesData });
+//   } catch (error) {
+//     console.error("Error fetching bikes:", error);
+//     res.status(500).json({ status: 500, message: "Internal Server Error", data: [] });
+//   }
+// };
+
 const getAllBikes = async (req, res) => {
   try {
-    const companies = await BikeCompany.find().lean();
-
-    const bikesData = await Promise.all(
-      companies.map(async (company) => {
-        const models = await BikeModel.find({ company_id: company._id }).lean();
-
-        const modelsWithVariants = await Promise.all(
-          models.map(async (model) => {
-            const variants = await BikeVariant.find({ model_id: model._id }).lean();
-            return { ...model, variants };
-          })
-        );
-
-        return { ...company, models: modelsWithVariants };
+    const companies = await BikeCompany.find()
+      .populate({
+        path: "models",
+        populate: {
+          path: "variants",
+        },
       })
-    );
+      .lean();
 
-    res.status(200).json({ status: 200, message: "All bikes retrieved successfully", data: bikesData });
+    res.status(200).json({
+      status: 200,
+      message: "All bikes retrieved successfully",
+      data: companies,
+    });
   } catch (error) {
     console.error("Error fetching bikes:", error);
     res.status(500).json({ status: 500, message: "Internal Server Error", data: [] });
   }
 };
-
-
-
 
 
 module.exports = {
