@@ -58,18 +58,16 @@ const upload = multer({
 });
 
 
-
-// / POST users listing. /;
 router.post("/addDealer",
   upload.fields([
-    { name: "images", maxCount: 1 }, // Allow multiple profile images
+    { name: "images", maxCount: 1 },
     { name: "panCardFront", maxCount: 1 },
     { name: "panCardBack", maxCount: 1 },
     { name: "adharCardFront", maxCount: 1 },
     { name: "adharCardBack", maxCount: 1 },
     { name: "passportImage", maxCount: 1 },
     { name: "PassbookImage", maxCount: 1 },
-    { name: "shopImages", maxCount: 10 }, // Allow multiple shop images
+    { name: "shopImages", maxCount: 10 }, 
   ]),
     addDealer
 );

@@ -256,95 +256,154 @@ const dealerWithInRange2 = async (req, res) => {
   }
 };
 
+// async function addDealer(req, res) {
+//   try {
+//       const data = jwt_decode(req.headers.token);
+//       const user_id = data.user_id;
+//       const user_type = data.user_type;
+
+//       if (!user_id || user_type !== 1) { 
+//           if (user_type === 3) {
+//               const subAdmin = await Admin.findById(user_id);
+//               if (!subAdmin) {
+//                   return res.status(403).json({ success: false, message: "Subadmin not found!" });
+//               }
+              
+//               const isAllowed = await checkPermission(user_id, "Dealers.create");
+//               if (!isAllowed) {
+//                   return res.status(403).json({ success: false, message: "No permission to add dealers!" });
+//               }
+//           } else {
+//               return res.status(403).json({ success: false, message: "Unauthorized access!" });
+//           }
+//       }
+
+//       // Extract fields from request body
+//       let dealerData = { ...req.body };
+//       dealerData.create_by = user_id;  // Set creator
 
 
+//       dealerData.isVerify = true;
+//       dealerData.isProfile = true;
+//       dealerData.isDoc = true;
+//       dealerData.goDigital = true;
+//       dealerData.isShopDetailsAdded = true;
+//       dealerData.isDocumentsAdded = true;
 
+//       // Handle file uploads
+//       if (req.files) {
 
+//         if (req.files?.images) {
+//           dealerData.images = req.files.images[0].filename; // Convert array to single string
+//       }
+      
+//           if (req.files.panCardFront) {
+//               dealerData.panCardFront = req.files.panCardFront[0].filename;
+//           }
+//           if (req.files.panCardBack) {
+//               dealerData.panCardBack = req.files.panCardBack[0].filename;
+//           }
+//           if (req.files.adharCardFront) {
+//               dealerData.adharCardFront = req.files.adharCardFront[0].filename;
+//           }
+//           if (req.files.adharCardBack) {
+//               dealerData.adharCardBack = req.files.adharCardBack[0].filename;
+//           }
+//           if (req.files.passportImage) {
+//               dealerData.passportImage = req.files.passportImage[0].filename;
+//           }
+//           if (req.files.PassbookImage) {
+//               dealerData.PassbookImage = req.files.PassbookImage[0].filename;
+//           }
+//           if (req.files.shopImages) {
+//               dealerData.shopImages = req.files.shopImages.map(file => file.filename);
+//           }
+//       }
+
+//       // Check if email already exists
+//       const emailCheck = await Dealer.findOne({ email: dealerData.email });
+//       if (emailCheck) {
+//           return res.status(400).json({ success: false, message: "Email already exists" });
+//       }
+
+//       // Create a new dealer record
+//       const newDealer = await Dealer.create(dealerData);
+
+//       return res.status(201).json({
+//           success: true,
+//           message: "Dealer added successfully",
+//           data: newDealer,
+//       });
+
+//   } catch (error) {
+//       console.error("Error adding dealer:", error);
+//       return res.status(500).json({ success: false, message: "Internal server error" });
+//   }
+// }
+// p start
+
+// By Prashant
 async function addDealer(req, res) {
   try {
-      const data = jwt_decode(req.headers.token);
-      const user_id = data.user_id;
-      const user_type = data.user_type;
+    // Step 1: Extract form data from request body
+    let dealerData = { ...req.body };
 
-      if (!user_id || user_type !== 1) { 
-          if (user_type === 3) {
-              const subAdmin = await Admin.findById(user_id);
-              if (!subAdmin) {
-                  return res.status(403).json({ success: false, message: "Subadmin not found!" });
-              }
-              
-              const isAllowed = await checkPermission(user_id, "Dealers.create");
-              if (!isAllowed) {
-                  return res.status(403).json({ success: false, message: "No permission to add dealers!" });
-              }
-          } else {
-              return res.status(403).json({ success: false, message: "Unauthorized access!" });
-          }
+    // Optional: Set default flags
+    dealerData.isVerify = true;
+    dealerData.isProfile = true;
+    dealerData.isDoc = true;
+    dealerData.goDigital = true;
+    dealerData.isShopDetailsAdded = true;
+    dealerData.isDocumentsAdded = true;
+
+    // Step 2: Handle file uploads (Multer saves files in req.files)
+    if (req.files) {
+      if (req.files?.images) {
+        dealerData.images = req.files.images[0].filename;
       }
-
-      // Extract fields from request body
-      let dealerData = { ...req.body };
-      dealerData.create_by = user_id;  // Set creator
-
-
-      dealerData.isVerify = true;
-      dealerData.isProfile = true;
-      dealerData.isDoc = true;
-      dealerData.goDigital = true;
-      dealerData.isShopDetailsAdded = true;
-      dealerData.isDocumentsAdded = true;
-
-      // Handle file uploads
-      if (req.files) {
-
-        if (req.files?.images) {
-          dealerData.images = req.files.images[0].filename; // Convert array to single string
+      if (req.files.panCardFront) {
+        dealerData.panCardFront = req.files.panCardFront[0].filename;
       }
-      
-          if (req.files.panCardFront) {
-              dealerData.panCardFront = req.files.panCardFront[0].filename;
-          }
-          if (req.files.panCardBack) {
-              dealerData.panCardBack = req.files.panCardBack[0].filename;
-          }
-          if (req.files.adharCardFront) {
-              dealerData.adharCardFront = req.files.adharCardFront[0].filename;
-          }
-          if (req.files.adharCardBack) {
-              dealerData.adharCardBack = req.files.adharCardBack[0].filename;
-          }
-          if (req.files.passportImage) {
-              dealerData.passportImage = req.files.passportImage[0].filename;
-          }
-          if (req.files.PassbookImage) {
-              dealerData.PassbookImage = req.files.PassbookImage[0].filename;
-          }
-          if (req.files.shopImages) {
-              dealerData.shopImages = req.files.shopImages.map(file => file.filename);
-          }
+      if (req.files.panCardBack) {
+        dealerData.panCardBack = req.files.panCardBack[0].filename;
       }
-
-      // Check if email already exists
-      const emailCheck = await Dealer.findOne({ email: dealerData.email });
-      if (emailCheck) {
-          return res.status(400).json({ success: false, message: "Email already exists" });
+      if (req.files.adharCardFront) {
+        dealerData.adharCardFront = req.files.adharCardFront[0].filename;
       }
+      if (req.files.adharCardBack) {
+        dealerData.adharCardBack = req.files.adharCardBack[0].filename;
+      }
+      if (req.files.passportImage) {
+        dealerData.passportImage = req.files.passportImage[0].filename;
+      }
+      if (req.files.PassbookImage) {
+        dealerData.PassbookImage = req.files.PassbookImage[0].filename;
+      }
+      if (req.files.shopImages) {
+        dealerData.shopImages = req.files.shopImages.map(file => file.filename);
+      }
+    }
 
-      // Create a new dealer record
-      const newDealer = await Dealer.create(dealerData);
+    // Step 3: Check for duplicate email
+    const emailCheck = await Dealer.findOne({ shopEmail: dealerData.shopEmail });
+    if (emailCheck) {
+      return res.status(400).json({ success: false, message: "Email already exists" });
+    }
 
-      return res.status(201).json({
-          success: true,
-          message: "Dealer added successfully",
-          data: newDealer,
-      });
+    // Step 4: Create a new dealer document
+    const newDealer = await Dealer.create(dealerData);
+
+    return res.status(201).json({
+      success: true,
+      message: "Dealer added successfully",
+      data: newDealer,
+    });
 
   } catch (error) {
-      console.error("Error adding dealer:", error);
-      return res.status(500).json({ success: false, message: "Internal server error" });
+    console.error("Error adding dealer:", error);
+    return res.status(500).json({ success: false, message: "Internal server error" });
   }
 }
-// p start
 
 async function addAmount(req, res) {
   try {

@@ -572,7 +572,6 @@ const getSingleRole = async (req, res) => {
 
 
 // By Prashant 
-
 const twilio = require('twilio');
 const { log } = require('console');
 const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
