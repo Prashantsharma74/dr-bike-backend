@@ -116,7 +116,6 @@ router.post("/addDealer",
     { name: "panCardFront", maxCount: 1 },
     { name: "aadharFront", maxCount: 1 },
     { name: "aadharBack", maxCount: 1 },
-    { name: "passbookImage", maxCount: 1 },
     { name: "shopImages", maxCount: 10 }
   ]),
 
