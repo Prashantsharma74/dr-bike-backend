@@ -2,9 +2,8 @@ var express = require("express");
 const multer = require("multer");
 var fs = require("fs");
 var path = require("path");
-const Dealer = require("../models/Dealer");
+const Vendor = require("../models/dealerModel");
 var {
-  addDealer,
   editDealer,
   dealerList,
   deleteDealer,
@@ -27,6 +26,7 @@ var {
   updateDealerDocStatus,
   updateDealerVerfication
 } = require("../controller/dealer");
+const { log } = require("console");
 
 const router = express.Router();
 
@@ -119,103 +119,205 @@ router.post("/addDealer",
     { name: "passbookImage", maxCount: 1 },
     { name: "shopImages", maxCount: 10 }
   ]),
+
   async function addDealer(req, res) {
     try {
-      const dealerData = {
-        shopName: req.body.shopName,
-        shopEmail: req.body.shopEmail,
-        shopContact: req.body.shopContact,
-        password: req.body.password,
-        shopPincode: req.body.shopPincode,
-        fullAddress: req.body.fullAddress,
-        city: req.body.city,
-        state: req.body.state,
-        latitude: parseFloat(req.body.latitude),
-        longitude: parseFloat(req.body.longitude),
-        ownerName: req.body.ownerName,
+      // const body = {
+      //   ...req.body,
+      //   email: req.body.email?.trim()?.toLowerCase()
+      // };
 
-        // Personal Details
-        personalEmail: req.body.personalEmail,
-        personalPhone: req.body.personalPhone,
-        alternatePhone: req.body.alternatePhone,
+      const {
+        shopName,
+        email,
+        phone,
+        password,
+        shopPincode,
+        fullAddress,
+        city,
+        state,
+        latitude,
+        longitude,
+        ownerName,
+        personalEmail,
+        personalPhone,
+        alternatePhone,
+        permanentAddress,
+        permanentState,
+        permanentCity,
+        presentAddress,
+        presentState,
+        presentCity,
+        accountHolderName,
+        ifscCode,
+        bankName,
+        accountNumber,
+      } = req.body;
 
-        // Addresses (corrected mapping)
-        permanentAddress: {
-          address: req.body.permanentAddress,
-          state: req.body.permanentState || req.body.shopState, // Fallback
-          city: req.body.permanentCity || req.body.shopCity    // Fallback
-        },
-        presentAddress: {
-          address: req.body.presentAddress,
-          state: req.body.presentState || req.body.shopState,  // Fallback
-          city: req.body.presentCity || req.body.shopCity      // Fallback
-        },
+      console.log("Body", req.body);
 
-        // Bank Details
-        bankDetails: {
-          accountHolderName: req.body.accountHolderName,
-          ifscCode: req.body.ifscCode,
-          bankName: req.body.bankName,
-          accountNumber: req.body.accountNumber
-        },
-
-        // Documents (ensure field names match Multer config)
-        documents: {
-          panCardFront: req.files?.panCardFront?.[0]?.filename,
-          aadharFront: req.files?.aadharFront?.[0]?.filename,
-          aadharBack: req.files?.aadharBack?.[0]?.filename,
-          passbookImage: req.files?.passbookImage?.[0]?.filename
-        },
-
-        // Shop Images
-        shopImages: req.files?.shopImages?.map(file => file.filename) || [],
-
-        // System Flags
-        isVerify: false,
-        isProfile: true,
-        isDoc: true,
-        goDigital: true,
-        aadharCardNo:""
+      // ✅ Step 1: Enhanced Validation
+      const requiredFields = {
+        shopName: 'Shop Name',
+        email: 'Shop Email',
+        phone: 'Shop Contact',
+        password: 'Password',
+        shopPincode: 'Shop Pincode',
+        fullAddress: 'Full Address',
+        city: 'City',
+        state: 'State',
+        latitude: 'Latitude',
+        longitude: 'Longitude',
+        ownerName: 'Owner Name',
+        personalEmail: 'Personal Email',
+        personalPhone: 'Personal Phone',
+        permanentAddress: 'Permanent Address',
+        permanentState: 'Permanent State',
+        permanentCity: 'Permanent City',
+        presentAddress: 'Present Address',
+        accountHolderName: 'Account Holder Name',
+        ifscCode: 'IFSC Code',
+        bankName: 'Bank Name',
+        accountNumber: 'Account Number'
       };
 
-      // 2. Validate required documents
-      if (!dealerData.documents.panCardFront ||
-        !dealerData.documents.aadharFront ||
-        !dealerData.documents.aadharBack ||
-        !dealerData.documents.passbookImage) {
+      // const missingFields = Object.entries(requiredFields)
+      //   .filter(([key, _]) => !body[key] || body[key] === '')
+      //   .map(([_, label]) => label);
+
+      // if (missingFields.length > 0) {
+      //   return res.status(400).json({
+      //     success: false,
+      //     message: "Missing required fields",
+      //     missingFields
+      //   });
+      // }
+
+      // Email format validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
         return res.status(400).json({
           success: false,
-          message: "All documents (PAN, Aadhaar front/back, Passbook) are required"
+          message: "Invalid email format"
         });
       }
 
-      // 3. Create dealer
-      const newDealer = await Dealer.create(dealerData);
+      // ✅ Step 2: Check for existing dealer (optimized)
+      const existingDealer = await Vendor.findOne({
+        $or: [
+          { email },
+          { phone }
+        ]
+      });
+      console.log("exist", existingDealer);
+
+
+      if (existingDealer) {
+        let conflictField = existingDealer.email === email ? 'Shop Email' : 'Shop Contact';
+        return res.status(409).json({
+          success: false,
+          message: `${conflictField} already exists`,
+          field: conflictField.toLowerCase().replace(' ', '-')
+        });
+      }
+
+      // ✅ Step 3: Handle file uploads with better validation
+      const requiredDocs = {
+        panCardFront: 'PAN Card Front',
+        aadharFront: 'Aadhar Front',
+        aadharBack: 'Aadhar Back',
+        passbookImage: 'Passbook'
+      };
+
+      const missingDocs = Object.entries(requiredDocs)
+        .filter(([key, _]) => !req.files?.[key]?.[0])
+        .map(([_, label]) => label);
+
+      if (missingDocs.length > 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Missing required documents",
+          missingDocuments: missingDocs
+        });
+      }
+
+      // Process files
+      const documents = {};
+      Object.keys(requiredDocs).forEach(key => {
+        documents[key] = req.files[key][0].filename;
+      });
+
+      // ✅ Step 4: Prepare dealer data with proper structure
+      const dealerData = {
+        shopName,
+        email,
+        phone,
+        password,
+        shopPincode,
+        fullAddress,
+        city,
+        state,
+        latitude: parseFloat(latitude),
+        longitude: parseFloat(longitude),
+        ownerName,
+        personalEmail: personalEmail.trim().toLowerCase(),
+        personalPhone,
+        alternatePhone,
+        permanentAddress: {
+          address: permanentAddress,
+          state: permanentState,
+          city: permanentCity
+        },
+        presentAddress: {
+          address: presentAddress,
+          state: presentState,
+          city: presentCity
+        },
+        bankDetails: {
+          accountHolderName,
+          ifscCode,
+          bankName,
+          accountNumber
+        },
+        documents,
+        shopImages: req.files?.shopImages?.map(file => file.filename) || [],
+        isVerify: false,
+        isProfile: true,
+        isDoc: true
+      };
+
+      // ✅ Step 5: Create dealer with transaction for data consistency
+      const newDealer = await Vendor.create(dealerData);
 
       return res.status(201).json({
         success: true,
         message: "Dealer registered successfully",
         data: {
           id: newDealer._id,
-          shopName: newDealer
+          shopName: newDealer.shopName,
+          email: newDealer.email
         }
       });
 
     } catch (error) {
       console.error("Registration error:", error);
 
-      // Cleanup uploaded files on error
+      // Cleanup uploaded files if error occurs
       if (req.files) {
         Object.values(req.files).flat().forEach(file => {
-          if (file.filename) {
-            fs.unlinkSync(path.join(uploadDir, file.filename));
+          try {
+            if (file?.filename) {
+              fs.unlinkSync(path.join(uploadDir, file.filename));
+            }
+          } catch (err) {
+            console.error("File cleanup error:", err);
           }
         });
       }
 
       return res.status(500).json({
         success: false,
-        message: "Registration failed. Please check all required fields.",
+        message: "Registration failed due to server error",
         error: process.env.NODE_ENV === 'development' ? error.message : undefined
       });
     }
