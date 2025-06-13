@@ -226,7 +226,6 @@ router.post("/addDealer",
         panCardFront: 'PAN Card Front',
         aadharFront: 'Aadhar Front',
         aadharBack: 'Aadhar Back',
-        passbookImage: 'Passbook'
       };
 
       const missingDocs = Object.entries(requiredDocs)
