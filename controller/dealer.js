@@ -884,37 +884,37 @@ async function editDealer(req, res) {
 
 
 
-async function dealerList(req, res) {
-  try {
-    const dealerResponse = await Dealer.find(req.query);
+// async function dealerList(req, res) {
+//   try {
+//     const dealerResponse = await Dealer.find(req.query);
     
-    // let newDealerResponse = [...dealerResponse].sort((a, b) => b.wallet - a.wallet);
+//     // let newDealerResponse = [...dealerResponse].sort((a, b) => b.wallet - a.wallet);
 
-    if (dealerResponse.length > 0) {
-      const response = {
-        status: 200,
-        message: "success",
-        data: dealerResponse,
-        // MaxWallet: newDealerResponse[0].wallet || 0
-      };
-      return res.status(200).send(response);
-    } else {
-      const response = {
-        status: 201,
-        message: "No Dealer Found",
-        data: dealerResponse,
-      };
-      return res.status(201).send(response);
-    }
-  } catch (error) {
-    console.log("error", error);
-    const response = {
-      status: 201,
-      message: "Operation was not successful",
-    };
-    return res.status(201).send(response);
-  }
-}
+//     if (dealerResponse.length > 0) {
+//       const response = {
+//         status: 200,
+//         message: "success",
+//         data: dealerResponse,
+//         // MaxWallet: newDealerResponse[0].wallet || 0
+//       };
+//       return res.status(200).send(response);
+//     } else {
+//       const response = {
+//         status: 201,
+//         message: "No Dealer Found",
+//         data: dealerResponse,
+//       };
+//       return res.status(201).send(response);
+//     }
+//   } catch (error) {
+//     console.log("error", error);
+//     const response = {
+//       status: 201,
+//       message: "Operation was not successful",
+//     };
+//     return res.status(201).send(response);
+//   }
+// }
 
 
 async function singledealer(req, res) {
@@ -1963,6 +1963,34 @@ const updateDealerVerfication = async (req, res) =>{
     });
   }
 } 
+
+// By prashant 
+async function dealerList(req, res) {
+  try {
+    // Use an empty object to fetch all dealers
+    const dealerResponse = await Dealer.find({});
+
+    if (dealerResponse.length > 0) {
+      return res.status(200).send({
+        status: 200,
+        message: "Success",
+        data: dealerResponse,
+      });
+    } else {
+      return res.status(200).send({
+        status: 200,
+        message: "No Dealers Found",
+        data: [],
+      });
+    }
+  } catch (error) {
+    console.error("Dealer list error:", error);
+    return res.status(500).send({
+      status: 500,
+      message: "Operation was not successful",
+    });
+  }
+}
 
 module.exports = {
   addDealer,
