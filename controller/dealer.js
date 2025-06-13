@@ -9,6 +9,7 @@ const Admin = require('../models/admin_model')
 const Bike = require('../models/bikeCompanyModel')
 const UserBike = require("../models/userBikeModel")
 const servicess = require("../models/service_model")
+const fs = require("fs");
 
 function calculateDistance(lat1, lon1, lat2, lon2) {
   const R = 6371; // Earth radius in kilometers
@@ -343,65 +344,277 @@ const dealerWithInRange2 = async (req, res) => {
 // p start
 
 // By Prashant
+// async function addDealer(req, res) {
+//   console.log("Api working");
+  
+//   try {
+//     // Step 1: Extract form data from request body
+//     let dealerData = { ...req.body };
+
+//     // Optional: Set default flags
+//     dealerData.isVerify = true;
+//     dealerData.isProfile = true;
+//     dealerData.isDoc = true;
+//     dealerData.goDigital = true;
+//     dealerData.isShopDetailsAdded = true;
+//     dealerData.isDocumentsAdded = true;
+
+//     // Step 2: Handle file uploads (Multer saves files in req.files)
+//     if (req.files) {
+//       if (req.files?.images) {
+//         dealerData.images = req.files.images[0].filename;
+//       }
+//       if (req.files.panCardFront) {
+//         dealerData.panCardFront = req.files.panCardFront[0].filename;
+//       }
+//       if (req.files.panCardBack) {
+//         dealerData.panCardBack = req.files.panCardBack[0].filename;
+//       }
+//       if (req.files.adharCardFront) {
+//         dealerData.adharCardFront = req.files.adharCardFront[0].filename;
+//       }
+//       if (req.files.adharCardBack) {
+//         dealerData.adharCardBack = req.files.adharCardBack[0].filename;
+//       }
+//       if (req.files.passportImage) {
+//         dealerData.passportImage = req.files.passportImage[0].filename;
+//       }
+//       if (req.files.PassbookImage) {
+//         dealerData.PassbookImage = req.files.PassbookImage[0].filename;
+//       }
+//       if (req.files.shopImages) {
+//         dealerData.shopImages = req.files.shopImages.map(file => file.filename);
+//       }
+//     }
+
+//     // Step 3: Check for duplicate email
+//     const emailCheck = await Dealer.findOne({ shopEmail: dealerData.shopEmail });
+//     if (emailCheck) {
+//       return res.status(400).json({ success: false, message: "Email already exists" });
+//     }
+
+//     // Step 4: Create a new dealer document
+//     const newDealer = await Dealer.create(dealerData);
+
+//     return res.status(201).json({
+//       success: true,
+//       message: "Dealer added successfully",
+//       data: newDealer,
+//     });
+
+//   } catch (error) {
+//     console.error("Error adding dealer:", error);
+//     return res.status(500).json({ success: false, message: "Internal server error" });
+//   }
+// }
+
+// async function addDealer(req, res) {
+//   try {
+//     // 1. Prepare the dealer data structure
+//     const dealerData = {
+//       ...req.body,
+//       // Default flags
+//       isVerify: true,
+//       isProfile: true,
+//       isDoc: true,
+//       goDigital: true,
+//       isShopDetailsAdded: true,
+//       isDocumentsAdded: true,
+      
+//       // Address fields
+//       permanentAddress: {
+//         address: req.body.permanentAddress,
+//         state: req.body.permanentState,
+//         city: req.body.permanentCity
+//       },
+//       presentAddress: {
+//         address: req.body.presentAddress,
+//         state: req.body.presentState,
+//         city: req.body.presentCity
+//       }
+//     };
+
+//     // 2. Process file uploads (using correct field names)
+//     if (req.files) {
+//       dealerData.documents = {
+//         panCardFront: req.files.panCardFront?.[0]?.filename,
+//         aadharFront: req.files.aadharFront?.[0]?.filename,
+//         aadharBack: req.files.aadharBack?.[0]?.filename,
+//         passbookImage: req.files.passbookImage?.[0]?.filename
+//       };
+      
+//       dealerData.shopImages = req.files.shopImages?.map(file => file.filename) || [];
+//     }
+
+//     // 3. Validate required fields
+//     const requiredFields = [
+//       'shopName', 'shopEmail', 'shopContact', 'ownerName',
+//       'permanentAddress', 'presentAddress', 'accountHolderName'
+//     ];
+    
+//     for (const field of requiredFields) {
+//       if (!dealerData[field]) {
+//         return res.status(400).json({
+//           success: false,
+//           message: `${field} is required`
+//         });
+//       }
+//     }
+
+//     // 4. Check for existing dealer
+//     const existingDealer = await Dealer.findOne({ 
+//       $or: [
+//         { shopEmail: dealerData.shopEmail },
+//         { shopContact: dealerData.shopContact }
+//       ]
+//     });
+
+//     if (existingDealer) {
+//       return res.status(400).json({
+//         success: false,
+//         message: existingDealer.shopEmail === dealerData.shopEmail 
+//           ? "Email already exists" 
+//           : "Contact number already exists"
+//       });
+//     }
+
+//     // 5. Create new dealer
+//     const newDealer = await Dealer.create(dealerData);
+
+//     return res.status(201).json({
+//       success: true,
+//       message: "Dealer registered successfully",
+//       data: {
+//         id: newDealer._id,
+//         shopName: newDealer.shopName,
+//         documents: dealerData.documents
+//       }
+//     });
+
+//   } catch (error) {
+//     console.error("Dealer registration error:", error);
+    
+//     // Cleanup uploaded files if error occurs
+//     if (req.files) {
+//       const fs = require('fs');
+//       const path = require('path');
+//       const uploadDir = path.join(__dirname, "../uploads/dealer-documents");
+      
+//       Object.values(req.files).flat().forEach(file => {
+//         if (file.filename) {
+//           fs.unlink(path.join(uploadDir, file.filename), () => {});
+//         }
+//       });
+//     }
+
+//     return res.status(500).json({
+//       success: false,
+//       message: "Registration failed. Please check all required fields.",
+//       error: process.env.NODE_ENV === 'development' ? error.message : undefined
+//     });
+//   }
+// }
+
+var path = require("path");
+
 async function addDealer(req, res) {
   try {
-    // Step 1: Extract form data from request body
-    let dealerData = { ...req.body };
+    const dealerData = {
+      shopName: req.body.shopName,
+      shopEmail: req.body.shopEmail,
+      shopContact: req.body.shopContact,
+      password: req.body.password,
+      shopPincode: req.body.shopPincode,
+      fullAddress: req.body.fullAddress,
+      city: req.body.city,
+      state: req.body.state,
+      latitude: parseFloat(req.body.latitude),
+      longitude: parseFloat(req.body.longitude),
+      ownerName: req.body.ownerName,
 
-    // Optional: Set default flags
-    dealerData.isVerify = true;
-    dealerData.isProfile = true;
-    dealerData.isDoc = true;
-    dealerData.goDigital = true;
-    dealerData.isShopDetailsAdded = true;
-    dealerData.isDocumentsAdded = true;
+      // Personal Details
+      personalEmail: req.body.personalEmail,
+      personalPhone: req.body.personalPhone,
+      alternatePhone: req.body.alternatePhone,
 
-    // Step 2: Handle file uploads (Multer saves files in req.files)
-    if (req.files) {
-      if (req.files?.images) {
-        dealerData.images = req.files.images[0].filename;
-      }
-      if (req.files.panCardFront) {
-        dealerData.panCardFront = req.files.panCardFront[0].filename;
-      }
-      if (req.files.panCardBack) {
-        dealerData.panCardBack = req.files.panCardBack[0].filename;
-      }
-      if (req.files.adharCardFront) {
-        dealerData.adharCardFront = req.files.adharCardFront[0].filename;
-      }
-      if (req.files.adharCardBack) {
-        dealerData.adharCardBack = req.files.adharCardBack[0].filename;
-      }
-      if (req.files.passportImage) {
-        dealerData.passportImage = req.files.passportImage[0].filename;
-      }
-      if (req.files.PassbookImage) {
-        dealerData.PassbookImage = req.files.PassbookImage[0].filename;
-      }
-      if (req.files.shopImages) {
-        dealerData.shopImages = req.files.shopImages.map(file => file.filename);
-      }
+      // Addresses (corrected mapping)
+      permanentAddress: {
+        address: req.body.permanentAddress,
+        state: req.body.permanentState || req.body.shopState, // Fallback
+        city: req.body.permanentCity || req.body.shopCity    // Fallback
+      },
+      presentAddress: {
+        address: req.body.presentAddress,
+        state: req.body.presentState || req.body.shopState,  // Fallback
+        city: req.body.presentCity || req.body.shopCity      // Fallback
+      },
+
+      // Bank Details
+      bankDetails: {
+        accountHolderName: req.body.accountHolderName,
+        ifscCode: req.body.ifscCode,
+        bankName: req.body.bankName,
+        accountNumber: req.body.accountNumber
+      },
+
+      // Documents (ensure field names match Multer config)
+      documents: {
+        panCardFront: req.files?.panCardFront?.[0]?.filename,
+        aadharFront: req.files?.aadharFront?.[0]?.filename,
+        aadharBack: req.files?.aadharBack?.[0]?.filename,
+        passbookImage: req.files?.passbookImage?.[0]?.filename
+      },
+
+      // Shop Images
+      shopImages: req.files?.shopImages?.map(file => file.filename) || [],
+
+      // System Flags
+      isVerify: false,
+      isProfile: true,
+      isDoc: true,
+      goDigital: true
+    };
+
+    // 2. Validate required documents
+    if (!dealerData.documents.panCardFront || 
+        !dealerData.documents.aadharFront || 
+        !dealerData.documents.aadharBack || 
+        !dealerData.documents.passbookImage) {
+      return res.status(400).json({
+        success: false,
+        message: "All documents (PAN, Aadhaar front/back, Passbook) are required"
+      });
     }
 
-    // Step 3: Check for duplicate email
-    const emailCheck = await Dealer.findOne({ shopEmail: dealerData.shopEmail });
-    if (emailCheck) {
-      return res.status(400).json({ success: false, message: "Email already exists" });
-    }
-
-    // Step 4: Create a new dealer document
+    // 3. Create dealer
     const newDealer = await Dealer.create(dealerData);
 
     return res.status(201).json({
       success: true,
-      message: "Dealer added successfully",
-      data: newDealer,
+      message: "Dealer registered successfully",
+      data: {
+        id: newDealer._id,
+        shopName: newDealer.shopName
+      }
     });
 
   } catch (error) {
-    console.error("Error adding dealer:", error);
-    return res.status(500).json({ success: false, message: "Internal server error" });
+    console.error("Registration error:", error);
+    
+    // Cleanup uploaded files on error
+    if (req.files) {
+      Object.values(req.files).flat().forEach(file => {
+        if (file.filename) {
+          fs.unlinkSync(path.join(uploadDir, file.filename));
+        }
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: "Registration failed. Please check all required fields.",
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 }
 
