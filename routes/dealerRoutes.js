@@ -197,7 +197,7 @@ router.post("/addDealer",
         message: "Dealer registered successfully",
         data: {
           id: newDealer._id,
-          shopName: newDealer.shopName
+          shopName: newDealer
         }
       });
 

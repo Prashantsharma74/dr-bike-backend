@@ -888,14 +888,14 @@ async function dealerList(req, res) {
   try {
     const dealerResponse = await Dealer.find(req.query);
     
-    let newDealerResponse = [...dealerResponse].sort((a, b) => b.wallet - a.wallet);
+    // let newDealerResponse = [...dealerResponse].sort((a, b) => b.wallet - a.wallet);
 
     if (dealerResponse.length > 0) {
       const response = {
         status: 200,
         message: "success",
         data: dealerResponse,
-        MaxWallet: newDealerResponse[0].wallet || 0
+        // MaxWallet: newDealerResponse[0].wallet || 0
       };
       return res.status(200).send(response);
     } else {
