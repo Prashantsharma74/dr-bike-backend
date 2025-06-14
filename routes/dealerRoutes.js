@@ -30,15 +30,12 @@ const { log } = require("console");
 
 const router = express.Router();
 
-// Define the upload directory path
 const uploadDir = path.join(__dirname, "../uploads/dealer-documents");
 
-// Ensure the upload directory exists
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-// Set up Multer storage with proper file naming
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, uploadDir);
@@ -50,7 +47,6 @@ const storage = multer.diskStorage({
   }
 });
 
-// File filter to allow only images
 const fileFilter = (req, file, cb) => {
   const allowedTypes = ['.jpg', '.jpeg', '.png', '.pdf'];
   const ext = path.extname(file.originalname).toLowerCase();
@@ -62,13 +58,12 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-// Configure Multer with proper limits
 const upload = multer({
   storage: storage,
   fileFilter: fileFilter,
   limits: {
-    fileSize: 20 * 1024 * 1024, // 20MB limit
-    files: 14 // Max 14 files (10 shop images + 4 documents)
+    fileSize: 20 * 1024 * 1024,
+    files: 14
   }
 });
 
