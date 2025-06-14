@@ -57,6 +57,19 @@ const dealerModel = new mongoose.Schema({
     bankName: { type: String, required: true },
     accountNumber: { type: String, required: true }
   },
+  commission: {
+    type: Number,
+    required: true,
+    min: 0,
+    max: 100,
+    default: 0
+  },
+  tax: {
+    type: Number,
+    min: 0,
+    max: 18,
+    default: 0
+  },
 
   isVerify: { type: Boolean, default: false },
   isProfile: { type: Boolean, default: true },

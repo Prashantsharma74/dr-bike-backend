@@ -30,34 +30,6 @@ const { log } = require("console");
 
 const router = express.Router();
 
-// // Define the folder path
-// const uploadDir = path.join(__dirname, "../image");
-
-// // Ensure the folder exists
-// if (!fs.existsSync(uploadDir)) {
-//   fs.mkdirSync(uploadDir, { recursive: true });
-// }
-
-// // Set up Multer storage configuration
-// const storage = multer.diskStorage({
-//   destination: function (req, file, callback) {
-//     callback(null, uploadDir);
-//   },
-//   filename: function (req, file, callback) {
-//     const ext = path.extname(file.originalname);
-//     const uniqueName = `${file.fieldname}-${Date.now()}${ext}`;
-//     callback(null, uniqueName);
-//   },
-// });
-
-// // Configure Multer with size limit (20MB)
-// const upload = multer({
-//   storage: storage,
-//   limits: {
-//     fileSize: 50 * 1024 * 1024, // 20MB
-//   },
-// });
-
 // Define the upload directory path
 const uploadDir = path.join(__dirname, "../uploads/dealer-documents");
 
@@ -100,17 +72,6 @@ const upload = multer({
   }
 });
 
-// router.post("/addDealer",
-//   upload.fields([
-//     { name: "panCardFront", maxCount: 1 },
-//     { name: "adharCardFront", maxCount: 1 },
-//     { name: "adharCardBack", maxCount: 1 },
-//     { name: "PassbookImage", maxCount: 1 },
-//     { name: "shopImages", maxCount: 10 }, 
-//   ]),
-//     addDealer
-// );
-
 router.post("/addDealer",
   upload.fields([
     { name: "panCardFront", maxCount: 1 },
@@ -146,6 +107,8 @@ router.post("/addDealer",
         ifscCode,
         bankName,
         accountNumber,
+        commission,
+        tax
       } = req.body;
 
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -153,6 +116,20 @@ router.post("/addDealer",
         return res.status(400).json({
           success: false,
           message: "Invalid email format"
+        });
+      }
+
+      if (isNaN(commission) || commission < 0 || commission > 100) {
+        return res.status(400).json({
+          success: false,
+          message: "Commission must be between 0-100%"
+        });
+      }
+
+      if (tax && (isNaN(tax) || tax < 0 || tax > 18)) {
+        return res.status(400).json({
+          success: false,
+          message: "Tax must be between 0-18% if provided"
         });
       }
 
@@ -226,6 +203,8 @@ router.post("/addDealer",
           bankName,
           accountNumber
         },
+        commission: parseFloat(commission),
+        tax: tax ? parseFloat(tax) : 0,
         documents,
         shopImages: req.files?.shopImages?.map(file => file.filename) || [],
         isVerify: false,
@@ -233,7 +212,6 @@ router.post("/addDealer",
         isDoc: true
       };
 
-      // ✅ Step 5: Create dealer with transaction for data consistency
       const newDealer = await Vendor.create(dealerData);
 
       return res.status(201).json({
@@ -249,7 +227,6 @@ router.post("/addDealer",
     } catch (error) {
       console.error("Registration error:", error);
 
-      // Cleanup uploaded files if error occurs
       if (req.files) {
         Object.values(req.files).flat().forEach(file => {
           try {

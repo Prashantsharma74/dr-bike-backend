@@ -1614,7 +1614,6 @@ const updateDealerVerfication = async (req, res) =>{
 // By prashant 
 async function dealerList(req, res) {
   try {
-    // Use an empty object to fetch all dealers
     const dealerResponse = await Vendor.find({});
 
     if (dealerResponse.length > 0) {
