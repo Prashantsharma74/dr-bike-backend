@@ -121,11 +121,6 @@ router.post("/addDealer",
 
   async function addDealer(req, res) {
     try {
-      // const body = {
-      //   ...req.body,
-      //   email: req.body.email?.trim()?.toLowerCase()
-      // };
-
       const {
         shopName,
         email,
@@ -153,46 +148,6 @@ router.post("/addDealer",
         accountNumber,
       } = req.body;
 
-      console.log("Body", req.body);
-
-      // ✅ Step 1: Enhanced Validation
-      const requiredFields = {
-        shopName: 'Shop Name',
-        email: 'Shop Email',
-        phone: 'Shop Contact',
-        password: 'Password',
-        shopPincode: 'Shop Pincode',
-        fullAddress: 'Full Address',
-        city: 'City',
-        state: 'State',
-        latitude: 'Latitude',
-        longitude: 'Longitude',
-        ownerName: 'Owner Name',
-        personalEmail: 'Personal Email',
-        personalPhone: 'Personal Phone',
-        permanentAddress: 'Permanent Address',
-        permanentState: 'Permanent State',
-        permanentCity: 'Permanent City',
-        presentAddress: 'Present Address',
-        accountHolderName: 'Account Holder Name',
-        ifscCode: 'IFSC Code',
-        bankName: 'Bank Name',
-        accountNumber: 'Account Number'
-      };
-
-      // const missingFields = Object.entries(requiredFields)
-      //   .filter(([key, _]) => !body[key] || body[key] === '')
-      //   .map(([_, label]) => label);
-
-      // if (missingFields.length > 0) {
-      //   return res.status(400).json({
-      //     success: false,
-      //     message: "Missing required fields",
-      //     missingFields
-      //   });
-      // }
-
-      // Email format validation
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(email)) {
         return res.status(400).json({
@@ -201,15 +156,12 @@ router.post("/addDealer",
         });
       }
 
-      // ✅ Step 2: Check for existing dealer (optimized)
       const existingDealer = await Vendor.findOne({
         $or: [
           { email },
           { phone }
         ]
       });
-      console.log("exist", existingDealer);
-
 
       if (existingDealer) {
         let conflictField = existingDealer.email === email ? 'Shop Email' : 'Shop Contact';
@@ -220,7 +172,6 @@ router.post("/addDealer",
         });
       }
 
-      // ✅ Step 3: Handle file uploads with better validation
       const requiredDocs = {
         panCardFront: 'PAN Card Front',
         aadharFront: 'Aadhar Front',
@@ -239,13 +190,11 @@ router.post("/addDealer",
         });
       }
 
-      // Process files
       const documents = {};
       Object.keys(requiredDocs).forEach(key => {
         documents[key] = req.files[key][0].filename;
       });
 
-      // ✅ Step 4: Prepare dealer data with proper structure
       const dealerData = {
         shopName,
         email,

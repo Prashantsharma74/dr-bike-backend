@@ -688,86 +688,7 @@ async function singledealer(req, res) {
   }
 }
 
-async function deleteDealer(req, res) {
-  try {
-    const data = jwt_decode(req.headers.token);
-    const user_id = data.user_id;
-    const user_type = data.user_type;
-    const type = data.type;
-    if (user_id == null || user_type != 1) {
-     
-        if(user_type === 3){
-        const subAdmin = await Admin.findById(user_id)
-        
-        if (!subAdmin) {
-          var response = {
-            status: 200,
-            message: "Subadmin not found!",
-          };
-          return res.status(200).send(response);
-        }
-  
-        if(user_type === 3){
-          const subAdmin = await Admin.findById(user_id)
-          
-          if (!subAdmin) {
-            var response = {
-              status: 200,
-              message: "Subadmin not found!",
-            };
-            return res.status(200).send(response);
-          }
-        }
-    
-        const isAllowed = await checkPermission(user_id, "Dealers.delete");
-  
-        if (!isAllowed) {
-          var response = {
-            status: 200,
-            message: "Subadmin does not have permission to delete dealers!",
-          };
-          return res.status(200).send(response);
-        }
-  
-      }
-  
-    }
 
-    const { dealer_id } = req.body;
-    const dealerRes = await Dealer.findOne({ _id: dealer_id });
-
-    if (!dealerRes) {
-      var response = {
-        status: 201,
-        message: "No Dealer Found",
-      };
-      return res.status(201).send(response);
-    }
-
-    Dealer.findByIdAndDelete({ _id: dealer_id }, async function (err, docs) {
-      if (err) {
-        var response = {
-          status: 201,
-          message: "Dealer delete failed",
-        };
-        return res.status(201).send(response);
-      } else {
-        var response = {
-          status: 200,
-          message: "Dealer deleted successfully",
-        };
-        return res.status(200).send(response);
-      }
-    });
-  } catch (error) {
-    console.log("error", error);
-    response = {
-      status: 201,
-      message: "Operation was not successful",
-    };
-    return res.status(201).send(response);
-  }
-}
 
 async function editDealerStatus(req, res) {
   try {
@@ -1717,6 +1638,124 @@ async function dealerList(req, res) {
     });
   }
 }
+
+async function deleteDealer(req, res) {
+  try {
+    const { dealer_id } = req.body;
+
+    if (!dealer_id) {
+      return res.status(400).json({
+        status: 400,
+        message: "dealer_id is required"
+      });
+    }
+
+    const dealerRes = await Dealer.findOne({ _id: dealer_id });
+
+    if (!dealerRes) {
+      return res.status(404).json({
+        status: 404,
+        message: "No Dealer Found"
+      });
+    }
+
+    await Dealer.findByIdAndDelete({ _id: dealer_id });
+
+    return res.status(200).json({
+      status: 200,
+      message: "Dealer deleted successfully"
+    });
+
+  } catch (error) {
+    console.error("Delete dealer error:", error);
+    return res.status(500).json({
+      status: 500,
+      message: "Operation was not successful",
+      error: error.message
+    });
+  }
+}
+
+// async function deleteDealer(req, res) {
+//   try {
+//     const data = jwt_decode(req.headers.token);
+//     const user_id = data.user_id;
+//     const user_type = data.user_type;
+//     const type = data.type;
+//     if (user_id == null || user_type != 1) {
+     
+//         if(user_type === 3){
+//         const subAdmin = await Admin.findById(user_id)
+        
+//         if (!subAdmin) {
+//           var response = {
+//             status: 200,
+//             message: "Subadmin not found!",
+//           };
+//           return res.status(200).send(response);
+//         }
+  
+//         if(user_type === 3){
+//           const subAdmin = await Admin.findById(user_id)
+          
+//           if (!subAdmin) {
+//             var response = {
+//               status: 200,
+//               message: "Subadmin not found!",
+//             };
+//             return res.status(200).send(response);
+//           }
+//         }
+    
+//         const isAllowed = await checkPermission(user_id, "Dealers.delete");
+  
+//         if (!isAllowed) {
+//           var response = {
+//             status: 200,
+//             message: "Subadmin does not have permission to delete dealers!",
+//           };
+//           return res.status(200).send(response);
+//         }
+  
+//       }
+  
+//     }
+
+//     const { dealer_id } = req.body;
+//     const dealerRes = await Dealer.findOne({ _id: dealer_id });
+
+//     if (!dealerRes) {
+//       var response = {
+//         status: 201,
+//         message: "No Dealer Found",
+//       };
+//       return res.status(201).send(response);
+//     }
+
+//     Dealer.findByIdAndDelete({ _id: dealer_id }, async function (err, docs) {
+//       if (err) {
+//         var response = {
+//           status: 201,
+//           message: "Dealer delete failed",
+//         };
+//         return res.status(201).send(response);
+//       } else {
+//         var response = {
+//           status: 200,
+//           message: "Dealer deleted successfully",
+//         };
+//         return res.status(200).send(response);
+//       }
+//     });
+//   } catch (error) {
+//     console.log("error", error);
+//     response = {
+//       status: 201,
+//       message: "Operation was not successful",
+//     };
+//     return res.status(201).send(response);
+//   }
+// }
 
 module.exports = {
   editDealer,
