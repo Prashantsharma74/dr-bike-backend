@@ -11,6 +11,7 @@ const Bike = require('../models/bikeCompanyModel')
 const UserBike = require("../models/userBikeModel")
 const servicess = require("../models/service_model")
 const fs = require("fs");
+const { log } = require("console");
 
 function calculateDistance(lat1, lon1, lat2, lon2) {
   const R = 6371; // Earth radius in kilometers
@@ -19,9 +20,9 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
   const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
     Math.cos(lat1 * (Math.PI / 180)) *
-      Math.cos(lat2 * (Math.PI / 180)) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
+    Math.cos(lat2 * (Math.PI / 180)) *
+    Math.sin(dLon / 2) *
+    Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   const distance = R * c; // Distance in kilometers
   return distance;
@@ -30,24 +31,24 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
 
 async function checkPermission(user_id, requiredPermission) {
   try {
-      const userRole = await Role.findOne({ subAdmin: user_id });
-      console.log(userRole,"1")
-      if (!userRole) {
-          return false;
-      }
-      const permissions = userRole.permissions;
-      console.log(permissions,"2")
-
-      const [module, permission] = requiredPermission.split('.');
-    
-      // Check if the module and permission exist in permissions object
-      if (!permissions || !permissions[module] || !permissions[module][permission]) {
-        return false;
-      }
-      return true;
-  } catch (error) {
-      console.error("Error while checking permission:", error);
+    const userRole = await Role.findOne({ subAdmin: user_id });
+    console.log(userRole, "1")
+    if (!userRole) {
       return false;
+    }
+    const permissions = userRole.permissions;
+    console.log(permissions, "2")
+
+    const [module, permission] = requiredPermission.split('.');
+
+    // Check if the module and permission exist in permissions object
+    if (!permissions || !permissions[module] || !permissions[module][permission]) {
+      return false;
+    }
+    return true;
+  } catch (error) {
+    console.error("Error while checking permission:", error);
+    return false;
   }
 }
 
@@ -177,13 +178,13 @@ const dealerWithInRange = async (req, res) => {
     }
 
     // Fetch all active dealers
-    const dealers = await Dealer.find({ 
+    const dealers = await Dealer.find({
       is_online: "on",
       wallet: { $gt: -500 },
       isBlock: false
     });
 
-    console.log("dealer",dealers)
+    console.log("dealer", dealers)
     // Filter dealers based on 3 km distance
     const nearbyDealers = dealers.filter(dealer => {
       const distance = calculateDistance(
@@ -196,7 +197,7 @@ const dealerWithInRange = async (req, res) => {
     });
 
 
-    console.log("nearbyDealers",nearbyDealers)
+    console.log("nearbyDealers", nearbyDealers)
 
 
     res.status(200).json({ success: true, data: nearbyDealers });
@@ -270,7 +271,7 @@ const dealerWithInRange2 = async (req, res) => {
 //               if (!subAdmin) {
 //                   return res.status(403).json({ success: false, message: "Subadmin not found!" });
 //               }
-              
+
 //               const isAllowed = await checkPermission(user_id, "Dealers.create");
 //               if (!isAllowed) {
 //                   return res.status(403).json({ success: false, message: "No permission to add dealers!" });
@@ -298,7 +299,7 @@ const dealerWithInRange2 = async (req, res) => {
 //         if (req.files?.images) {
 //           dealerData.images = req.files.images[0].filename; // Convert array to single string
 //       }
-      
+
 //           if (req.files.panCardFront) {
 //               dealerData.panCardFront = req.files.panCardFront[0].filename;
 //           }
@@ -346,7 +347,7 @@ const dealerWithInRange2 = async (req, res) => {
 
 async function addAmount(req, res) {
   try {
-    const dealerId = req.params.id; 
+    const dealerId = req.params.id;
     const orderAmount = 100;
 
     const dealer = await Dealer.findById(dealerId);
@@ -557,9 +558,9 @@ async function editDealer(req, res) {
       "isBlock", "email", "shopName", "shopDescription", "extra_charges",
       "name", "accountno", "panCard", "bankname", "ifsc", "adharCard",
       "service_id", "bikes", "isProfile", "pickupAndDrop", "pickupAndDropDescription",
-      "isDoc","goDigital", 
-      "expertAdvice", 
-      "ourPromise" ,"pincode","accholdername"
+      "isDoc", "goDigital",
+      "expertAdvice",
+      "ourPromise", "pincode", "accholdername"
     ];
 
     allowedFields.forEach(field => {
@@ -613,7 +614,7 @@ async function editDealer(req, res) {
 // async function dealerList(req, res) {
 //   try {
 //     const dealerResponse = await Dealer.find(req.query);
-    
+
 //     // let newDealerResponse = [...dealerResponse].sort((a, b) => b.wallet - a.wallet);
 
 //     if (dealerResponse.length > 0) {
@@ -661,7 +662,7 @@ async function singledealer(req, res) {
     }
 
     var dealerResposnse = await Dealer.findById(req.params.id)
-    .populate("services", "name image")
+      .populate("services", "name image")
     // .populate("BikeModel");
 
     if (dealerResposnse) {
@@ -698,9 +699,9 @@ async function editDealerStatus(req, res) {
 
     // const type = data.type;
 
-    if(user_type === 3){
+    if (user_type === 3) {
       const subAdmin = await Admin.findById(user_id)
-      
+
       if (!subAdmin) {
         var response = {
           status: 200,
@@ -709,9 +710,9 @@ async function editDealerStatus(req, res) {
         return res.status(200).send(response);
       }
 
-      if(user_type === 3){
+      if (user_type === 3) {
         const subAdmin = await Admin.findById(user_id)
-        
+
         if (!subAdmin) {
           var response = {
             status: 200,
@@ -720,7 +721,7 @@ async function editDealerStatus(req, res) {
           return res.status(200).send(response);
         }
       }
-  
+
       const isAllowed = await checkPermission(user_id, "Dealers.update");
 
       if (!isAllowed) {
@@ -730,8 +731,8 @@ async function editDealerStatus(req, res) {
         };
         return res.status(200).send(response);
       }
-  
-  
+
+
     }
 
 
@@ -742,7 +743,7 @@ async function editDealerStatus(req, res) {
       isBlock
 
     };
-    var where = { _id : dealer_id };
+    var where = { _id: dealer_id };
 
     Dealer.findByIdAndUpdate(
       where,
@@ -794,7 +795,7 @@ async function getWallet(req, res) {
     // Fetch dealer details along with services
     const dealer = await Dealer.findById(dealer_id)
       .select("wallet")
-     
+
 
     if (!dealer) {
       return res.status(200).json({ success: false, message: "Dealer not found!" });
@@ -823,26 +824,26 @@ async function getWallet(req, res) {
   }
 }
 
-const GetwalletInfo = async(req,res) =>{
-  try{
-    const walletInfo = await Wallet.find({ dealer_id: req.params.id }).sort( { "_id": -1 } )
-    .populate({
+const GetwalletInfo = async (req, res) => {
+  try {
+    const walletInfo = await Wallet.find({ dealer_id: req.params.id }).sort({ "_id": -1 })
+      .populate({
         path: 'dealer_id',
-        select: ['name','id']
-    })
+        select: ['name', 'id']
+      })
     // .populate({
     //   path:'user_id',
     //   select:['id','first_name']
     // })
-  
-  
-  if(walletInfo){
-      res.status(200).send({message:'Get wallet information',data:walletInfo})
+
+
+    if (walletInfo) {
+      res.status(200).send({ message: 'Get wallet information', data: walletInfo })
     }
-  }catch (error) {
+  } catch (error) {
     console.error(error);
     return res.status(500).json({ success: false, message: 'Internal server error' });
-  }  
+  }
 }
 
 // const WalletAdd =async(req, res) => {
@@ -852,15 +853,15 @@ const GetwalletInfo = async(req,res) =>{
 //   const user_type = data.user_type;
 //   const type = data.type;
 //   if (user_id == null || user_type != 1) {
-   
+
 
 //       var response = {
 //         status: 200,
 //         message: "not authorized",
 //       };
 //       return res.status(200).send(response);
-    
-    
+
+
 //   }
 //   const { Amount, Type, Note } = req.body;
 
@@ -895,7 +896,7 @@ const GetwalletInfo = async(req,res) =>{
 //       // }
 //       dealer.wallet -= Amount;
 //   }
-   
+
 //     const walletData = {
 //       dealer_id: req.params.id,
 //       Amount: req.body.Amount,
@@ -929,26 +930,26 @@ const WalletAdd = async (req, res) => {
 
     // Validate required fields
     if (!Amount || !Type) {
-      return res.status(200).json({ 
-        status: 200, 
-        message: "Amount and Type are required" 
+      return res.status(200).json({
+        status: 200,
+        message: "Amount and Type are required"
       });
     }
 
     // Validate transaction type
     if (!['Credit', 'Debit'].includes(Type)) {
-      return res.status(200).json({ 
-        status: 200, 
-        message: 'Invalid transaction type. Use "Credit" or "Debit"' 
+      return res.status(200).json({
+        status: 200,
+        message: 'Invalid transaction type. Use "Credit" or "Debit"'
       });
     }
 
     // Check if dealer exists
     const dealer = await Dealer.findById(dealer_id);
     if (!dealer) {
-      return res.status(200).json({ 
-        status: 200, 
-        message: "Dealer not found" 
+      return res.status(200).json({
+        status: 200,
+        message: "Dealer not found"
       });
     }
 
@@ -956,43 +957,43 @@ const WalletAdd = async (req, res) => {
     if (user_type === 3) { // Subadmin
       const subAdmin = await Admin.findById(user_id);
       if (!subAdmin) {
-        return res.status(200).json({ 
-          status: 200, 
-          message: "Subadmin not found" 
+        return res.status(200).json({
+          status: 200,
+          message: "Subadmin not found"
         });
       }
 
       const isAllowed = await checkPermission(user_id, "Dealers.wallet");
       if (!isAllowed) {
-        return res.status(200).json({ 
-          status: 200, 
-          message: "You do not have permission to perform this action" 
+        return res.status(200).json({
+          status: 200,
+          message: "You do not have permission to perform this action"
         });
       }
     } else if (user_type === 2) { // Dealer
       if (dealer._id.toString() !== user_id) {
-        return res.status(200).json({ 
-          status: 200, 
-          message: "You can only manage your own wallet" 
+        return res.status(200).json({
+          status: 200,
+          message: "You can only manage your own wallet"
         });
       }
     } else if (user_type !== 1) { // Admin
-      return res.status(200).json({ 
-        status: 200, 
-        message: "Unauthorized access" 
+      return res.status(200).json({
+        status: 200,
+        message: "Unauthorized access"
       });
     }
 
     // Handle Debit (withdrawal) validation
     if (Type === 'Debit' && dealer.wallet < Amount) {
-      return res.status(200).json({ 
-        status: 200, 
-        message: "Insufficient wallet balance" 
+      return res.status(200).json({
+        status: 200,
+        message: "Insufficient wallet balance"
       });
     }
 
     // Update wallet balance
-    Type === 'Credit' 
+    Type === 'Credit'
       ? dealer.wallet += Number(Amount)
       : dealer.wallet -= Number(Amount);
 
@@ -1019,9 +1020,9 @@ const WalletAdd = async (req, res) => {
 
   } catch (error) {
     console.error("Wallet error:", error);
-    return res.status(500).json({ 
-      status: 500, 
-      message: "Internal server error" 
+    return res.status(500).json({
+      status: 500,
+      message: "Internal server error"
     });
   }
 };
@@ -1049,7 +1050,7 @@ function prepareTransferRequest(dealerId, orderAmount) {
     'accept': 'application/json',
     'content-type': 'application/json',
     'x-api-version': '2023-08-01',
-    'X-Client-Id': process.env.APP_ID, 
+    'X-Client-Id': process.env.APP_ID,
     'X-Client-Secret': process.env.SECRET_KEY,
     'X-Timestamp': timestamp
   };
@@ -1061,7 +1062,7 @@ const tranfer = async (req, res) => {
   try {
     const { dealerId, orderAmount } = req.body;
     const { requestData, apiUrl, headers } = prepareTransferRequest(dealerId, orderAmount);
-    return res.status(200).json({ success: true, requestData, apiUrl, headers,message:"ok" });
+    return res.status(200).json({ success: true, requestData, apiUrl, headers, message: "ok" });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ success: false, message: 'Internal server error' });
@@ -1141,7 +1142,7 @@ async function getShopDetails(req, res) {
         averageRating
       }
     });
-    
+
 
   } catch (error) {
     console.error("Error in getShopDetails:", error);
@@ -1198,8 +1199,8 @@ const addDealerShopDetails = async (req, res) => {
     // Append new shopImages if provided
     if (req.files?.shopImages) {
       const newImages = req.files.shopImages.map(file => file.filename);
-      updateData.shopImages = dealer.shopImages 
-        ? [...dealer.shopImages, ...newImages] 
+      updateData.shopImages = dealer.shopImages
+        ? [...dealer.shopImages, ...newImages]
         : newImages;
     }
 
@@ -1272,7 +1273,7 @@ const addDealerShopDetails = async (req, res) => {
 //       "shopState",
 //       "shopPhone",
 //       "businessEmail",
-      
+
 //     ];
 
 //     allowedFields.forEach((field) => {
@@ -1285,12 +1286,12 @@ const addDealerShopDetails = async (req, res) => {
 //     if (req.files?.shopImages) {
 //       const newImages = req.files.shopImages.map(file => file.filename);
 //       console.log("New Images:", newImages);
-  
+
 //       updateFields.shopImages = dealer.shopImages 
 //           ? [...dealer.shopImages, ...newImages] 
 //           : newImages;
 //   }
-  
+
 
 //     // ✅ Set confirmation flag
 //     updateData.isShopDetailsAdded = true;
@@ -1389,12 +1390,12 @@ const addDealerDocuments = async (req, res) => {
 
 const getPendingWallets = async (req, res) => {
   try {
-    const pendingWallets = await Wallet.find({ 
-      order_status: 'PENDING', 
+    const pendingWallets = await Wallet.find({
+      order_status: 'PENDING',
       Type: { $nin: ['Credit', 'Pending'] } // Exclude both Credit and Pending types
     })
-    .sort({ createdAt: -1 })
-    .populate('dealer_id');
+      .sort({ createdAt: -1 })
+      .populate('dealer_id');
 
     return res.status(200).json({
       status: true,
@@ -1447,12 +1448,12 @@ const updateWalletStatus = async (req, res) => {
 };
 
 const getAllDealersWithDocFalse = async (req, res) => {
-  try{
+  try {
     const data = jwt_decode(req.headers.token);
     const user_type = data.user_type;
-    if(user_type === 1){
-      const allDealers = await Dealer.find({isDoc: false});
-      if(!allDealers){
+    if (user_type === 1) {
+      const allDealers = await Dealer.find({ isDoc: false });
+      if (!allDealers) {
         return res.status(404).json({
           success: false,
           message: "No Dealer found in the collection."
@@ -1464,14 +1465,14 @@ const getAllDealersWithDocFalse = async (req, res) => {
         data: allDealers
       })
     }
-    else{
+    else {
       return res.status(403).json({
         success: false,
         message: "Unauthorised access!"
       })
     }
   }
-  catch(err){
+  catch (err) {
     console.error("Error fetching Dealers details:", err);
     return res.status(500).json({
       status: false,
@@ -1541,14 +1542,14 @@ const getAllDealersWithVerifyFalse = async (req, res) => {
 };
 
 
-const updateDealerDocStatus = async (req, res) =>{
-  try{
+const updateDealerDocStatus = async (req, res) => {
+  try {
     const data = jwt_decode(req.headers.token);
     const user_type = data.user_type;
-    const {id } = req.body;
-    if(user_type === 1){
-      const dealerDetails = await Dealer.findByIdAndUpdate(id, {isDoc: true}, {new: true, runValidators: true});
-      if(!dealerDetails){
+    const { id } = req.body;
+    if (user_type === 1) {
+      const dealerDetails = await Dealer.findByIdAndUpdate(id, { isDoc: true }, { new: true, runValidators: true });
+      if (!dealerDetails) {
         return res.status(404).json({
           success: false,
           message: "No Dealer found in the collection."
@@ -1560,30 +1561,30 @@ const updateDealerDocStatus = async (req, res) =>{
         data: dealerDetails
       })
     }
-      else{
-        return res.status(403).json({
-          success: false,
-          message: "Unauthorised access!"
-        })
-      }
+    else {
+      return res.status(403).json({
+        success: false,
+        message: "Unauthorised access!"
+      })
+    }
   }
-  catch(err){
+  catch (err) {
     console.error("Error updating dealers details:", err);
     return res.status(500).json({
       status: false,
       message: "Internal server error"
     });
   }
-} 
+}
 
-const updateDealerVerfication = async (req, res) =>{
-  try{
+const updateDealerVerfication = async (req, res) => {
+  try {
     const data = jwt_decode(req.headers.token);
     const user_type = data.user_type;
-    const {id} = req.body;
-    if(user_type === 1){
-      const dealerDetails = await Dealer.findByIdAndUpdate(id, {isVerify: true}, {new: true, runValidators: true});
-      if(!dealerDetails){
+    const { id } = req.body;
+    if (user_type === 1) {
+      const dealerDetails = await Dealer.findByIdAndUpdate(id, { isVerify: true }, { new: true, runValidators: true });
+      if (!dealerDetails) {
         return res.status(404).json({
           success: false,
           message: "No Dealer found in the collection."
@@ -1595,21 +1596,21 @@ const updateDealerVerfication = async (req, res) =>{
         data: dealerDetails
       })
     }
-      else{
-        return res.status(403).json({
-          success: false,
-          message: "Unauthorised access!"
-        })
-      }
+    else {
+      return res.status(403).json({
+        success: false,
+        message: "Unauthorised access!"
+      })
+    }
   }
-  catch(err){
+  catch (err) {
     console.error("Error updating dealers details:", err);
     return res.status(500).json({
       status: false,
       message: "Internal server error"
     });
   }
-} 
+}
 
 // By prashant 
 async function dealerList(req, res) {
@@ -1641,6 +1642,7 @@ async function dealerList(req, res) {
 async function deleteDealer(req, res) {
   try {
     const { dealer_id } = req.body;
+    console.log("Dealer id", req.body);
 
     if (!dealer_id) {
       return res.status(400).json({
@@ -1650,7 +1652,6 @@ async function deleteDealer(req, res) {
     }
 
     const dealerRes = await Vendor.findOne({ _id: dealer_id });
-
     if (!dealerRes) {
       return res.status(404).json({
         status: 404,
@@ -1658,7 +1659,9 @@ async function deleteDealer(req, res) {
       });
     }
 
-    await Dealer.findByIdAndDelete({ _id: dealer_id });
+    console.log("Dealer res:-", dealerRes);
+
+    await Vendor.findByIdAndDelete({ _id: dealer_id });
 
     return res.status(200).json({
       status: 200,
@@ -1674,87 +1677,6 @@ async function deleteDealer(req, res) {
     });
   }
 }
-
-// async function deleteDealer(req, res) {
-//   try {
-//     const data = jwt_decode(req.headers.token);
-//     const user_id = data.user_id;
-//     const user_type = data.user_type;
-//     const type = data.type;
-//     if (user_id == null || user_type != 1) {
-     
-//         if(user_type === 3){
-//         const subAdmin = await Admin.findById(user_id)
-        
-//         if (!subAdmin) {
-//           var response = {
-//             status: 200,
-//             message: "Subadmin not found!",
-//           };
-//           return res.status(200).send(response);
-//         }
-  
-//         if(user_type === 3){
-//           const subAdmin = await Admin.findById(user_id)
-          
-//           if (!subAdmin) {
-//             var response = {
-//               status: 200,
-//               message: "Subadmin not found!",
-//             };
-//             return res.status(200).send(response);
-//           }
-//         }
-    
-//         const isAllowed = await checkPermission(user_id, "Dealers.delete");
-  
-//         if (!isAllowed) {
-//           var response = {
-//             status: 200,
-//             message: "Subadmin does not have permission to delete dealers!",
-//           };
-//           return res.status(200).send(response);
-//         }
-  
-//       }
-  
-//     }
-
-//     const { dealer_id } = req.body;
-//     const dealerRes = await Dealer.findOne({ _id: dealer_id });
-
-//     if (!dealerRes) {
-//       var response = {
-//         status: 201,
-//         message: "No Dealer Found",
-//       };
-//       return res.status(201).send(response);
-//     }
-
-//     Dealer.findByIdAndDelete({ _id: dealer_id }, async function (err, docs) {
-//       if (err) {
-//         var response = {
-//           status: 201,
-//           message: "Dealer delete failed",
-//         };
-//         return res.status(201).send(response);
-//       } else {
-//         var response = {
-//           status: 200,
-//           message: "Dealer deleted successfully",
-//         };
-//         return res.status(200).send(response);
-//       }
-//     });
-//   } catch (error) {
-//     console.log("error", error);
-//     response = {
-//       status: 201,
-//       message: "Operation was not successful",
-//     };
-//     return res.status(201).send(response);
-//   }
-// }
 
 module.exports = {
   editDealer,
