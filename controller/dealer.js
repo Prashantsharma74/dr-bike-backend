@@ -1650,7 +1650,7 @@ async function deleteDealer(req, res) {
       });
     }
 
-    const dealerRes = await Dealer.findOne({ _id: dealer_id });
+    const dealerRes = await Vendor.findOne({ _id: dealer_id });
 
     if (!dealerRes) {
       return res.status(404).json({
