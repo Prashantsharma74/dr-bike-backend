@@ -57,14 +57,6 @@ const dealerModel = new mongoose.Schema({
     bankName: { type: String, required: true },
     accountNumber: { type: String, required: true }
   },
-  // commission: { 
-  //   type: Number,
-  //   required: true,
-  //   min: 0,
-  //   max: 100,
-  //   get: v => parseFloat(v.toFixed(2)),
-  //   set: v => parseFloat(v) 
-  // },
   commission: {
     type: Number,
     required: true,
@@ -81,13 +73,7 @@ const dealerModel = new mongoose.Schema({
   isVerify: { type: Boolean, default: false },
   isProfile: { type: Boolean, default: true },
   isDoc: { type: Boolean, default: false },
+  isActive: { type: Boolean, default: true },
 }, { timestamps: true });
-
-// DealerSchema.index({ shopEmail: 1 }, { 
-//   unique: true,
-//   partialFilterExpression: {
-//     shopEmail: { $exists: true, $ne: null }
-//   }
-// });
 
 module.exports = mongoose.model("Vendor", dealerModel);

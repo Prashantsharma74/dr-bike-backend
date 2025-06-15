@@ -75,186 +75,10 @@ router.post("/addDealer",
     { name: "shopImages", maxCount: 10 }
   ]),
 
-  // async function addDealer(req, res) {
-  //   try {
-  //     console.log("Incoming payload:", req.body);
-  //     const {
-  //       shopName,
-  //       email,
-  //       phone,
-  //       password,
-  //       shopPincode,
-  //       fullAddress,
-  //       city,
-  //       state,
-  //       latitude,
-  //       longitude,
-  //       ownerName,
-  //       personalEmail,
-  //       personalPhone,
-  //       alternatePhone,
-  //       permanentAddress,
-  //       permanentState,
-  //       permanentCity,
-  //       presentAddress,
-  //       presentState,
-  //       presentCity,
-  //       accountHolderName,
-  //       ifscCode,
-  //       bankName,
-  //       accountNumber,
-  //       commission,
-  //       tax
-  //     } = req.body;
-
-  //     console.log("Type of commission value:", typeof (req.body.commission || req.body.comission));
-
-  //     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  //     if (!emailRegex.test(email)) {
-  //       return res.status(400).json({
-  //         success: false,
-  //         message: "Invalid email format"
-  //       });
-  //     }
-
-  //     const commissionNum = parseFloat(commission);
-
-  //     if (isNaN(commissionNum)) {
-  //       return res.status(400).json({
-  //         success: false,
-  //         message: "Commission must be a number"
-  //       });
-  //     }
-
-  //     if (commissionNum < 0 || commissionNum > 100) {
-  //       return res.status(400).json({
-  //         success: false,
-  //         message: `Commission ${commissionNum}% is invalid. Must be 0-100%`
-  //       });
-  //     }
-
-  //     console.log("Type of commission value:", typeof (commissionNum));
-
-  //     const existingDealer = await Vendor.findOne({
-  //       $or: [
-  //         { email },
-  //         { phone }
-  //       ]
-  //     });
-
-  //     if (existingDealer) {
-  //       let conflictField = existingDealer.email === email ? 'Shop Email' : 'Shop Contact';
-  //       return res.status(409).json({
-  //         success: false,
-  //         message: `${conflictField} already exists`,
-  //         field: conflictField.toLowerCase().replace(' ', '-')
-  //       });
-  //     }
-
-  //     const requiredDocs = {
-  //       panCardFront: 'PAN Card Front',
-  //       aadharFront: 'Aadhar Front',
-  //       aadharBack: 'Aadhar Back',
-  //     };
-
-  //     const missingDocs = Object.entries(requiredDocs)
-  //       .filter(([key, _]) => !req.files?.[key]?.[0])
-  //       .map(([_, label]) => label);
-
-  //     if (missingDocs.length > 0) {
-  //       return res.status(400).json({
-  //         success: false,
-  //         message: "Missing required documents",
-  //         missingDocuments: missingDocs
-  //       });
-  //     }
-
-  //     const documents = {};
-  //     Object.keys(requiredDocs).forEach(key => {
-  //       documents[key] = req.files[key][0].filename;
-  //     });
-
-  //     const dealerData = {
-  //       shopName,
-  //       email,
-  //       phone,
-  //       password,
-  //       shopPincode,
-  //       fullAddress,
-  //       city,
-  //       state,
-  //       latitude: parseFloat(latitude),
-  //       longitude: parseFloat(longitude),
-  //       ownerName,
-  //       personalEmail: personalEmail.trim().toLowerCase(),
-  //       personalPhone,
-  //       alternatePhone,
-  //       permanentAddress: {
-  //         address: permanentAddress,
-  //         state: permanentState,
-  //         city: permanentCity
-  //       },
-  //       presentAddress: {
-  //         address: presentAddress,
-  //         state: presentState,
-  //         city: presentCity
-  //       },
-  //       bankDetails: {
-  //         accountHolderName,
-  //         ifscCode,
-  //         bankName,
-  //         accountNumber
-  //       },
-  //       // commission: parseFloat(commission),
-  //       commission: "10",
-  //       tax: tax ? parseFloat(tax) : 0,
-  //       documents,
-  //       shopImages: req.files?.shopImages?.map(file => file.filename) || [],
-  //       isVerify: false,
-  //       isProfile: true,
-  //       isDoc: true
-  //     };
-
-  //     const newDealer = await Vendor.create(dealerData);
-
-  //     return res.status(201).json({
-  //       success: true,
-  //       message: "Dealer registered successfully",
-  //       data: {
-  //         id: newDealer._id,
-  //         shopName: newDealer.shopName,
-  //         email: newDealer.email
-  //       }
-  //     });
-
-  //   } catch (error) {
-  //     console.error("Registration error:", error);
-
-  //     if (req.files) {
-  //       Object.values(req.files).flat().forEach(file => {
-  //         try {
-  //           if (file?.filename) {
-  //             fs.unlinkSync(path.join(uploadDir, file.filename));
-  //           }
-  //         } catch (err) {
-  //           console.error("File cleanup error:", err);
-  //         }
-  //       });
-  //     }
-
-  //     return res.status(500).json({
-  //       success: false,
-  //       message: "Registration failed due to server error",
-  //       error: process.env.NODE_ENV === 'development' ? error.message : undefined
-  //     });
-  //   }
-  // }
-
   async function addDealer(req, res) {
     try {
       console.log("Incoming payload:", req.body);
 
-      // Destructure with alias for commission (handles both spellings)
       const {
         shopName,
         email,
@@ -280,7 +104,7 @@ router.post("/addDealer",
         ifscCode,
         bankName,
         accountNumber,
-        commission: commissionInput,  // Handles 'commission' or 'comission'
+        commission: commissionInput,
         tax
       } = req.body;
 
@@ -392,16 +216,16 @@ router.post("/addDealer",
           bankName,
           accountNumber
         },
-        commission,  // Using the parsed number
-        tax: taxValue,  // Using the parsed number
+        commission,  
+        tax: taxValue,  
         documents,
         shopImages: req.files?.shopImages?.map(file => file.filename) || [],
         isVerify: false,
         isProfile: true,
-        isDoc: true
+        isDoc: true,
+        isActive: true
       };
 
-      // Create new dealer
       const newDealer = await Vendor.create(dealerData);
 
       return res.status(201).json({
