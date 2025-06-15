@@ -1678,6 +1678,51 @@ async function deleteDealer(req, res) {
   }
 }
 
+async function singledealer(req, res) {
+  try {
+    const data = jwt_decode(req.headers.token);
+    const user_id = data.user_id;
+    const user_type = data.user_type;
+    const type = data.type;
+    if (
+      user_id == null ||
+      (user_type != 1 && user_type != 3 && user_type != 2)
+    ) {
+      var response = {
+        status: 200,
+        message: "admin is un-authorised !",
+      };
+      return res.status(200).send(response);
+    }
+
+    var dealerResposnse = await Dealer.findById(req.params.id)
+      .populate("services", "name image")
+    // .populate("BikeModel");
+
+    if (dealerResposnse) {
+      var response = {
+        status: 200,
+        message: "success",
+        data: dealerResposnse,
+      };
+      return res.status(200).send(response);
+    } else {
+      var response = {
+        status: 201,
+        message: "No Dealer Found",
+      };
+      return res.status(201).send(response);
+    }
+  } catch (error) {
+    console.log("error", error);
+    response = {
+      status: 201,
+      message: "Operation was not successful",
+    };
+    return res.status(201).send(response);
+  }
+}
+
 module.exports = {
   editDealer,
   dealerList,
