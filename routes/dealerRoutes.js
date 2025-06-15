@@ -263,6 +263,7 @@ router.post("/addDealer",
   }
 );
 
+// By Prashant 
 router.patch('/:id/status', async (req, res) => {
   try {
     const { id } = req.params;
@@ -308,7 +309,17 @@ router.patch('/:id/status', async (req, res) => {
   }
 });
 
-module.exports = router;
+router.get('/view/:id', async (req, res) => {
+  try {
+    const dealer = await Vendor.findById(req.params.id);
+    if (!dealer) {
+      return res.status(404).json({ error: 'Dealer not found' });
+    }
+    res.json(dealer);
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
 
 router.put("/editDealer", upload.fields([
   { name: 'images', maxCount: 20 },
