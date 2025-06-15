@@ -263,6 +263,55 @@ router.post("/addDealer",
   }
 );
 
+router.patch('/:id/status', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { isActive } = req.body;
+
+    // Validate input
+    if (typeof isActive !== 'boolean') {
+      return res.status(400).json({
+        success: false,
+        message: 'isActive must be a boolean value'
+      });
+    }
+
+    // Find and update dealer
+    const dealer = await Vendor.findByIdAndUpdate(
+      id,
+      { isActive },
+      { new: true, runValidators: true }
+    );
+
+    if (!dealer) {
+      return res.status(404).json({
+        success: false,
+        message: 'Dealer not found'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: `Dealer status updated to ${dealer.isActive ? 'Active' : 'Inactive'}`,
+      data: {
+        id: dealer._id,
+        isActive: dealer.isActive,
+        shopName: dealer.shopName
+      }
+    });
+
+  } catch (error) {
+    console.error('Error updating dealer status:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while updating dealer status',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
+module.exports = router;
+
 router.put("/editDealer", upload.fields([
   { name: 'images', maxCount: 20 },
   { name: 'panCardFront', maxCount: 1 },
