@@ -1680,7 +1680,7 @@ async function deleteDealer(req, res) {
 
 async function singledealer(req, res) {
   try {
-    const dealerResposnse = await Dealer.findById(req.params.id)
+    const dealerResposnse = await Vendor.findById(req.params.id)
       .populate("services", "name image");
       // .populate("BikeModel"); // Uncomment if you need it
 
