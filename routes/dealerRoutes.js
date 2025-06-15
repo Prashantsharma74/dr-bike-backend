@@ -268,7 +268,6 @@ router.patch('/:id/status', async (req, res) => {
     const { id } = req.params;
     const { isActive } = req.body;
 
-    // Validate input
     if (typeof isActive !== 'boolean') {
       return res.status(400).json({
         success: false,
@@ -276,7 +275,6 @@ router.patch('/:id/status', async (req, res) => {
       });
     }
 
-    // Find and update dealer
     const dealer = await Vendor.findByIdAndUpdate(
       id,
       { isActive },
