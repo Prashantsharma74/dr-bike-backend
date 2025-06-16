@@ -1681,25 +1681,23 @@ async function deleteDealer(req, res) {
 async function singledealer(req, res) {
   try {
     const dealerResposnse = await Vendor.findById(req.params.id)
-      .populate("services", "name image");
-      // .populate("BikeModel"); // Uncomment if you need it
 
     if (dealerResposnse) {
       return res.status(200).send({
-        status: 200,
+        status: true,
         message: "success",
         data: dealerResposnse,
       });
     } else {
       return res.status(404).send({
-        status: 404,
+        status: false,
         message: "No Dealer Found",
       });
     }
   } catch (error) {
     console.error("error", error);
     return res.status(500).send({
-      status: 500,
+      status: false,
       message: "Operation was not successful",
     });
   }

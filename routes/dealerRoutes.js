@@ -75,6 +75,192 @@ router.post("/addDealer",
     { name: "shopImages", maxCount: 10 }
   ]),
 
+  // async function addDealer(req, res) {
+  //   try {
+  //     console.log("Incoming payload:", req.body);
+
+  //     const {
+  //       shopName,
+  //       email,
+  //       phone,
+  //       password,
+  //       shopPincode,
+  //       fullAddress,
+  //       city,
+  //       state,
+  //       latitude,
+  //       longitude,
+  //       ownerName,
+  //       personalEmail,
+  //       personalPhone,
+  //       alternatePhone,
+  //       permanentAddress,
+  //       permanentState,
+  //       permanentCity,
+  //       presentAddress,
+  //       presentState,
+  //       presentCity,
+  //       accountHolderName,
+  //       ifscCode,
+  //       bankName,
+  //       accountNumber,
+  //       commission: commissionInput,
+  //       tax
+  //     } = req.body;
+
+  //     // Debug logging for numeric fields
+  //     console.log("Commission input:", commissionInput, typeof commissionInput);
+  //     console.log("Tax input:", tax, typeof tax);
+
+  //     // Convert and validate commission
+  //     const commission = parseFloat(req.body.comission);
+  //     if (isNaN(commission)) {
+  //       return res.status(400).json({
+  //         success: false,
+  //         message: `Invalid commission value: ${req.body.comission}`
+  //       });
+  //     }
+  //     if (commission < 0 || commission > 100) {
+  //       return res.status(400).json({
+  //         success: false,
+  //         message: `Commission must be between 0-100%. Received: ${commission}%`
+  //       });
+  //     }
+
+  //     // Convert and validate tax (optional)
+  //     const taxValue = tax ? parseFloat(tax) : 0;
+  //     if (tax && (isNaN(taxValue) || taxValue < 0 || taxValue > 18)) {
+  //       return res.status(400).json({
+  //         success: false,
+  //         message: `Tax must be between 0-18% if provided. Received: ${tax}%`
+  //       });
+  //     }
+
+  //     // Validate email format
+  //     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  //     if (!emailRegex.test(email)) {
+  //       return res.status(400).json({
+  //         success: false,
+  //         message: "Invalid email format"
+  //       });
+  //     }
+
+  //     // Check for existing dealer
+  //     const existingDealer = await Vendor.findOne({
+  //       $or: [{ email }, { phone }]
+  //     });
+
+  //     if (existingDealer) {
+  //       const conflictField = existingDealer.email === email ? 'Shop Email' : 'Shop Contact';
+  //       return res.status(409).json({
+  //         success: false,
+  //         message: `${conflictField} already exists`,
+  //         field: conflictField.toLowerCase().replace(' ', '-')
+  //       });
+  //     }
+
+  //     // Validate required documents
+  //     const requiredDocs = {
+  //       panCardFront: 'PAN Card Front',
+  //       aadharFront: 'Aadhar Front',
+  //       aadharBack: 'Aadhar Back',
+  //     };
+
+  //     const missingDocs = Object.entries(requiredDocs)
+  //       .filter(([key]) => !req.files?.[key]?.[0])
+  //       .map(([_, label]) => label);
+
+  //     if (missingDocs.length > 0) {
+  //       return res.status(400).json({
+  //         success: false,
+  //         message: "Missing required documents",
+  //         missingDocuments: missingDocs
+  //       });
+  //     }
+
+  //     // Prepare documents object
+  //     const documents = {};
+  //     Object.keys(requiredDocs).forEach(key => {
+  //       documents[key] = req.files[key][0].filename;
+  //     });
+
+  //     // Prepare dealer data
+  //     const dealerData = {
+  //       shopName,
+  //       email,
+  //       phone,
+  //       password,
+  //       shopPincode,
+  //       fullAddress,
+  //       city,
+  //       state,
+  //       latitude: parseFloat(latitude),
+  //       longitude: parseFloat(longitude),
+  //       ownerName,
+  //       personalEmail: personalEmail.trim().toLowerCase(),
+  //       personalPhone,
+  //       alternatePhone,
+  //       permanentAddress: {
+  //         address: permanentAddress,
+  //         state: permanentState,
+  //         city: permanentCity
+  //       },
+  //       presentAddress: {
+  //         address: presentAddress,
+  //         state: presentState,
+  //         city: presentCity
+  //       },
+  //       bankDetails: {
+  //         accountHolderName,
+  //         ifscCode,
+  //         bankName,
+  //         accountNumber
+  //       },
+  //       commission,  
+  //       tax: taxValue,  
+  //       documents,
+  //       shopImages: req.files?.shopImages?.map(file => file.filename) || [],
+  //       isVerify: false,
+  //       isProfile: true,
+  //       isDoc: true,
+  //       isActive: true
+  //     };
+
+  //     const newDealer = await Vendor.create(dealerData);
+
+  //     return res.status(201).json({
+  //       success: true,
+  //       message: "Dealer registered successfully",
+  //       data: {
+  //         id: newDealer._id,
+  //         shopName: newDealer.shopName,
+  //         email: newDealer.email
+  //       }
+  //     });
+
+  //   } catch (error) {
+  //     console.error("Registration error:", error);
+
+  //     // Clean up uploaded files on error
+  //     if (req.files) {
+  //       Object.values(req.files).flat().forEach(file => {
+  //         try {
+  //           if (file?.filename) {
+  //             fs.unlinkSync(path.join(uploadDir, file.filename));
+  //           }
+  //         } catch (err) {
+  //           console.error("File cleanup error:", err);
+  //         }
+  //       });
+  //     }
+
+  //     return res.status(500).json({
+  //       success: false,
+  //       message: "Registration failed due to server error",
+  //       error: process.env.NODE_ENV === 'development' ? error.message : undefined
+  //     });
+  //   }
+  // }
   async function addDealer(req, res) {
     try {
       console.log("Incoming payload:", req.body);
@@ -104,39 +290,35 @@ router.post("/addDealer",
         ifscCode,
         bankName,
         accountNumber,
-        commission: commissionInput,
-        tax
+        comission: commissionInput,
+        tax,
+        aadharCardNo,
+        panCardNo
       } = req.body;
 
-      // Debug logging for numeric fields
+      // Debug log
       console.log("Commission input:", commissionInput, typeof commissionInput);
       console.log("Tax input:", tax, typeof tax);
 
-      // Convert and validate commission
-      const commission = parseFloat(req.body.comission);
-      if (isNaN(commission)) {
+      // Validate commission
+      const commission = parseFloat(commissionInput);
+      if (isNaN(commission) || commission < 0 || commission > 100) {
         return res.status(400).json({
           success: false,
-          message: `Invalid commission value: ${req.body.comission}`
-        });
-      }
-      if (commission < 0 || commission > 100) {
-        return res.status(400).json({
-          success: false,
-          message: `Commission must be between 0-100%. Received: ${commission}%`
+          message: `Commission must be between 0-100%. Received: ${commissionInput}`
         });
       }
 
-      // Convert and validate tax (optional)
+      // Validate tax
       const taxValue = tax ? parseFloat(tax) : 0;
       if (tax && (isNaN(taxValue) || taxValue < 0 || taxValue > 18)) {
         return res.status(400).json({
           success: false,
-          message: `Tax must be between 0-18% if provided. Received: ${tax}%`
+          message: `Tax must be between 0-18%. Received: ${tax}%`
         });
       }
 
-      // Validate email format
+      // Email format check
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(email)) {
         return res.status(400).json({
@@ -145,7 +327,25 @@ router.post("/addDealer",
         });
       }
 
-      // Check for existing dealer
+      // PAN format: 5 letters, 4 digits, 1 letter
+      const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
+      if (!panCardNo || !panRegex.test(panCardNo.trim().toUpperCase())) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid PAN card number"
+        });
+      }
+
+      // Aadhar format: 12-digit number
+      const aadharRegex = /^\d{12}$/;
+      if (!aadharCardNo || !aadharRegex.test(aadharCardNo.trim())) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid Aadhar card number"
+        });
+      }
+
+      // Check duplicate email/phone
       const existingDealer = await Vendor.findOne({
         $or: [{ email }, { phone }]
       });
@@ -159,7 +359,7 @@ router.post("/addDealer",
         });
       }
 
-      // Validate required documents
+      // Required document validation
       const requiredDocs = {
         panCardFront: 'PAN Card Front',
         aadharFront: 'Aadhar Front',
@@ -178,13 +378,11 @@ router.post("/addDealer",
         });
       }
 
-      // Prepare documents object
       const documents = {};
       Object.keys(requiredDocs).forEach(key => {
         documents[key] = req.files[key][0].filename;
       });
 
-      // Prepare dealer data
       const dealerData = {
         shopName,
         email,
@@ -216,8 +414,10 @@ router.post("/addDealer",
           bankName,
           accountNumber
         },
-        commission,  
-        tax: taxValue,  
+        aadharCardNo: aadharCardNo.trim(),
+        panCardNo: panCardNo.trim().toUpperCase(),
+        commission,
+        tax: taxValue,
         documents,
         shopImages: req.files?.shopImages?.map(file => file.filename) || [],
         isVerify: false,
@@ -241,7 +441,7 @@ router.post("/addDealer",
     } catch (error) {
       console.error("Registration error:", error);
 
-      // Clean up uploaded files on error
+      // Cleanup uploaded files
       if (req.files) {
         Object.values(req.files).flat().forEach(file => {
           try {

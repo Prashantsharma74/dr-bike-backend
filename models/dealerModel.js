@@ -17,7 +17,28 @@ const dealerModel = new mongoose.Schema({
   },
   phone: { type: String, required: true },
   password: { type: String, required: true },
-  aadharCardNo: { type: Number, required: false },
+  aadharCardNo: {
+    type: String,
+    required: true,
+    validate: {
+      validator: function (v) {
+        return /^\d{12}$/.test(v);
+      },
+      message: props => `${props.value} is not a valid Aadhar number!`
+    }
+  },
+
+  panCardNo: {
+    type: String,
+    required: true,
+    uppercase: true,
+    validate: {
+      validator: function (v) {
+        return /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(v);
+      },
+      message: props => `${props.value} is not a valid PAN number!`
+    }
+  },
   shopPincode: { type: String, required: true },
   fullAddress: { type: String, required: true },
   city: { type: String, required: true },
