@@ -18,7 +18,7 @@ const serviceSchema = new mongoose.Schema(
     ],
     dealer_id: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "dealer",
+      ref: "Vendor",
     },  
    },
   {
