@@ -405,8 +405,6 @@ async function verifyOtpAdmin(req, res) {
   }
 }
 
-
-
 function deleteFile(filePath) {
   try {
     fs.unlinkSync(path.join(__dirname, '..', filePath));
@@ -448,7 +446,6 @@ async function updateProfilePicture(req, res) {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 }
-
 
 async function getProfilePicture(req, res) {
   try {

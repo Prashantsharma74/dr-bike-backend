@@ -339,7 +339,187 @@ router.put("/editDealer", upload.fields([
   { name: 'panCardFront', maxCount: 1 },
   { name: 'adharCardFront', maxCount: 1 },
   { name: 'shopImages', maxCount: 10 }
-]), editDealer);
+]), async function editDealer(req, res) {
+  try {
+    const dealerId = req.body.id;
+    console.log("Request Body:", req.body);
+    console.log("Request Files:", req.files);
+
+    // Find existing dealer
+    const existingDealer = await Vendor.findById(dealerId);
+    if (!existingDealer) {
+      return res.status(404).json({
+        success: false,
+        message: "Dealer not found"
+      });
+    }
+
+    // Validate inputs
+    const errors = {};
+
+    // Commission validation
+    if (req.body.comission !== undefined) {
+      const commission = parseFloat(req.body.comission);
+      if (isNaN(commission) || commission < 0 || commission > 100) {
+        errors.comission = "Commission must be between 0-100%";
+      }
+    }
+
+    // PAN validation
+    if (req.body.panCardNo !== undefined && req.body.panCardNo !== '') {
+      if (!/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(req.body.panCardNo.trim().toUpperCase())) {
+        errors.panCardNo = "Invalid PAN card number";
+      }
+    }
+
+    if (Object.keys(errors).length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Validation failed",
+        errors
+      });
+    }
+
+    // Prepare update data
+    const updateData = {};
+    const fields = [
+      'shopName', 'email', 'phone', 'shopPincode', 'fullAddress', 'city', 'state',
+      'latitude', 'longitude', 'ownerName', 'personalEmail', 'personalPhone',
+      'alternatePhone', 'aadharCardNo', 'panCardNo', 'gstNumber'
+    ];
+
+    fields.forEach(field => {
+      if (req.body[field] !== undefined) {
+        updateData[field] = req.body[field] === '' ? null : req.body[field];
+      }
+    });
+
+    // Handle numeric fields
+    if (req.body.comission !== undefined) {
+      updateData.commission = parseFloat(req.body.comission);
+    }
+    if (req.body.tax !== undefined) {
+      updateData.tax = req.body.tax === '' ? null : parseFloat(req.body.tax);
+    }
+
+    // Handle addresses
+    if (req.body.permanentAddress !== undefined ||
+      req.body.permanentState !== undefined ||
+      req.body.permanentCity !== undefined) {
+      updateData.permanentAddress = {
+        address: req.body.permanentAddress || existingDealer.permanentAddress.address,
+        state: req.body.permanentState || existingDealer.permanentAddress.state,
+        city: req.body.permanentCity || existingDealer.permanentAddress.city
+      };
+    }
+
+    // Handle bank details
+    if (req.body.accountHolderName !== undefined ||
+      req.body.ifscCode !== undefined ||
+      req.body.bankName !== undefined ||
+      req.body.accountNumber !== undefined) {
+      updateData.bankDetails = {
+        accountHolderName: req.body.accountHolderName || existingDealer.bankDetails.accountHolderName,
+        ifscCode: req.body.ifscCode || existingDealer.bankDetails.ifscCode,
+        bankName: req.body.bankName || existingDealer.bankDetails.bankName,
+        accountNumber: req.body.accountNumber || existingDealer.bankDetails.accountNumber
+      };
+    }
+
+    // Handle document uploads
+    if (req.files) {
+      updateData.documents = { ...existingDealer.documents };
+
+      const documentFields = [
+        { field: 'panCardFront', name: 'panCardFront' },
+        { field: 'aadharFront', name: 'aadharFront' },
+        { field: 'aadharBack', name: 'aadharBack' }
+      ];
+
+      documentFields.forEach(({ field, name }) => {
+        if (req.files[field]) {
+          // Delete old file if exists
+          if (existingDealer.documents[name]) {
+            try {
+              fs.unlinkSync(path.join(uploadDir, existingDealer.documents[name]));
+            } catch (err) {
+              console.error(`Error deleting old ${name}:`, err);
+            }
+          }
+          // Add new file
+          updateData.documents[name] = req.files[field][0].filename;
+        }
+      });
+    }
+
+    // Handle shop images
+    if (req.body.existingShopImages !== undefined || req.files?.shopImages) {
+      const imagesToKeep = Array.isArray(req.body.existingShopImages)
+        ? req.body.existingShopImages
+        : [];
+
+      // Filter existing images to keep
+      const keptImages = existingDealer.shopImages.filter(img =>
+        imagesToKeep.some(keptImg => keptImg.includes(img)) // Adjust based on how you store paths
+      );
+
+      // Add new images
+      const newImages = req.files?.shopImages
+        ? req.files.shopImages.map(file => file.filename)
+        : [];
+
+      updateData.shopImages = [...keptImages, ...newImages];
+
+      // Delete removed images
+      existingDealer.shopImages.forEach(img => {
+        if (!imagesToKeep.some(keptImg => keptImg.includes(img))) {
+          try {
+            fs.unlinkSync(path.join(uploadDir, img));
+          } catch (err) {
+            console.error("Error deleting shop image:", err);
+          }
+        }
+      });
+    }
+
+    // Update the dealer
+    const updatedDealer = await Vendor.findByIdAndUpdate(
+      dealerId,
+      { $set: updateData },
+      { new: true, runValidators: true }
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Dealer updated successfully",
+      data: updatedDealer
+    });
+
+  } catch (error) {
+    console.error("Edit dealer error:", error);
+
+    // Cleanup uploaded files if error occurred
+    if (req.files) {
+      Object.values(req.files).flat().forEach(file => {
+        try {
+          if (file?.filename) {
+            fs.unlinkSync(path.join(uploadDir, file.filename));
+          }
+        } catch (err) {
+          console.error("File cleanup error:", err);
+        }
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: error.name === 'ValidationError'
+        ? "Validation failed"
+        : "Update failed due to server error",
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
 
 
 router.get("/dealerList", dealerList);

@@ -457,9 +457,7 @@ async function addDealer1(req, res) {
 
 async function editDealer(req, res) {
   try {
-    console.log("Incoming edit payload:", req.body);
-    // const dealerId = req.params.id || req.body.dealer_id;
-    const dealerId = "684ff55f3d92ab7cca4d2da5";
+    const dealerId = req.body.id;
 
     // Find existing dealer
     const existingDealer = await Vendor.findById(dealerId);
