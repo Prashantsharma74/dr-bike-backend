@@ -10,6 +10,7 @@ const bikeCompanySchema = require('../models/bikeCompanyModel');
 const customerSchema = require('../models/customer_model');
 const bookingSchema = require('../models/Booking');
 const servicesSchema = require('../models/service_model');
+const dealersSchema = require('../models/Dealer');
 
 var bcrypt = require('bcryptjs');
 const jwt_decode = require("jwt-decode");
@@ -788,6 +789,7 @@ const dashboardCounts = async (req, res) => {
     const customerCount = await customerSchema.countDocuments();
     const bookingCount = await bookingSchema.countDocuments();
     const serviceCount = await servicesSchema.countDocuments();
+    const dealerCount = await dealersSchema.countDocuments();
 
     res.status(200).json({
       status: 200,
@@ -799,6 +801,7 @@ const dashboardCounts = async (req, res) => {
         totalCustomers: customerCount,
         totalBookings: bookingCount,
         totalServices: serviceCount,
+        totalDealers: dealerCount ,
       },
     });
   } catch (error) {

@@ -455,194 +455,213 @@ async function addDealer1(req, res) {
   }
 }
 
-// async function editDealer(req, res) {
-//   try {
-//     const data = jwt_decode(req.headers.token);
-//     const user_id = data.user_id;
-//     const user_type = data.user_type;
-//     const type = data.type;
-
-//     const dealer_id = user_type == 2 ? user_id : req.body.dealer_id;
-//     console.log("Editing Dealer:", dealer_id);
-
-//     let dealer = await Dealer.findById(dealer_id);
-//     if (!dealer) {
-//       return res.status(200).json({ success: false, message: 'Dealer not found' });
-//     }
-
-//     if (type === 2 && !dealer.isVerify) {
-//       return res.status(200).json({ success: false, message: 'Dealer verification pending. Cannot edit details.' });
-//     }
-
-//     const {
-//       address, latitude, longitude, phone, state, city, email, area, isBlock, deletedImages = [],
-//       shopName, shopDescription, name, extra_charges, accountno, panCard, bankname,
-//       ifsc, adharCard, service_id, bikes, isProfile, pickupAndDrop, pickupAndDropDescription,isDoc
-//     } = req.body;
-
-//     const image = req.files?.images ? req.files.images[0].filename : dealer.images;
-
-//     console.log(image,"image")
-
-//     const updatedShopImages = dealer.shopImages || [];
-//     if (req.files?.shopImages) {
-//       updatedShopImages.push(...req.files.shopImages.map(file => file.filename));
-//     }
-
-//     const updatedData = {
-//       phone: phone ?? dealer.phone,
-//       state: state ?? dealer.state,
-//       city: city ?? dealer.city,
-//       area: area ?? dealer.area,
-//       address: address ?? dealer.address,
-//       latitude: latitude ?? dealer.latitude,
-//       longitude: longitude ?? dealer.longitude,
-//       isBlock: isBlock ?? dealer.isBlock,
-//       email: email ?? dealer.email,
-//       shopName: shopName ?? dealer.shopName,
-//       shopDescription: shopDescription ?? dealer.shopDescription,
-//       shopImages: updatedShopImages.length ? updatedShopImages : dealer.shopImages,
-//       extra_charges: extra_charges ?? dealer.extra_charges,
-//       name: name ?? dealer.name,
-//       images: image ? image : dealer.images,
-//       accountno: accountno ?? dealer.accountno,
-//       panCard: panCard ?? dealer.panCard,
-//       bankname: bankname ?? dealer.bankname,
-//       ifsc: ifsc ?? dealer.ifsc,
-//       isProfile: isProfile ?? dealer.isProfile,
-//       isDoc: isDoc ?? dealer.isDoc,
-//       adharCard: adharCard ?? dealer.adharCard,
-//       services: service_id ?? dealer.services,
-//       bikes: bikes ?? dealer.bikes,
-//       pickupAndDrop: pickupAndDrop ?? dealer.pickupAndDrop,
-//       pickupAndDropDescription: pickupAndDropDescription ?? dealer.pickupAndDropDescription,
-//       panCardImage: req.files?.panCardImage ? req.files.panCardImage[0].filename : dealer.panCardImage,
-//       adharCardImage: req.files?.adharCardImage ? req.files.adharCardImage[0].filename : dealer.adharCardImage,
-//       adharCardBackImage: req.files?.adharCardBackImage ? req.files.adharCardBackImage[0].filename : dealer.adharCardBackImage,
-//       passportImage: req.files?.passportImage ? req.files.passportImage[0].filename : dealer.passportImage,
-//       PassbookImage: req.files?.PassbookImage ? req.files.PassbookImage[0].filename : dealer.PassbookImage
-//     };
-
-//     await Dealer.findByIdAndUpdate(dealer_id, { $set: updatedData }, { new: true });
-//     return res.status(200).json({ status: 200, message: "Dealer updated successfully",data:updatedData });
-
-//   } catch (error) {
-//     console.error("Error in editDealer:", error);
-//     return res.status(500).json({ status: 500, message: "Operation was not successful" });
-//   }
-// }
-
 async function editDealer(req, res) {
   try {
-    const data = jwt_decode(req.headers.token);
-    const user_id = data.user_id;
-    const user_type = data.user_type;
-    const type = data.type;
+    console.log("Incoming edit payload:", req.body);
+    // const dealerId = req.params.id || req.body.dealer_id;
+    const dealerId = "684ff55f3d92ab7cca4d2da5";
 
-    const dealer_id = user_type == 2 ? user_id : req.body.dealer_id;
-    console.log("Editing Dealer:", dealer_id);
-
-    let dealer = await Dealer.findById(dealer_id);
-    if (!dealer) {
-      return res.status(200).json({ success: false, message: 'Dealer not found' });
+    // Find existing dealer
+    const existingDealer = await Vendor.findById(dealerId);
+    console.log("Existing Dealer", existingDealer)
+    if (!existingDealer) {
+      return res.status(404).json({
+        success: false,
+        message: "Dealer not found"
+      });
     }
 
-    if (type === 2 && !dealer.isVerify) {
-      return res.status(200).json({ success: false, message: 'Dealer verification pending. Cannot edit details.' });
+    // Extract all possible fields (same as addDealer)
+    const {
+      shopName,
+      email,
+      phone,
+      shopPincode,
+      fullAddress,
+      city,
+      state,
+      latitude,
+      longitude,
+      ownerName,
+      personalEmail,
+      personalPhone,
+      alternatePhone,
+      permanentAddress,
+      permanentState,
+      permanentCity,
+      presentAddress,
+      presentState,
+      presentCity,
+      accountHolderName,
+      ifscCode,
+      bankName,
+      accountNumber,
+      comission: commissionInput,
+      tax,
+      aadharCardNo,
+      panCardNo
+    } = req.body;
+
+    // Validate commission (same as addDealer)
+    const commission = parseFloat(commissionInput);
+    if (commissionInput && (isNaN(commission) || commission < 0 || commission > 100)) {
+      return res.status(400).json({
+        success: false,
+        message: `Commission must be between 0-100%. Received: ${commissionInput}`
+      });
     }
 
-    // Fields to update only if they are provided in req.body
-    const updateFields = {};
-    const allowedFields = [
-      "phone", "state", "city", "area", "address", "latitude", "longitude",
-      "isBlock", "email", "shopName", "shopDescription", "extra_charges",
-      "name", "accountno", "panCard", "bankname", "ifsc", "adharCard",
-      "service_id", "bikes", "isProfile", "pickupAndDrop", "pickupAndDropDescription",
-      "isDoc", "goDigital",
-      "expertAdvice",
-      "ourPromise", "pincode", "accholdername"
-    ];
+    // Validate tax (same as addDealer)
+    const taxValue = tax ? parseFloat(tax) : existingDealer.tax;
+    if (tax && (isNaN(taxValue) || taxValue < 0 || taxValue > 18)) {
+      return res.status(400).json({
+        success: false,
+        message: `Tax must be between 0-18%. Received: ${tax}%`
+      });
+    }
 
-    allowedFields.forEach(field => {
-      if (req.body[field] !== undefined) {
-        updateFields[field] = req.body[field];
+    // Email format check (same as addDealer)
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid email format"
+      });
+    }
+
+    // PAN format check (same as addDealer)
+    if (panCardNo && !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(panCardNo.trim().toUpperCase())) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid PAN card number"
+      });
+    }
+
+    // Aadhar format check (same as addDealer)
+    if (aadharCardNo && !/^\d{12}$/.test(aadharCardNo.trim())) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid Aadhar card number"
+      });
+    }
+
+    // Check for duplicate email/phone (excluding current dealer)
+    if (email || phone) {
+      const duplicate = await Vendor.findOne({
+        $and: [
+          { _id: { $ne: dealerId } },
+          { $or: [] }
+        ]
+      });
+
+      if (email) duplicate.$or.push({ email });
+      if (phone) duplicate.$or.push({ phone });
+
+      if (duplicate) {
+        const conflictField = duplicate.email === email ? 'Shop Email' : 'Shop Contact';
+        return res.status(409).json({
+          success: false,
+          message: `${conflictField} already exists`,
+          field: conflictField.toLowerCase().replace(' ', '-')
+        });
+      }
+    }
+
+    // Prepare update data (similar to addDealer but only update provided fields)
+    const updateData = {};
+
+    // Text fields
+    if (shopName) updateData.shopName = shopName;
+    if (email) updateData.email = email;
+    if (phone) updateData.phone = phone;
+    // ... add all other text fields similarly
+
+    // Address fields
+    if (permanentAddress || permanentState || permanentCity) {
+      updateData.permanentAddress = {
+        address: permanentAddress || existingDealer.permanentAddress.address,
+        state: permanentState || existingDealer.permanentAddress.state,
+        city: permanentCity || existingDealer.permanentAddress.city
+      };
+    }
+
+    // Bank details
+    if (accountHolderName || ifscCode || bankName || accountNumber) {
+      updateData.bankDetails = {
+        accountHolderName: accountHolderName || existingDealer.bankDetails.accountHolderName,
+        ifscCode: ifscCode || existingDealer.bankDetails.ifscCode,
+        bankName: bankName || existingDealer.bankDetails.bankName,
+        accountNumber: accountNumber || existingDealer.bankDetails.accountNumber
+      };
+    }
+
+    // Document handling (same file structure as addDealer)
+    if (req.files) {
+      updateData.documents = { ...existingDealer.documents };
+
+      if (req.files.panCardFront) {
+        updateData.documents.panCardFront = req.files.panCardFront[0].filename;
+        // Delete old file if exists
+        if (existingDealer.documents.panCardFront) {
+          fs.unlinkSync(path.join(uploadDir, existingDealer.documents.panCardFront));
+        }
+      }
+      // Repeat for aadharFront, aadharBack
+    }
+
+    // Shop images (append new ones)
+    if (req.files?.shopImages) {
+      updateData.shopImages = [
+        ...existingDealer.shopImages,
+        ...req.files.shopImages.map(file => file.filename)
+      ];
+    }
+
+    // Numeric fields
+    if (commissionInput) updateData.commission = commission;
+    if (tax) updateData.tax = taxValue;
+    if (latitude) updateData.latitude = parseFloat(latitude);
+    if (longitude) updateData.longitude = parseFloat(longitude);
+
+    // Update the dealer
+    const updatedDealer = await Vendor.findByIdAndUpdate(
+      dealerId,
+      { $set: updateData },
+      { new: true, runValidators: true }
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Dealer updated successfully",
+      data: {
+        id: updatedDealer._id,
+        shopName: updatedDealer.shopName,
+        email: updatedDealer.email
       }
     });
 
-    // Handle image updates if provided
-    if (req.files?.images) {
-      updateFields.images = req.files.images[0].filename;
-    }
-
-    if (req.files?.shopImages) {
-      updateFields.shopImages = dealer.shopImages ? [...dealer.shopImages, ...req.files.shopImages.map(file => file.filename)] : req.files.shopImages.map(file => file.filename);
-    }
-
-    if (req.files?.panCardImage) {
-      updateFields.panCardImage = req.files.panCardImage[0].filename;
-    }
-
-    if (req.files?.adharCardImage) {
-      updateFields.adharCardImage = req.files.adharCardImage[0].filename;
-    }
-
-    if (req.files?.adharCardBackImage) {
-      updateFields.adharCardBackImage = req.files.adharCardBackImage[0].filename;
-    }
-
-    if (req.files?.passportImage) {
-      updateFields.passportImage = req.files.passportImage[0].filename;
-    }
-
-    if (req.files?.PassbookImage) {
-      updateFields.PassbookImage = req.files.PassbookImage[0].filename;
-    }
-
-    // Update only provided fields
-    const updatedDealer = await Dealer.findByIdAndUpdate(dealer_id, { $set: updateFields }, { new: true });
-
-    return res.status(200).json({ status: 200, message: "Dealer updated successfully", data: updatedDealer });
-
   } catch (error) {
-    console.error("Error in editDealer:", error);
-    return res.status(500).json({ status: 500, message: "Operation was not successful" });
+    console.error("Edit dealer error:", error);
+
+    // Cleanup newly uploaded files if error occurs
+    if (req.files) {
+      Object.values(req.files).flat().forEach(file => {
+        try {
+          if (file?.filename) {
+            fs.unlinkSync(path.join(uploadDir, file.filename));
+          }
+        } catch (err) {
+          console.error("File cleanup error:", err);
+        }
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: "Update failed due to server error",
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 }
-
-
-
-// async function dealerList(req, res) {
-//   try {
-//     const dealerResponse = await Dealer.find(req.query);
-
-//     // let newDealerResponse = [...dealerResponse].sort((a, b) => b.wallet - a.wallet);
-
-//     if (dealerResponse.length > 0) {
-//       const response = {
-//         status: 200,
-//         message: "success",
-//         data: dealerResponse,
-//         // MaxWallet: newDealerResponse[0].wallet || 0
-//       };
-//       return res.status(200).send(response);
-//     } else {
-//       const response = {
-//         status: 201,
-//         message: "No Dealer Found",
-//         data: dealerResponse,
-//       };
-//       return res.status(201).send(response);
-//     }
-//   } catch (error) {
-//     console.log("error", error);
-//     const response = {
-//       status: 201,
-//       message: "Operation was not successful",
-//     };
-//     return res.status(201).send(response);
-//   }
-// }
-
 
 async function singledealer(req, res) {
   try {
@@ -688,8 +707,6 @@ async function singledealer(req, res) {
     return res.status(201).send(response);
   }
 }
-
-
 
 async function editDealerStatus(req, res) {
   try {
