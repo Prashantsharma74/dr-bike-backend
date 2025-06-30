@@ -521,7 +521,6 @@ router.put("/editDealer", upload.fields([
   }
 });
 
-
 router.get("/dealerList", dealerList);
 router.get("/dealerWithInRange", dealerWithInRange);
 router.get("/dealerWithInRange2", dealerWithInRange2);
