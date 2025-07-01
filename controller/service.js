@@ -40,7 +40,6 @@ async function singleService(req, res) {
   }
 }
 
-
 async function updateService(req, res) {
   try {
     const { service_id, name, description, dealer_id, bikes } = req.body;
@@ -77,7 +76,6 @@ async function updateService(req, res) {
   }
 }
 
-
 async function deleteService(req, res) {
   try {
     const { service_id } = req.body;
@@ -95,7 +93,6 @@ async function deleteService(req, res) {
     return res.status(200).send({ status: 500, message: "Internal Server Error" });
   }
 }
-
 
 async function getServicesByDealer(req, res) {
   try {
@@ -117,7 +114,6 @@ async function getServicesByDealer(req, res) {
     return res.status(200).send({ status: 500, message: "Internal Server Error" });
   }
 }
-
 
 async function addAdminService(req, res) {
   try {
@@ -273,6 +269,67 @@ async function addservice(req, res) {
   }
 }
 
+async function getServiceById(req, res) {
+  try {
+    const { id } = req.params;
+    
+    if (!id) {
+      return res.status(200).send({ 
+        status: 400, 
+        message: "Service ID is required!" 
+      });
+    }
+
+    const serviceData = await service.findById(id)
+      .populate("dealer_id", "shopName email phone")
+      .lean();
+
+    if (!serviceData) {
+      return res.status(200).send({ 
+        status: 404, 
+        message: "Service not found!" 
+      });
+    }
+
+    // Format the response data
+    const responseData = {
+      _id: serviceData._id,
+      name: serviceData.name,
+      image: serviceData.image,
+      description: serviceData.description,
+      dealer_id: {
+        _id: serviceData.dealer_id?._id,
+        shopName: serviceData.dealer_id?.shopName,
+        email: serviceData.dealer_id?.email,
+        phone: serviceData.dealer_id?.phone
+      },
+      bikes: serviceData.bikes || [],
+      createdAt: serviceData.createdAt,
+      updatedAt: serviceData.updatedAt
+    };
+
+    return res.status(200).send({
+      status: 200,
+      message: "Service retrieved successfully",
+      data: responseData
+    });
+
+  } catch (error) {
+    console.error("Error fetching service by ID:", error);
+    
+    if (error instanceof mongoose.Error.CastError) {
+      return res.status(200).send({ 
+        status: 400, 
+        message: "Invalid service ID format" 
+      });
+    }
+    
+    return res.status(200).send({ 
+      status: 500, 
+      message: "Internal Server Error" 
+    });
+  }
+}
 
 module.exports = {
   addservice,
@@ -282,5 +339,6 @@ module.exports = {
   deleteService,
   getServicesByDealer,
   addAdminService,
-  listAdminServices
+  listAdminServices,
+  getServiceById
 };

@@ -11,7 +11,8 @@ var {
   singleService,
   getServicesByDealer,
   addAdminService,
-  listAdminServices
+  listAdminServices,
+  getServiceById
 } = require("../controller/service");
 
 var { PicknDrop } = require("../controller/pickupndrop");
@@ -50,6 +51,7 @@ const upload = multer({
 router.post("/addservice", upload.single("images"), addservice);
 // router.post("/addservice",  addservice);
 router.get("/servicelist", servicelist);
+router.get("/services/:id", getServiceById);
 router.put(
   "/updateservice",
   upload.fields([{ name: "service_image", maxCount: 1 }]),
