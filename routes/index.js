@@ -32,6 +32,7 @@ const { verifyOtpAdmin, sendOtpAdmin } = require("../controller/adminAuth");
 const reward = require('../routes/rewardRoutes');
 const ticket = require("../routes/ticketRoutes");
 const notification = require("../routes/notification")
+const additional = require("../routes/additionalRouter")
 
 
 // User App Admin
@@ -40,6 +41,7 @@ router.use('/adminauth', adminauth);
 // router.use('/employee',verifyToken,employee);
 router.use('/customers', customers);
 router.use('/service', service);
+router.use('/additional-service', additional);
 router.use('/ticket', verifyToken, ticket);
 router.use('/servicefeature', verifyToken, servicefeature);
 router.use('/servicesalientfeature', verifyToken, servicesalientfeature);

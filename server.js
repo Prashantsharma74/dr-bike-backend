@@ -18,7 +18,7 @@ var serveIndex = require('serve-index')
 app.all("*", function (req, res, next) {
   res.header("Access-Control-Allow-Origin", "*");
   res.header("Access-Control-Allow-Methods", "PUT, GET, POST, DELETE, OPTIONS");
-  res.header("Access-Control-Allow-Headers", "Content-Type",'Authorization');
+  res.header("Access-Control-Allow-Headers", "Content-Type", 'Authorization');
   // res.setHeader('Access-Control-Allow-Credentials', true);
   next();
 });
@@ -52,7 +52,7 @@ app.use(express.static('public'));
 
 app.use(express.static(path.join(__dirname, 'public')));
 // app.use('/images', express.static('images'));
-app.use('/image', express.static('image'),serveIndex('image', {'icons': true}));
+app.use('/image', express.static('image'), serveIndex('image', { 'icons': true }));
 
 // parse requests of content-type - application/x-www-form-urlencoded
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -66,8 +66,8 @@ app.get('/', (req, res) => {
 });
 
 
- app.get("/bikedoctor",(req,res)=>{
-  res.status(200).json({message:"Bikedoctor API Working"})
+app.get("/bikedoctor", (req, res) => {
+  res.status(200).json({ message: "Bikedoctor API Working" })
 });
 
 
@@ -77,16 +77,16 @@ app.post('/upload', (req, res) => {
 
   const { image } = req.files;
 
-  if(!image) return res.sendStatus(400);
+  if (!image) return res.sendStatus(400);
 
   if (!/^image/.test(image.mimetype)) return res.sendStatus(400);
 
   // Move the uploaded image to our upload folder
-  image.mv(__dirname + '/upload/' + Date.now() +"_" + image.name.replace(" ",""));
+  image.mv(__dirname + '/upload/' + Date.now() + "_" + image.name.replace(" ", ""));
 
   // All good
   res.sendStatus(200);
-  
+
 });
 
 app.use("/bikedoctor", apiRouter);
@@ -95,7 +95,7 @@ app.use("/location", require("./routes/stateAndCityRoute"));
 // app.use("/dealer", require("./routes/dealerRoutes"));
 app.use("/service", require("./routes/serviceRoutes"));
 
-app.use("/bikedoctor",require('./routes/policyRoutes'))
+app.use("/bikedoctor", require('./routes/policyRoutes'))
 app.use("/testmulter", require("./routes/multerRoute"));
 
 
@@ -110,7 +110,7 @@ app.use("/testmulter", require("./routes/multerRoute"));
 const DB = process.env.DATABASE_URL;
 
 db.mongoose
-  .connect(DB , {
+  .connect(DB, {
     useUnifiedTopology: true,
     useNewUrlParser: true,
   })
@@ -119,24 +119,24 @@ db.mongoose
   })
   .catch((err) => {
     console.log("mongodb error", err);
-});
+  });
 
 // test
 
 const port = process.env.PORT || 8001;
-server.listen(8001,()=>{
-// server.listen(()=>{
-    console.log(`Server is working on port : ${port}`)
-    // console.log(`Bike Dcotor API Server is working`)
+server.listen(8001, () => {
+  // server.listen(()=>{
+  console.log(`Server is working on port : ${port}`)
+  // console.log(`Bike Dcotor API Server is working`)
 })
 
 
 function errHandler(err, req, res, next) {
   if (err instanceof multer.MulterError) {
-      res.json({
-          success: 0,
-          message: err.message
-      })
+    res.json({
+      success: 0,
+      message: err.message
+    })
   }
 }
 
