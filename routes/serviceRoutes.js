@@ -51,7 +51,7 @@ const upload = multer({
 router.post("/addservice", upload.single("images"), addservice);
 // router.post("/addservice",  addservice);
 router.get("/servicelist", servicelist);
-router.get("/services/:id", getServiceById);
+router.get("/edit-service/:id", getServiceById);
 router.put(
   "/updateservice",
   upload.fields([{ name: "service_image", maxCount: 1 }]),
