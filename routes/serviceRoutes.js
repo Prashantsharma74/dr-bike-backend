@@ -12,7 +12,8 @@ var {
   getServicesByDealer,
   addAdminService,
   listAdminServices,
-  getServiceById
+  getServiceById,
+  updateServiceById
 } = require("../controller/service");
 
 var { PicknDrop } = require("../controller/pickupndrop");
@@ -52,6 +53,11 @@ router.post("/addservice", upload.single("images"), addservice);
 // router.post("/addservice",  addservice);
 router.get("/servicelist", servicelist);
 router.get("/edit-service/:id", getServiceById);
+router.put(
+  "/update-service/:id",
+  upload.single("images"),
+  updateServiceById
+);
 router.put(
   "/updateservice",
   upload.fields([{ name: "service_image", maxCount: 1 }]),

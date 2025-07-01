@@ -331,6 +331,135 @@ async function getServiceById(req, res) {
   }
 }
 
+// Update Service API
+async function updateServiceById(req, res) {
+  try {
+    const { id } = req.params;
+    const { name, description, dealer_id, bikes } = req.body;
+
+    // Validate required fields
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ 
+        status: 400,
+        message: "Valid service ID is required" 
+      });
+    }
+
+    if (!name || name.trim() === "") {
+      return res.status(400).json({
+        status: 400,
+        message: "Service name is required",
+        field: "name"
+      });
+    }
+
+    if (!dealer_id || !mongoose.Types.ObjectId.isValid(dealer_id)) {
+      return res.status(400).json({
+        status: 400,
+        message: "Valid dealer ID is required",
+        field: "dealer_id"
+      });
+    }
+
+    // Parse bikes data
+    let parsedBikes = [];
+    try {
+      parsedBikes = bikes ? JSON.parse(bikes) : [];
+    } catch (error) {
+      return res.status(400).json({
+        status: 400,
+        message: "Invalid bikes data format",
+        field: "bikes"
+      });
+    }
+
+    // Validate bikes array
+    if (!Array.isArray(parsedBikes) || parsedBikes.length === 0) {
+      return res.status(400).json({
+        status: 400,
+        message: "At least one bike configuration is required",
+        field: "bikes"
+      });
+    }
+
+    // Validate each bike object
+    for (let i = 0; i < parsedBikes.length; i++) {
+      const bike = parsedBikes[i];
+      if (!bike.cc || isNaN(bike.cc) || bike.cc <= 0) {
+        return res.status(400).json({
+          status: 400,
+          message: `Bike at index ${i} must have valid CC > 0`,
+          field: `bikes[${i}].cc`
+        });
+      }
+      if (!bike.price || isNaN(bike.price) || bike.price <= 0) {
+        return res.status(400).json({
+          status: 400,
+          message: `Bike at index ${i} must have valid price > 0`,
+          field: `bikes[${i}].price`
+        });
+      }
+    }
+
+    // Prepare update data
+    const updateData = {
+      name: name.trim(),
+      description: description?.trim() || "",
+      dealer_id,
+      bikes: parsedBikes
+    };
+
+    // Handle image upload if exists
+    if (req.file) {
+      updateData.image = req.file.filename;
+    }
+
+    // Update the service
+    const updatedService = await service.findByIdAndUpdate(
+      id,
+      updateData,
+      { new: true }
+    ).populate("dealer_id", "shopName email phone");
+
+    if (!updatedService) {
+      return res.status(404).json({
+        status: 404,
+        message: "Service not found"
+      });
+    }
+
+    // Format the response
+    const responseData = {
+      _id: updatedService._id,
+      name: updatedService.name,
+      image: updatedService.image,
+      description: updatedService.description,
+      dealer_id: {
+        _id: updatedService.dealer_id?._id,
+        shopName: updatedService.dealer_id?.shopName,
+        email: updatedService.dealer_id?.email,
+        phone: updatedService.dealer_id?.phone
+      },
+      bikes: updatedService.bikes || [],
+      createdAt: updatedService.createdAt,
+      updatedAt: updatedService.updatedAt
+    };
+
+    return res.status(200).json({
+      status: 200,
+      message: "Service updated successfully",
+      data: responseData
+    });
+
+  } catch (error) {
+    console.error("Error updating service:", error);
+    return res.status(500).json({
+      status: 500,
+      message: "Internal server error"
+    });
+  }
+}
+
 module.exports = {
   addservice,
   servicelist,
@@ -340,5 +469,6 @@ module.exports = {
   getServicesByDealer,
   addAdminService,
   listAdminServices,
-  getServiceById
+  getServiceById,
+  updateServiceById
 };
