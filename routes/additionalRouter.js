@@ -31,11 +31,10 @@ const upload = multer({
     storage: storage,
     fileFilter: fileFilter,
     limits: {
-        fileSize: 5 * 1024 * 1024, // 5MB limit
+        fileSize: 5 * 1024 * 1024,
     },
 });
 
-// Routes with Multer middleware
 router.post("/add-service", upload.single("image"), additionalServiceController.addAdditionalService);
 router.get("/all-additional-services", additionalServiceController.getAllAdditionalServices);
 router.get("/single-additional-service/:id", additionalServiceController.getAdditionalServiceById);
