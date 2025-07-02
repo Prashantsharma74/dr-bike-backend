@@ -14,7 +14,11 @@ const additionalServiceSchema = new mongoose.Schema(
         cc: Number,
         price: Number
       }
-    ]
+    ],
+    dealer_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Vendor",
+    },
   },
   {
     timestamps: true,

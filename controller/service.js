@@ -599,6 +599,68 @@ async function deleteAdditionaalService(req, res) {
   }
 }
 
+async function getAdditionalServiceById(req, res) {
+  try {
+    const { id } = req.params;
+
+    if (!id) {
+      return res.status(200).send({
+        status: 400,
+        message: "Service ID is required!"
+      });
+    }
+
+    const serviceData = await additionalService.findById(id)
+      .populate("dealer_id", "shopName email phone")
+      .lean();
+
+    if (!serviceData) {
+      return res.status(200).send({
+        status: 404,
+        message: "Service not found!"
+      });
+    }
+
+    // Format the response data
+    const responseData = {
+      _id: serviceData._id,
+      name: serviceData.name,
+      image: serviceData.image,
+      description: serviceData.description,
+      dealer_id: {
+        _id: serviceData.dealer_id?._id,
+        shopName: serviceData.dealer_id?.shopName,
+        email: serviceData.dealer_id?.email,
+        phone: serviceData.dealer_id?.phone
+      },
+      bikes: serviceData.bikes || [],
+      createdAt: serviceData.createdAt,
+      updatedAt: serviceData.updatedAt
+    };
+
+    return res.status(200).send({
+      status: 200,
+      message: "Service retrieved successfully",
+      data: responseData
+    });
+
+  } catch (error) {
+    console.error("Error fetching service by ID:", error);
+
+    if (error instanceof mongoose.Error.CastError) {
+      return res.status(200).send({
+        status: 400,
+        message: "Invalid service ID format"
+      });
+    }
+
+    return res.status(200).send({
+      status: 500,
+      message: "Internal Server Error"
+    });
+  }
+}
+
 module.exports = {
   addservice,
   servicelist,
@@ -612,5 +674,6 @@ module.exports = {
   updateServiceById,
   addAdditionalService,
   additionalservicelist,
-  deleteAdditionaalService
+  deleteAdditionaalService,
+  getAdditionalServiceById
 };
