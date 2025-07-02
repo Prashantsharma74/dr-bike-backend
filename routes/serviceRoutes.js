@@ -13,7 +13,10 @@ var {
   addAdminService,
   listAdminServices,
   getServiceById,
-  updateServiceById
+  updateServiceById,
+  addAdditionalService,
+  additionalservicelist,
+  deleteAdditionaalService
 } = require("../controller/service");
 
 var { PicknDrop } = require("../controller/pickupndrop");
@@ -68,4 +71,11 @@ router.post("/PicknDrop", PicknDrop);
 router.get("/dealer/:dealer_id", getServicesByDealer);
 router.post("/adminservices/create", upload.single("image"), addAdminService);
 router.get("/adminservices", listAdminServices);
+
+// Aadditional Services 
+router.post("/create-additional-service", upload.single("images"), addAdditionalService);
+router.get("/additionalservicelist", additionalservicelist);
+router.delete("/deleteAdditionalService/:id", deleteAdditionaalService);
+
+
 module.exports = router;

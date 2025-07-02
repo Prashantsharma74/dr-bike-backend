@@ -1,4 +1,5 @@
 const service = require("../models/service_model");
+const additionalService = require("../models/additionalServiceSchema");
 const jwt_decode = require("jwt-decode");
 const adminservices = require("../models/adminService");
 const mongoose = require("mongoose");
@@ -272,11 +273,11 @@ async function addservice(req, res) {
 async function getServiceById(req, res) {
   try {
     const { id } = req.params;
-    
+
     if (!id) {
-      return res.status(200).send({ 
-        status: 400, 
-        message: "Service ID is required!" 
+      return res.status(200).send({
+        status: 400,
+        message: "Service ID is required!"
       });
     }
 
@@ -285,9 +286,9 @@ async function getServiceById(req, res) {
       .lean();
 
     if (!serviceData) {
-      return res.status(200).send({ 
-        status: 404, 
-        message: "Service not found!" 
+      return res.status(200).send({
+        status: 404,
+        message: "Service not found!"
       });
     }
 
@@ -316,17 +317,17 @@ async function getServiceById(req, res) {
 
   } catch (error) {
     console.error("Error fetching service by ID:", error);
-    
+
     if (error instanceof mongoose.Error.CastError) {
-      return res.status(200).send({ 
-        status: 400, 
-        message: "Invalid service ID format" 
+      return res.status(200).send({
+        status: 400,
+        message: "Invalid service ID format"
       });
     }
-    
-    return res.status(200).send({ 
-      status: 500, 
-      message: "Internal Server Error" 
+
+    return res.status(200).send({
+      status: 500,
+      message: "Internal Server Error"
     });
   }
 }
@@ -339,9 +340,9 @@ async function updateServiceById(req, res) {
 
     // Validate required fields
     if (!id || !mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         status: 400,
-        message: "Valid service ID is required" 
+        message: "Valid service ID is required"
       });
     }
 
@@ -460,6 +461,144 @@ async function updateServiceById(req, res) {
   }
 }
 
+// Additional Services API 
+async function additionalservicelist(req, res) {
+  try {
+    const services = await additionalService
+      .find()
+      .populate("dealer_id", "name email")
+      .sort({ id: -1 });
+
+    return res.status(200).send({
+      status: 200,
+      message: services.length > 0 ? "Success" : "No services available",
+      data: services,
+    });
+  } catch (error) {
+    console.error("Error fetching services:", error);
+    return res.status(200).send({ status: 500, message: "Internal Server Error" });
+  }
+}
+
+async function addAdditionalService(req, res) {
+  try {
+    const { name, description, dealer_id, bikes: bikesString } = req.body;
+    console.log("Raw Request Body:", req.body);
+
+    // Validate: name
+    if (!name || name.trim() === "") {
+      return res.status(400).json({
+        status: 400,
+        message: "Additional Service name is required.",
+        field: "name",
+      });
+    }
+
+    // Validate: dealer_id
+    if (!dealer_id || !mongoose.Types.ObjectId.isValid(dealer_id)) {
+      return res.status(400).json({
+        status: 400,
+        message: "Valid dealer ID is required.",
+        field: "dealer_id",
+      });
+    }
+
+    // Parse and validate bikes
+    let parsedBikes = [];
+    try {
+      // Parse the JSON string to array
+      parsedBikes = JSON.parse(bikesString);
+
+      if (!Array.isArray(parsedBikes)) {
+        throw new Error("Bikes must be an array");
+      }
+
+      // Validate each bike object
+      parsedBikes = parsedBikes.map((bike, index) => {
+        if (!bike || typeof bike !== 'object') {
+          throw new Error(`Bike at index ${index} is not a valid object`);
+        }
+
+        const cc = Number(bike.cc);
+        const price = Number(bike.price);
+
+        if (isNaN(cc)) {
+          throw new Error(`Invalid cc value at index ${index}`);
+        }
+        if (isNaN(price)) {
+          throw new Error(`Invalid price value at index ${index}`);
+        }
+
+        return {
+          cc,
+          price
+        };
+      });
+
+    } catch (err) {
+      console.error("Bikes parsing error:", err);
+      return res.status(400).json({
+        status: 400,
+        message: "Invalid bikes data: " + err.message,
+        field: "bikes",
+      });
+    }
+
+    if (parsedBikes.length === 0) {
+      return res.status(400).json({
+        status: 400,
+        message: "At least one bike configuration is required",
+        field: "bikes",
+      });
+    }
+
+    // Handle image
+    const image = req.file?.filename || "";
+
+    // Create service
+    const newService = await additionalService.create({
+      name: name.trim(),
+      description: description?.trim() || "",
+      dealer_id,
+      bikes: parsedBikes,
+      image,
+    });
+
+    console.log("New Additional Service with Bikes:", newService);
+
+    return res.status(201).json({
+      status: 201,
+      message: "Additional Service added successfully",
+      data: newService,
+    });
+  } catch (error) {
+    console.error("Error adding service:", error);
+    return res.status(500).json({
+      status: 500,
+      message: "Internal Server Error: " + error.message,
+    });
+  }
+}
+
+async function deleteAdditionaalService(req, res) {
+  try {
+    const { id } = req.params;
+    console.log("Delete Service ID:", id);
+    if (!id) {
+      return res.status(200).send({ status: 400, message: "Service ID is required!" });
+    }
+
+    const deletedService = await additionalService.findByIdAndDelete(id);
+    return res.status(200).send({
+      status: 200,
+      message: deletedService ? "Service deleted successfully" : "Service not found!",
+    });
+  } catch (error) {
+    console.error("Error deleting service:", error);
+    return res.status(200).send({ status: 500, message: "Internal Server Error" });
+  }
+}
+
 module.exports = {
   addservice,
   servicelist,
@@ -470,5 +609,8 @@ module.exports = {
   addAdminService,
   listAdminServices,
   getServiceById,
-  updateServiceById
+  updateServiceById,
+  addAdditionalService,
+  additionalservicelist,
+  deleteAdditionaalService
 };
