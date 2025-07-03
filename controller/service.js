@@ -8,7 +8,7 @@ async function servicelist(req, res) {
   try {
     const services = await service
       .find()
-      .populate("dealer_id", "name email")
+      .populate("dealer_id", "shopName email")
       .sort({ id: -1 });
 
     return res.status(200).send({
