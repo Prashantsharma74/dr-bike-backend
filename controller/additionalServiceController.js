@@ -31,7 +31,9 @@ const addAdditionalService = async (req, res) => {
 // 2. Get All Additional Services
 const getAllAdditionalServices = async (req, res) => {
     try {
-        const services = await AdditionalService.find().sort({ id: -1 });
+        const services = await AdditionalService.find()
+        .populate("dealer_id", "shopName email")
+        .sort({ id: -1 })
 
         res.status(200).json({
             status: 200,
