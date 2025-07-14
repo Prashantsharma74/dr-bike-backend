@@ -1,6 +1,7 @@
 var validation = require('../helper/validation');
 const otpAuth = require("../helper/otpAuth");
 const Dealer = require('../models/Dealer');
+const Vendor = require('../models/dealerModel');
 
 
 //user_type = ( 2=dealer )
@@ -64,80 +65,80 @@ const Dealer = require('../models/Dealer');
 
 
 
-async function sendOtp(req, res) { 
-  try{
-      const { phone } = req.body;
+async function sendOtp(req, res) {
+  try {
+    const { phone } = req.body;
 
-      if (phone != '' || phone === null) {
-          var userResm = await Dealer.findOne({phone});
+    if (phone != '' || phone === null) {
+      var userResm = await Dealer.findOne({ phone });
 
-          if(userResm){
-              // const optdata = {otp:1111} 
-              const data = await otpAuth.otp(phone)
+      if (userResm) {
+        // const optdata = {otp:1111} 
+        const data = await otpAuth.otp(phone)
 
-              
-              Dealer.findByIdAndUpdate({ _id: userResm._id },
-              { otp: data.otp },
-              { new: true },
-              async function (err, docs) {
-                  // const token = validation.generateUserToken(userResm._id, 'logged', 2)
-                  if (err) {
-                      var response = {
-                          status: 201,
-                          message: err,
-                      };
-                      return res.status(201).send(response);
-                  }
-                  else {
-                      var response = {
-                          status: 200,
-                          message: 'OTP send successfully',
-                          // token:token
-                      };
-                      res.status(200)
-                              // .cookie('accessToken', data.accessToken, {
-                              //     expires: new Date(new Date().getTime() + 60 * 1000),
-                              //     sameSite: 'strict',
-                              //     httpOnly: true
-                              // })
-                              // .cookie('refreshToken', data.refreshToken, {
-                              //     expires: new Date(new Date().getTime() + 31557600000),
-                              //     sameSite: 'strict',
-                              //     httpOnly: true
-                              // })
-                              // .cookie('authSession', true, { 
-                              //     expires: new Date(new Date().getTime() + 30 * 1000), 
-                              //     sameSite: 'strict' 
-                              // })
-                              // .cookie('refreshTokenID', true, {
-                              //     expires: new Date(new Date().getTime() + 31557600000),
-                              //     sameSite: 'strict'
-                              // })
-                              .json(response);
-                  }
-              });
-          }else{
+
+        Dealer.findByIdAndUpdate({ _id: userResm._id },
+          { otp: data.otp },
+          { new: true },
+          async function (err, docs) {
+            // const token = validation.generateUserToken(userResm._id, 'logged', 2)
+            if (err) {
               var response = {
-                  status: 201,
-                  message: 'Dealer not exist',
+                status: 201,
+                message: err,
               };
               return res.status(201).send(response);
-          }
-     
-      }else {
-          var response = {
-              status: 201,
-              message: 'Phone No can not be empty value!',
-          };
-          return res.status(201).send(response);
-      }
-  } catch (error) {
-      console.log("error", error);
-      response = {
+            }
+            else {
+              var response = {
+                status: 200,
+                message: 'OTP send successfully',
+                // token:token
+              };
+              res.status(200)
+                // .cookie('accessToken', data.accessToken, {
+                //     expires: new Date(new Date().getTime() + 60 * 1000),
+                //     sameSite: 'strict',
+                //     httpOnly: true
+                // })
+                // .cookie('refreshToken', data.refreshToken, {
+                //     expires: new Date(new Date().getTime() + 31557600000),
+                //     sameSite: 'strict',
+                //     httpOnly: true
+                // })
+                // .cookie('authSession', true, { 
+                //     expires: new Date(new Date().getTime() + 30 * 1000), 
+                //     sameSite: 'strict' 
+                // })
+                // .cookie('refreshTokenID', true, {
+                //     expires: new Date(new Date().getTime() + 31557600000),
+                //     sameSite: 'strict'
+                // })
+                .json(response);
+            }
+          });
+      } else {
+        var response = {
           status: 201,
-          message: 'Operation was not successful',
+          message: 'Dealer not exist',
+        };
+        return res.status(201).send(response);
+      }
+
+    } else {
+      var response = {
+        status: 201,
+        message: 'Phone No can not be empty value!',
       };
       return res.status(201).send(response);
+    }
+  } catch (error) {
+    console.log("error", error);
+    response = {
+      status: 201,
+      message: 'Operation was not successful',
+    };
+    return res.status(201).send(response);
   }
 }
 
@@ -157,7 +158,7 @@ async function sendOtp(req, res) {
 //       user.save()
 //         .then((data) => {
 //           return res.status(200)
-           
+
 //             .json({ status: 200, msg: 'Dealer verified successfully', dealer_id:user._id, token: token, isVerify: user.isVerify});
 //         })
 //         .catch(error => {
@@ -186,24 +187,24 @@ async function usersignin(req, res) {
       return res.status(200).json({ success: false, message: 'Phone number is required!' });
     }
 
-    let dealer = await Dealer.findOne({ phone, isBlock: false });
+    let dealer = await Vendor.findOne({ phone, isBlock: false });
 
     if (!dealer) {
       const otpData = await otpAuth.otp(phone);
-      
+
       dealer = new Dealer({
         phone,
         otp: otpData.otp,
         ftoken,
         device_token,
-        isVerify: false, // Dealers need admin verification
+        isVerify: false,
       });
       await dealer.save();
 
       return res.status(201).json({
         success: true,
         message: 'OTP sent to your mobile. Awaiting admin verification.',
-        dealer: { phone: dealer.phone, isVerify: dealer.isVerify,isDoc: dealer.isDoc },
+        dealer: { phone: dealer.phone, isVerify: dealer.isVerify, isDoc: dealer.isDoc },
       });
     }
 
@@ -220,7 +221,7 @@ async function usersignin(req, res) {
     res.status(200).json({
       success: true,
       message: 'OTP sent to your mobile.',
-      dealer: { phone: dealer.phone, isVerify: dealer.isVerify,isDoc: dealer.isDoc },
+      dealer: { phone: dealer.phone, isVerify: dealer.isVerify, isDoc: dealer.isDoc },
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -249,11 +250,11 @@ async function verifyOTP(req, res) {
         token: token,
         isVerify: user.isVerify,
         isDoc: user.isDoc,
-        isShopDetailsAdded:user.isShopDetailsAdded,
-        isProfile:user.isProfile,
-        isDocumentsAdded:user.isDocumentsAdded,
-        isDoc:user.isDoc
-     
+        isShopDetailsAdded: user.isShopDetailsAdded,
+        isProfile: user.isProfile,
+        isDocumentsAdded: user.isDocumentsAdded,
+        isDoc: user.isDoc
+
       });
     } else {
       return res.status(200).json({ verification: false, message: 'Incorrect OTP' });
@@ -265,9 +266,9 @@ async function verifyOTP(req, res) {
 
 
 
-async function changePassword (req,res){
-  try{
-    const {phone, new_password, confirm_password} = req.body;
+async function changePassword(req, res) {
+  try {
+    const { phone, new_password, confirm_password } = req.body;
 
     const dealers = await Dealer.findOne({ phone }).select("+password");
 
@@ -279,7 +280,7 @@ async function changePassword (req,res){
       return res.status(201).send(response);
     }
 
-    if(validation.comparePassword(dealers.password, new_password)){
+    if (validation.comparePassword(dealers.password, new_password)) {
       var response = {
         status: 201,
         message: 'New Password can not Same as Old Password',
@@ -287,40 +288,40 @@ async function changePassword (req,res){
       return res.status(201).send(response);
     }
 
-    if(new_password != confirm_password){
+    if (new_password != confirm_password) {
       var response = {
         status: 201,
         message: 'Password Not Matched',
       };
       return res.status(201).send(response);
     }
-    
+
     const datas = {
-      password : validation.hashPassword(new_password)
+      password: validation.hashPassword(new_password)
     }
 
     var where = { _id: dealers._id };
 
     Dealer.findByIdAndUpdate(where,
-        { $set: datas },
-        { new: true },
-        async function (err, docs) {
-            if (err) {
-                var response = {
-                    status: 201,
-                    message: err,
-                };
-                return res.status(201).send(response);
-            }
-            else {
-                var response = {
-                    status: 200,
-                    message: 'Dealer Password Updated Successfully',
-                    // data: docs,
-                };
-                return res.status(200).send(response);
-            }
-    });
+      { $set: datas },
+      { new: true },
+      async function (err, docs) {
+        if (err) {
+          var response = {
+            status: 201,
+            message: err,
+          };
+          return res.status(201).send(response);
+        }
+        else {
+          var response = {
+            status: 200,
+            message: 'Dealer Password Updated Successfully',
+            // data: docs,
+          };
+          return res.status(200).send(response);
+        }
+      });
 
   } catch (error) {
     console.log("error", error);
@@ -361,23 +362,23 @@ async function logout(req, res) {
 
 async function resendOtp(req, res) {
   try {
-      const { phone } = req.body;
-      if (!phone) {
-          return res.status(400).json({ success: false, message: "Phone number is required" });
-      }
+    const { phone } = req.body;
+    if (!phone) {
+      return res.status(400).json({ success: false, message: "Phone number is required" });
+    }
 
-      const user = await Dealer.findOne({ phone });
-      if (!user) {
-          return res.status(404).json({ success: false, message: "User not found" });
-      }
+    const user = await Dealer.findOne({ phone });
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
 
-      const otpData = await otpAuth.otp(phone);
-      user.otp = otpData.otp;
-      await user.save();
+    const otpData = await otpAuth.otp(phone);
+    user.otp = otpData.otp;
+    await user.save();
 
-      res.status(200).json({ success: true, message: "OTP sent successfully" });
+    res.status(200).json({ success: true, message: "OTP sent successfully" });
   } catch (error) {
-      res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
 }
 
