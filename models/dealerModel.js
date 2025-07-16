@@ -2,7 +2,7 @@
 const mongoose = require("mongoose");
 
 const dealerModel = new mongoose.Schema({
-  shopName: { type: String, required: true },
+  shopName: { type: String, required: false },
   email: {
     type: String,
     required: true,
@@ -16,7 +16,7 @@ const dealerModel = new mongoose.Schema({
     }
   },
   phone: { type: String, required: true },
-  password: { type: String, required: true },
+  password: { type: String, required: false },
   aadharCardNo: {
     type: String,
     required: true,
@@ -30,7 +30,7 @@ const dealerModel = new mongoose.Schema({
 
   panCardNo: {
     type: String,
-    required: true,
+    required: false,
     uppercase: true,
     validate: {
       validator: function (v) {
@@ -39,48 +39,48 @@ const dealerModel = new mongoose.Schema({
       message: props => `${props.value} is not a valid PAN number!`
     }
   },
-  shopPincode: { type: String, required: true },
-  fullAddress: { type: String, required: true },
-  city: { type: String, required: true },
-  state: { type: String, required: true },
-  latitude: { type: Number, required: true },
-  longitude: { type: Number, required: true },
+  shopPincode: { type: String, required: false },
+  fullAddress: { type: String, required: false },
+  city: { type: String, required: false },
+  state: { type: String, required: false },
+  latitude: { type: Number, required: false },
+  longitude: { type: Number, required: false },
 
-  ownerName: { type: String, required: true },
+  ownerName: { type: String, required: false },
 
   shopImages: [{ type: String }],
 
-  personalEmail: { type: String, required: true },
-  personalPhone: { type: String, required: true },
-  alternatePhone: { type: String, required: true },
+  personalEmail: { type: String, required: false },
+  personalPhone: { type: String, required: false },
+  alternatePhone: { type: String, required: false },
 
   permanentAddress: {
-    address: { type: String, required: true },
-    state: { type: String, required: true },
-    city: { type: String, required: true }
+    address: { type: String, required: false },
+    state: { type: String, required: false },
+    city: { type: String, required: false }
   },
   presentAddress: {
-    address: { type: String, required: true },
-    state: { type: String, required: true },
-    city: { type: String, required: true }
+    address: { type: String, required: false },
+    state: { type: String, required: false },
+    city: { type: String, required: false }
   },
 
   documents: {
-    panCardFront: { type: String, required: true },
-    aadharFront: { type: String, required: true },
-    aadharBack: { type: String, required: true },
+    panCardFront: { type: String, required: false },
+    aadharFront: { type: String, required: false },
+    aadharBack: { type: String, required: false },
     // passbookImage: { type: String, required: true }
   },
 
   bankDetails: {
-    accountHolderName: { type: String, required: true },
-    ifscCode: { type: String, required: true },
-    bankName: { type: String, required: true },
-    accountNumber: { type: String, required: true }
+    accountHolderName: { type: String, required: false },
+    ifscCode: { type: String, required: false },
+    bankName: { type: String, required: false },
+    accountNumber: { type: String, required: false }
   },
   commission: {
     type: Number,
-    required: true,
+    required: false,
     min: 0,
     max: 100,
     set: v => parseFloat(v)
@@ -92,9 +92,9 @@ const dealerModel = new mongoose.Schema({
     max: 18
   },
   isVerify: { type: Boolean, default: false },
-  isProfile: { type: Boolean, default: true },
+  isProfile: { type: Boolean, default: false },
   isDoc: { type: Boolean, default: false },
-  isActive: { type: Boolean, default: true },
+  isActive: { type: Boolean, default: false },
 }, { timestamps: true });
 
 module.exports = mongoose.model("Vendor", dealerModel);
