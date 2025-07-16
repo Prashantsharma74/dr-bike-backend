@@ -256,16 +256,14 @@ async function usersignin(req, res) {
         isDoc: false
       });
     } else {
-      // Update existing dealer's tokens and OTP
       dealer.otp = otp;
       dealer.ftoken = ftoken;
       dealer.device_token = device_token;
-      dealer.isActive = true; // Ensure active on login
+      dealer.isActive = true;
     }
 
     await dealer.save();
 
-    // Return consistent response format for both new and existing users
     res.status(dealer.isNew ? 201 : 200).json({
       success: true,
       message: 'OTP sent to your mobile.',
@@ -287,35 +285,91 @@ async function usersignin(req, res) {
   }
 }
 
+// async function verifyOTP(req, res) {
+//   try {
+//     const { otp = 9999, phone } = req.body;
+//     const user = await Dealer.findOne({ phone });
+
+//     if (!user) {
+//       return res.status(200).json({ success: false, message: 'Mobile number not registered.' });
+//     }
+
+//     if (otp == 9999) {
+//       const token = validation.generateUserToken(user._id, 'logged', 2);
+//       return res.status(200).json({
+//         status: 200,
+//         message: 'Dealer verified successfully.',
+//         dealer_id: user._id,
+//         token: token,
+//         isVerify: user.isVerify,
+//         isDoc: user.isDoc,
+//         isShopDetailsAdded: user.isShopDetailsAdded,
+//         isProfile: user.isProfile,
+//         isDocumentsAdded: user.isDocumentsAdded,
+//         isDoc: user.isDoc
+
+//       });
+//     } else {
+//       return res.status(200).json({ verification: false, message: 'Incorrect OTP' });
+//     }
+//   } catch (error) {
+//     res.status(500).json({ status: 500, message: 'Operation was not successful' });
+//   }
+// }
+
 async function verifyOTP(req, res) {
   try {
-    const { otp = 9999, phone } = req.body;
-    const user = await Dealer.findOne({ phone });
-
-    if (!user) {
-      return res.status(200).json({ success: false, message: 'Mobile number not registered.' });
-    }
-
-    if (otp == 9999) {
-      const token = validation.generateUserToken(user._id, 'logged', 2);
-      return res.status(200).json({
-        status: 200,
-        message: 'Dealer verified successfully.',
-        dealer_id: user._id,
-        token: token,
-        isVerify: user.isVerify,
-        isDoc: user.isDoc,
-        isShopDetailsAdded: user.isShopDetailsAdded,
-        isProfile: user.isProfile,
-        isDocumentsAdded: user.isDocumentsAdded,
-        isDoc: user.isDoc
-
+    const { otp, phone } = req.body;
+    
+    // Basic validation
+    if (!phone) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Phone number is required' 
       });
-    } else {
-      return res.status(200).json({ verification: false, message: 'Incorrect OTP' });
     }
+
+    const dealer = await Dealer.findOne({ phone });
+    
+    if (!dealer) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Mobile number not registered' 
+      });
+    }
+
+    const isDevBypass = process.env.NODE_ENV !== 'production' && otp == 9999;
+    
+    if (isDevBypass) {
+      const token = validation.generateUserToken(dealer._id, 'dealer', '2h');
+      
+      return res.status(200).json({
+        success: true,
+        message: 'Dealer verified successfully',
+        data: {
+          dealer_id: dealer._id,
+          token,
+          status: {
+            isVerify: dealer.isVerify,
+            isDoc: dealer.isDoc,
+            isProfile: dealer.isProfile
+          }
+        }
+      });
+    }
+
+    return res.status(401).json({ 
+      success: false, 
+      message: 'Incorrect OTP' 
+    });
+
   } catch (error) {
-    res.status(500).json({ status: 500, message: 'Operation was not successful' });
+    console.error('OTP verification error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Internal server error',
+      ...(process.env.NODE_ENV === 'development' && { error: error.message })
+    });
   }
 }
 
