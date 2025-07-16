@@ -317,56 +317,107 @@ async function usersignin(req, res) {
 //   }
 // }
 
+// async function verifyOTP(req, res) {
+//   try {
+//     const { otp, phone } = req.body;
+
+//     if (!phone) {
+//       return res.status(400).json({ 
+//         success: false, 
+//         message: 'Phone number is required' 
+//       });
+//     }
+
+//     const dealer = await Dealer.findOne({ phone });
+
+//     if (!dealer) {
+//       return res.status(404).json({ 
+//         success: false, 
+//         message: 'Mobile number not registered' 
+//       });
+//     }
+
+//     const isDevBypass = process.env.NODE_ENV !== 'production' && otp == 9999;
+
+//     if (isDevBypass) {
+//       const token = validation.generateUserToken(dealer._id, 'dealer', '2h');
+
+//       return res.status(200).json({
+//         success: true,
+//         message: 'Dealer verified successfully',
+//         data: {
+//           dealer_id: dealer._id,
+//           token,
+//           status: {
+//             isVerify: dealer.isVerify,
+//             isDoc: dealer.isDoc,
+//             isProfile: dealer.isProfile
+//           }
+//         }
+//       });
+//     }
+
+//     return res.status(401).json({ 
+//       success: false, 
+//       message: 'Incorrect OTP' 
+//     });
+
+//   } catch (error) {
+//     console.error('OTP verification error:', error);
+//     res.status(500).json({ 
+//       success: false, 
+//       message: 'Internal server error',
+//       ...(process.env.NODE_ENV === 'development' && { error: error.message })
+//     });
+//   }
+// }
+
 async function verifyOTP(req, res) {
   try {
     const { otp, phone } = req.body;
-    
-    // Basic validation
+
     if (!phone) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Phone number is required' 
+      return res.status(400).json({
+        success: false,
+        message: 'Phone number is required'
       });
     }
 
-    const dealer = await Dealer.findOne({ phone });
-    
-    if (!dealer) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Mobile number not registered' 
-      });
-    }
+    const dealer = await Vendor.findOne({ phone });
 
+    // Development bypass - only allow in non-production environments
     const isDevBypass = process.env.NODE_ENV !== 'production' && otp == 9999;
-    
-    if (isDevBypass) {
-      const token = validation.generateUserToken(dealer._id, 'dealer', '2h');
-      
-      return res.status(200).json({
-        success: true,
-        message: 'Dealer verified successfully',
-        data: {
-          dealer_id: dealer._id,
-          token,
-          status: {
-            isVerify: dealer.isVerify,
-            isDoc: dealer.isDoc,
-            isProfile: dealer.isProfile
-          }
-        }
+
+    if (!isDevBypass && (!dealer || dealer.otp !== otp)) {
+      return res.status(401).json({
+        success: false,
+        message: 'Incorrect OTP'
       });
     }
 
-    return res.status(401).json({ 
-      success: false, 
-      message: 'Incorrect OTP' 
+    const token = validation.generateUserToken(dealer._id, 'dealer', '2h');
+
+    const isNewUser = !dealer.isProfile && !dealer.isDoc && !dealer.isVerify;
+
+    return res.status(200).json({
+      success: true,
+      message: isNewUser ? 'Signup successful' : 'Login successful',
+      data: {
+        dealer_id: dealer._id,
+        token,
+        isNewUser,
+        status: {
+          isVerify: dealer.isVerify,
+          isDoc: dealer.isDoc,
+          isProfile: dealer.isProfile
+        }
+      }
     });
 
   } catch (error) {
     console.error('OTP verification error:', error);
-    res.status(500).json({ 
-      success: false, 
+    res.status(500).json({
+      success: false,
       message: 'Internal server error',
       ...(process.env.NODE_ENV === 'development' && { error: error.message })
     });
