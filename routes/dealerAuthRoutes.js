@@ -22,7 +22,6 @@ const upload = multer({ storage });
 /* POST users listing. */
 router.post('/signin', usersignin);
 router.post('/sendotp', sendOtp);
-// router.post('/sendotp',verifyUser, sendOTP);
 router.post('/verifyotp', verifyOTP);
 router.post('/logout', logout);
 router.post('/changepassword', changePassword);

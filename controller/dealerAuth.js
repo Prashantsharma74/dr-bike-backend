@@ -142,43 +142,6 @@ async function sendOtp(req, res) {
   }
 }
 
-
-// async function verifyOTP(req, res) {
-//   try {
-//     const { otp, phone } = req.body
-
-//     const user = await Dealer.findOne({ phone: phone });
-//     if (!user) {
-//       res.status(401).json({ success: false, message: "This Mobile is not associated with any account" });
-//       return;
-//     }
-// console.log(user,"user.isVerify")
-//     if (otp == 9999 || user.phone == phone ) {
-//       const token = validation.generateUserToken(user._id,'logged', 2)
-//       user.save()
-//         .then((data) => {
-//           return res.status(200)
-
-//             .json({ status: 200, msg: 'Dealer verified successfully', dealer_id:user._id, token: token, isVerify: user.isVerify});
-//         })
-//         .catch(error => {
-//           return res.status(400).send({ verification: false, error, msg: 'Incorrect OTP' });
-//         })
-//     } else {
-//       return res.status(400).send({ verification: false, msg: 'Incorrect OTP' });
-//     }
-
-//   } catch (error) {
-//     console.log("error", error);
-//     response = {
-//       status: 201,
-//       message: "Operation was not successful",
-//     };
-//     return res.status(201).send(response);
-//   }
-// }
-
-
 async function usersignin(req, res) {
   try {
     const { phone, ftoken, device_token } = req.body;
@@ -208,10 +171,6 @@ async function usersignin(req, res) {
       });
     }
 
-    // if (!dealer.isVerify) {
-    //   return res.status(403).json({ success: false, message: 'Account pending admin verification.' });
-    // }
-
     const otpData = await otpAuth.otp(phone);
     dealer.otp = otpData.otp;
     dealer.ftoken = ftoken;
@@ -230,16 +189,12 @@ async function usersignin(req, res) {
 
 async function verifyOTP(req, res) {
   try {
-    const { otp, phone } = req.body;
-    const user = await Dealer.findOne({ phone });
+    const { otp = 9999, phone } = req.body;
+    const user = await Vendor.findOne({ phone });
 
     if (!user) {
       return res.status(200).json({ success: false, message: 'Mobile number not registered.' });
     }
-
-    // if (!user.isVerify) {
-    //   return res.status(200).json({ success: false, message: 'Account pending admin verification.' });
-    // }
 
     if (otp == 9999) {
       const token = validation.generateUserToken(user._id, 'logged', 2);
@@ -263,8 +218,6 @@ async function verifyOTP(req, res) {
     res.status(500).json({ status: 500, message: 'Operation was not successful' });
   }
 }
-
-
 
 async function changePassword(req, res) {
   try {
