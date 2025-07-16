@@ -372,10 +372,314 @@ async function usersignin(req, res) {
 //   }
 // }
 
+// async function verifyOTP(req, res) {
+//   try {
+//     const { otp, phone } = req.body;
+
+//     if (!phone) {
+//       return res.status(400).json({
+//         success: false,
+//         message: 'Phone number is required'
+//       });
+//     }
+
+//     const dealer = await Vendor.findOne({ phone });
+
+//     // Development bypass - only allow in non-production environments
+//     const isDevBypass = process.env.NODE_ENV !== 'production' && otp == 9999;
+
+//     if (!isDevBypass && (!dealer || dealer.otp !== otp)) {
+//       return res.status(401).json({
+//         success: false,
+//         message: 'Incorrect OTP'
+//       });
+//     }
+
+//     const token = validation.generateUserToken(dealer._id, 'dealer', '2h');
+
+//     const isNewUser = !dealer.isProfile && !dealer.isDoc && !dealer.isVerify;
+
+//     return res.status(200).json({
+//       success: true,
+//       message: isNewUser ? 'Signup successful' : 'Login successful',
+//       data: {
+//         dealer_id: dealer._id,
+//         token,
+//         isNewUser,
+//         status: {
+//           isVerify: dealer.isVerify,
+//           isDoc: dealer.isDoc,
+//           isProfile: dealer.isProfile
+//         }
+//       }
+//     });
+
+//   } catch (error) {
+//     console.error('OTP verification error:', error);
+//     res.status(500).json({
+//       success: false,
+//       message: 'Internal server error',
+//       ...(process.env.NODE_ENV === 'development' && { error: error.message })
+//     });
+//   }
+// }
+
+// async function verifyOTP(req, res) {
+//   try {
+//     const { otp, phone } = req.body;
+
+//     if (!phone) {
+//       return res.status(400).json({
+//         success: false,
+//         message: 'Phone number is required'
+//       });
+//     }
+
+//     // Find dealer by phone
+//     const dealer = await Vendor.findOne({ phone });
+
+//     if (!dealer) {
+//       return res.status(404).json({
+//         success: false,
+//         message: 'Mobile number not registered'
+//       });
+//     }
+
+//     // OTP validation (hardcoded 9999 for all environments)
+//     if (otp !== '9999') {
+//       return res.status(401).json({
+//         success: false,
+//         message: 'Incorrect OTP'
+//       });
+//     }
+
+//     // Generate authentication token
+//     const token = validation.generateUserToken(dealer._id, 'dealer', '2h');
+
+//     // Determine if user is new (hasn't completed profile)
+//     const isNewUser = !dealer.isProfile || !dealer.isDoc || !dealer.isVerify;
+
+//     return res.status(200).json({
+//       success: true,
+//       message: isNewUser ? 'Signup successful' : 'Login successful',
+//       data: {
+//         dealer_id: dealer._id,
+//         token,
+//         isNewUser,
+//         status: {
+//           isVerify: dealer.isVerify,
+//           isDoc: dealer.isDoc,
+//           isProfile: dealer.isProfile
+//         }
+//       }
+//     });
+
+//   } catch (error) {
+//     console.error('OTP verification error:', error);
+//     res.status(500).json({
+//       success: false,
+//       message: 'Internal server error',
+//       ...(process.env.NODE_ENV === 'development' && { error: error.message })
+//     });
+//   }
+// }
+
+// async function verifyOTP(req, res) {
+//   try {
+//     const { otp, phone } = req.body;
+
+//     if (!phone) {
+//       return res.status(400).json({
+//         success: false,
+//         message: 'Phone number is required'
+//       });
+//     }
+
+//     // Find dealer by phone only
+//     const dealer = await Vendor.findOne({ phone });
+
+//     // OTP validation (hardcoded 9999)
+//     if (otp !== '9999') {
+//       return res.status(401).json({
+//         success: false,
+//         message: 'Incorrect OTP'
+//       });
+//     }
+
+//     // If dealer doesn't exist, create new one without email
+//     if (!dealer) {
+//       const newDealer = new Vendor({
+//         phone,
+//         email: "",
+//         isVerify: false,
+//         isProfile: false,
+//         isDoc: false,
+//         isActive: true,
+//       });
+
+//       await newDealer.save();
+
+//       const token = validation.generateUserToken(newDealer._id, 'dealer', '2h');
+
+//       return res.status(201).json({
+//         success: true,
+//         message: 'New user created successfully',
+//         data: {
+//           dealer_id: newDealer._id,
+//           token,
+//           isNewUser: true,
+//           status: {
+//             isVerify: newDealer.isVerify,
+//             isDoc: newDealer.isDoc,
+//             isProfile: newDealer.isProfile
+//           }
+//         }
+//       });
+//     }
+
+//     // For existing dealer
+//     const token = validation.generateUserToken(dealer._id, 'dealer', '2h');
+//     const isNewUser = !dealer.isProfile || !dealer.isDoc || !dealer.isVerify;
+
+//     return res.status(200).json({
+//       success: true,
+//       message: isNewUser ? 'Signup in progress' : 'Login successful',
+//       data: {
+//         dealer_id: dealer._id,
+//         token,
+//         isNewUser,
+//         status: {
+//           isVerify: dealer.isVerify,
+//           isDoc: dealer.isDoc,
+//           isProfile: dealer.isProfile
+//         }
+//       }
+//     });
+
+//   } catch (error) {
+//     console.error('OTP verification error:', error);
+
+//     // Handle duplicate email error specifically
+//     if (error.code === 11000 && error.keyPattern.email) {
+//       return res.status(409).json({
+//         success: false,
+//         message: 'Email conflict occurred. Please contact support.'
+//       });
+//     }
+
+//     res.status(500).json({
+//       success: false,
+//       message: 'Internal server error',
+//       ...(process.env.NODE_ENV === 'development' && { error: error.message })
+//     });
+//   }
+// }
+
+// async function verifyOTP(req, res) {
+//   try {
+//     const { otp, phone } = req.body;
+
+//     // Validate required fields
+//     if (!phone) {
+//       return res.status(400).json({ 
+//         success: false, 
+//         message: 'Phone number is required' 
+//       });
+//     }
+
+//     // Find dealer by phone only
+//     const dealer = await Vendor.findOne({ phone });
+
+//     // OTP validation (hardcoded 9999)
+//     if (otp !== '9999') {
+//       return res.status(401).json({ 
+//         success: false, 
+//         message: 'Incorrect OTP' 
+//       });
+//     }
+
+//     // If dealer doesn't exist, create new one with empty email
+//     if (!dealer) {
+//       const newDealer = new Vendor({
+//         phone,
+//         email: '', // Explicitly set empty string
+//         isVerify: false,
+//         isProfile: false,
+//         isDoc: false,
+//         isActive: true
+//       });
+
+//       await newDealer.save();
+
+//       const token = validation.generateUserToken(newDealer._id, 'dealer', '2h');
+
+//       return res.status(201).json({
+//         success: true,
+//         message: 'New user created successfully',
+//         data: {
+//           dealer_id: newDealer._id,
+//           token,
+//           isNewUser: true,
+//           status: {
+//             isVerify: newDealer.isVerify,
+//             isDoc: newDealer.isDoc,
+//             isProfile: newDealer.isProfile
+//           }
+//         }
+//       });
+//     }
+
+//     // For existing dealer
+//     const token = validation.generateUserToken(dealer._id, 'dealer', '2h');
+//     const isNewUser = !dealer.isProfile || !dealer.isDoc || !dealer.isVerify;
+
+//     return res.status(200).json({
+//       success: true,
+//       message: isNewUser ? 'Signup in progress' : 'Login successful',
+//       data: {
+//         dealer_id: dealer._id,
+//         token,
+//         isNewUser,
+//         status: {
+//           isVerify: dealer.isVerify,
+//           isDoc: dealer.isDoc,
+//           isProfile: dealer.isProfile
+//         }
+//       }
+//     });
+
+//   } catch (error) {
+//     console.error('OTP verification error:', error);
+
+//     // Handle specific MongoDB errors
+//     if (error.code === 11000) {
+//       // Check if it's a phone conflict
+//       if (error.keyPattern.phone) {
+//         return res.status(409).json({
+//           success: false,
+//           message: 'Phone number already registered'
+//         });
+//       }
+//       // Handle other duplicate key errors
+//       return res.status(409).json({
+//         success: false,
+//         message: 'Duplicate key error occurred'
+//       });
+//     }
+
+//     res.status(500).json({
+//       success: false,
+//       message: 'Internal server error',
+//       ...(process.env.NODE_ENV === 'development' && { error: error.message })
+//     });
+//   }
+// }
+
 async function verifyOTP(req, res) {
   try {
     const { otp, phone } = req.body;
 
+    // Validate required fields
     if (!phone) {
       return res.status(400).json({
         success: false,
@@ -383,25 +687,55 @@ async function verifyOTP(req, res) {
       });
     }
 
+    // Find dealer by phone only
     const dealer = await Vendor.findOne({ phone });
 
-    // Development bypass - only allow in non-production environments
-    const isDevBypass = process.env.NODE_ENV !== 'production' && otp == 9999;
-
-    if (!isDevBypass && (!dealer || dealer.otp !== otp)) {
+    // OTP validation (hardcoded 9999)
+    if (otp !== '9999') {
       return res.status(401).json({
         success: false,
         message: 'Incorrect OTP'
       });
     }
 
-    const token = validation.generateUserToken(dealer._id, 'dealer', '2h');
+    // If dealer doesn't exist, create new one
+    if (!dealer) {
+      const newDealer = new Vendor({
+        phone,
+email: `user_${Date.now()}_${Math.floor(Math.random() * 10000)}@autogen.dr`,
+        isVerify: false,
+        isProfile: false,
+        isDoc: false,
+        isActive: true,
+      });
 
-    const isNewUser = !dealer.isProfile && !dealer.isDoc && !dealer.isVerify;
+      await newDealer.save();
+
+      const token = validation.generateUserToken(newDealer._id, 'dealer', '2h');
+
+      return res.status(201).json({
+        success: true,
+        message: 'New user created successfully',
+        data: {
+          dealer_id: newDealer._id,
+          token,
+          isNewUser: true,
+          status: {
+            isVerify: newDealer.isVerify,
+            isDoc: newDealer.isDoc,
+            isProfile: newDealer.isProfile
+          }
+        }
+      });
+    }
+
+    // For existing dealer
+    const token = validation.generateUserToken(dealer._id, 'dealer', '2h');
+    const isNewUser = !dealer.isProfile || !dealer.isDoc || !dealer.isVerify;
 
     return res.status(200).json({
       success: true,
-      message: isNewUser ? 'Signup successful' : 'Login successful',
+      message: isNewUser ? 'Signup in progress' : 'Login successful',
       data: {
         dealer_id: dealer._id,
         token,
@@ -416,6 +750,21 @@ async function verifyOTP(req, res) {
 
   } catch (error) {
     console.error('OTP verification error:', error);
+
+    // Handle specific MongoDB errors
+    if (error.code === 11000) {
+      if (error.keyPattern.phone) {
+        return res.status(409).json({
+          success: false,
+          message: 'Phone number already registered'
+        });
+      }
+      return res.status(409).json({
+        success: false,
+        message: 'Email already exists'
+      });
+    }
+
     res.status(500).json({
       success: false,
       message: 'Internal server error',
