@@ -5,7 +5,7 @@ const dealerModel = new mongoose.Schema({
   shopName: { type: String, required: false },
   email: {
     type: String,
-    required: true,
+    required: false,
     unique: true,
     index: true,
     validate: {
@@ -19,7 +19,7 @@ const dealerModel = new mongoose.Schema({
   password: { type: String, required: false },
   aadharCardNo: {
     type: String,
-    required: true,
+    required: false,
     validate: {
       validator: function (v) {
         return /^\d{12}$/.test(v);

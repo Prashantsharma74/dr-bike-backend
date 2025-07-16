@@ -179,52 +179,111 @@ async function sendOtp(req, res) {
 // }
 
 
+// async function usersignin(req, res) {
+//   try {
+//     const { phone, ftoken, device_token } = req.body;
+
+//     if (!phone) {
+//       return res.status(200).json({ success: false, message: 'Phone number is required!' });
+//     }
+
+//     let dealer = await Vendor.findOne({ phone, isBlock: false });
+
+//     if (!dealer) {
+//       const otpData = await otpAuth.otp(phone);
+
+//       dealer = new Dealer({
+//         phone,
+//         otp: otpData.otp,
+//         ftoken,
+//         device_token,
+//         isVerify: false,
+//       });
+//       await dealer.save();
+
+//       return res.status(201).json({
+//         success: true,
+//         message: 'OTP sent to your mobile. Awaiting admin verification.',
+//         dealer: { phone: dealer.phone, isVerify: dealer.isVerify, isDoc: dealer.isDoc },
+//       });
+//     }
+
+//     const otpData = await otpAuth.otp(phone);
+//     dealer.otp = otpData.otp;
+//     dealer.ftoken = ftoken;
+//     dealer.device_token = device_token;
+//     await dealer.save();
+
+//     res.status(200).json({
+//       success: true,
+//       message: 'OTP sent to your mobile.',
+//       dealer: { phone: dealer.phone, isVerify: dealer.isVerify, isDoc: dealer.isDoc },
+//     });
+//   } catch (error) {
+//     res.status(500).json({ success: false, message: error.message });
+//   }
+// }
+
 async function usersignin(req, res) {
   try {
     const { phone, ftoken, device_token } = req.body;
 
+    // Validate required fields
     if (!phone) {
-      return res.status(200).json({ success: false, message: 'Phone number is required!' });
+      return res.status(400).json({
+        success: false,
+        message: 'Phone number is required!'
+      });
     }
 
-    let dealer = await Vendor.findOne({ phone, isBlock: false });
+    // Find existing dealer or create new one
+    let dealer = await Vendor.findOne({ phone, isActive: true, isBlock: false });
+
+    // Generate OTP (in real implementation, this would send via SMS)
+    const otpData = await otpAuth.otp(phone);
+    const otp = otpData.otp;
 
     if (!dealer) {
-      const otpData = await otpAuth.otp(phone);
-
-      dealer = new Dealer({
+      // Create minimal dealer document for new users
+      dealer = new Vendor({
         phone,
-        otp: otpData.otp,
+        otp,
         ftoken,
         device_token,
+        isActive: true, // Activate on first login
         isVerify: false,
+        isProfile: false,
+        isDoc: false
       });
-      await dealer.save();
-
-      return res.status(201).json({
-        success: true,
-        message: 'OTP sent to your mobile. Awaiting admin verification.',
-        dealer: { phone: dealer.phone, isVerify: dealer.isVerify, isDoc: dealer.isDoc },
-      });
+    } else {
+      // Update existing dealer's tokens and OTP
+      dealer.otp = otp;
+      dealer.ftoken = ftoken;
+      dealer.device_token = device_token;
+      dealer.isActive = true; // Ensure active on login
     }
 
-    // if (!dealer.isVerify) {
-    //   return res.status(403).json({ success: false, message: 'Account pending admin verification.' });
-    // }
-
-    const otpData = await otpAuth.otp(phone);
-    dealer.otp = otpData.otp;
-    dealer.ftoken = ftoken;
-    dealer.device_token = device_token;
     await dealer.save();
 
-    res.status(200).json({
+    // Return consistent response format for both new and existing users
+    res.status(dealer.isNew ? 201 : 200).json({
       success: true,
       message: 'OTP sent to your mobile.',
-      dealer: { phone: dealer.phone, isVerify: dealer.isVerify, isDoc: dealer.isDoc },
+      data: {
+        phone: dealer.phone,
+        isVerify: dealer.isVerify,
+        isDoc: dealer.isDoc,
+        isProfile: dealer.isProfile
+      }
     });
+
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error('Login error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 }
 
