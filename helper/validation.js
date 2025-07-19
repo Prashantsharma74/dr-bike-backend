@@ -137,7 +137,9 @@ const generateUserToken = (id,type, user_type) => {
     type,
     user_type,
   },
-    'sk_digi',{ expiresIn: '60000d' });
+    process.env.JWT_SECRET,
+    { expiresIn: '60000d' }
+  );
   return token;
 };
 

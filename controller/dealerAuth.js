@@ -327,13 +327,41 @@ async function resendOtp(req, res) {
   }
 }
 
-// async function getProgress (req, res) {
+// async function getProgress(req, res) {
 //   try {
-//     const vendor = await Vendor.findById(req.user._id)
+//     const token = req.headers.authorization?.replace('Bearer ', '');
+    
+//     if (!token) {
+//       return res.status(401).json({
+//         success: false,
+//         message: "Authorization token required"
+//       });
+//     }
+
+//     // 2. Verify token and decode user ID
+//     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+//     if (!decoded._id) {
+//       return res.status(401).json({
+//         success: false,
+//         message: "Invalid token format"
+//       });
+//     }
+
+//     // 3. Find vendor using the decoded ID
+//     const vendor = await Vendor.findById(decoded._id)
 //       .select("formProgress completionTimestamps");
     
+//     if (!vendor) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "Vendor not found"
+//       });
+//     }
+
+//     // 4. Determine next step
 //     const nextStep = determineNextStep(vendor.formProgress.completedSteps);
     
+//     // 5. Return progress data
 //     res.status(200).json({
 //       success: true,
 //       currentStep: vendor.formProgress.currentStep,
@@ -341,36 +369,63 @@ async function resendOtp(req, res) {
 //       completedSteps: Object.fromEntries(vendor.formProgress.completedSteps),
 //       timestamps: vendor.completionTimestamps
 //     });
+
 //   } catch (error) {
+//     // Handle specific JWT errors
+//     if (error.name === 'JsonWebTokenError') {
+//       return res.status(401).json({
+//         success: false,
+//         message: "Invalid token",
+//         error: error.message
+//       });
+//     }
+    
+//     if (error.name === 'TokenExpiredError') {
+//       return res.status(401).json({
+//         success: false,
+//         message: "Token expired"
+//       });
+//     }
+
+//     // Generic error handling
 //     res.status(500).json({ 
 //       success: false, 
 //       message: "Error fetching progress",
 //       error: error.message 
 //     });
 //   }
-// };
+// }
 
 async function getProgress(req, res) {
   try {
-    const token = req.headers.authorization?.replace('Bearer ', '');
+    // 1. Extract and validate token format
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({
+        success: false,
+        message: "Authorization header with Bearer token required"
+      });
+    }
+
+    const token = authHeader.split(' ')[1];
     
-    if (!token) {
+    // 2. Verify token with same secret used in generation
+    const decoded = jwt.verify(token, process.env.JWT_SECRET, { 
+      algorithms: ['HS256'],
+      ignoreExpiration: false
+    });
+
+    console.log("Decoded Token:", decoded);
+
+    // 3. Check for required fields in payload
+    if (!decoded._id) { 
       return res.status(401).json({
         success: false,
-        message: "Authorization token required"
+        message: "Token missing required user_id field"
       });
     }
 
-    // 2. Verify token and decode user ID
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    if (!decoded._id) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid token format"
-      });
-    }
-
-    // 3. Find vendor using the decoded ID
+    // 4. Find vendor (now using user_id instead of _id)
     const vendor = await Vendor.findById(decoded._id)
       .select("formProgress completionTimestamps");
     
@@ -381,25 +436,22 @@ async function getProgress(req, res) {
       });
     }
 
-    // 4. Determine next step
-    const nextStep = determineNextStep(vendor.formProgress.completedSteps);
-    
     // 5. Return progress data
     res.status(200).json({
       success: true,
       currentStep: vendor.formProgress.currentStep,
-      nextStep,
+      nextStep: determineNextStep(vendor.formProgress.completedSteps),
       completedSteps: Object.fromEntries(vendor.formProgress.completedSteps),
       timestamps: vendor.completionTimestamps
     });
 
   } catch (error) {
-    // Handle specific JWT errors
+    // Enhanced error handling
     if (error.name === 'JsonWebTokenError') {
       return res.status(401).json({
         success: false,
         message: "Invalid token",
-        error: error.message
+        details: error.message
       });
     }
     
@@ -410,11 +462,11 @@ async function getProgress(req, res) {
       });
     }
 
-    // Generic error handling
+    console.error('Progress Error:', error);
     res.status(500).json({ 
       success: false, 
       message: "Error fetching progress",
-      error: error.message 
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 }
