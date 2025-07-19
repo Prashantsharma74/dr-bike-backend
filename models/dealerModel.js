@@ -92,9 +92,9 @@ const dealerModel = new mongoose.Schema({
     max: 18
   },
   formProgress: {
-    currentStep: { type: Number, default: 1 }, // Tracks which step user should see next
+    currentStep: { type: Number, default: 1 }, 
     completedSteps: {
-      type: Map, // Using Map for flexible field addition
+      type: Map, 
       of: Boolean,
       default: {
         'basicInfo': false,
@@ -104,7 +104,7 @@ const dealerModel = new mongoose.Schema({
         'bankDetails': false
       }
     },
-    lastActiveStep: { type: Number, default: 1 } // Last step user interacted with
+    lastActiveStep: { type: Number, default: 1 }
   },
   completionTimestamps: {
     basicInfo: Date,

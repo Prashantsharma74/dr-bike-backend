@@ -325,6 +325,7 @@ async function resendOtp(req, res) {
     res.status(500).json({ success: false, message: error.message });
   }
 }
+
 exports.getProgress = async (req, res) => {
   try {
     const vendor = await Vendor.findById(req.user._id)
@@ -382,7 +383,6 @@ exports.updateProgress = async (req, res) => {
   }
 };
 
-// Form Submission Endpoints
 exports.updateBasicInfo = async (req, res) => {
   try {
     const { fullName, personalEmail, phone, gender, dateOfBirth } = req.body;
