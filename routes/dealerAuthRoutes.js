@@ -31,8 +31,8 @@ router.put('/progress/:section', updateProgress);
 // Form Submission Endpoints
 router.post('/basic-info/:id', updateBasicInfo);
 router.post('/location-info/:id', updateLocationInfo);
-router.post('/shop-details', upload.array('shopImages', 5), updateShopDetails);
-router.post('/upload-documents', 
+router.post('/shop-details/:id', upload.array('shopImages', 5), updateShopDetails);
+router.post('/upload-documents/:id', 
   upload.fields([
     { name: 'aadharFront', maxCount: 1 },
     { name: 'aadharBack', maxCount: 1 },
@@ -41,7 +41,7 @@ router.post('/upload-documents',
   ]), 
   uploadDocuments
 );
-router.post('/bank-details', upload.single('passbookImage'), updateBankDetails);
+router.post('/bank-details/:id', upload.single('passbookImage'), updateBankDetails);
 
 // Registration Submission & Status
 router.post('/submit-registration', submitForApproval);

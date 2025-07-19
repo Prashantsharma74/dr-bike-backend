@@ -515,14 +515,14 @@ async function updateBasicInfo(req, res) {
 async function updateLocationInfo(req, res) {
   try {
     const { id } = req.params;
-    const { 
-      address, 
-      city, 
-      state, 
-      pincode, 
-      latitude, 
+    const {
+      address,
+      city,
+      state,
+      pincode,
+      latitude,
       longitude,
-      isPermanentAddress 
+      isPermanentAddress
     } = req.body;
 
     // Validate required fields
@@ -559,7 +559,7 @@ async function updateLocationInfo(req, res) {
     const updatedVendor = await Vendor.findByIdAndUpdate(
       id,
       updateData,
-      { 
+      {
         new: true,
         runValidators: true
       }
@@ -590,7 +590,7 @@ async function updateLocationInfo(req, res) {
     });
   } catch (error) {
     console.error('Location update error:', error);
-    
+
     // Handle specific MongoDB errors
     if (error.name === 'ValidationError') {
       return res.status(400).json({
@@ -610,66 +610,198 @@ async function updateLocationInfo(req, res) {
 
 async function updateShopDetails(req, res) {
   try {
+    const { id } = req.params;
     const { shopName, shopEmail, shopContact, holiday } = req.body;
-    const shopImages = req.files.map(file => file.path);
+    const shopImages = req.files?.map(file => file.path) || [];
 
+    // Validate required fields
     if (!shopName || !shopEmail || !shopContact) {
       return res.status(400).json({
         success: false,
-        message: "Shop name, email, and contact are required"
+        message: "Vendor ID, shop name, email, and contact are required"
       });
     }
 
-    await Vendor.findByIdAndUpdate(
-      req.user._id,
+    // // Validate ID format
+    // if (!mongoose.Types.ObjectId.isValid(id)) {
+    //   return res.status(400).json({
+    //     success: false,
+    //     message: "Invalid vendor ID format"
+    //   });
+    // }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(shopEmail)) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide a valid shop email"
+      });
+    }
+
+    const updateData = {
+      shopName,
+      shopEmail,
+      shopContact,
+      holiday,
+      "formProgress.completedSteps.shopDetails": true,
+      "completionTimestamps.shopDetails": new Date(),
+      updatedAt: new Date()
+    };
+
+    // Only update images if new ones were uploaded
+    if (shopImages.length > 0) {
+      updateData.$push = { shopImages: { $each: shopImages } };
+    }
+
+    const updatedVendor = await Vendor.findByIdAndUpdate(
+      id,
+      updateData,
       {
-        shopName,
-        shopEmail,
-        shopContact,
-        holiday,
-        shopImages,
-        "formProgress.completedSteps.shopDetails": true
+        new: true,
+        runValidators: true
       }
-    );
+    ).select('shopName shopEmail shopContact holiday shopImages formProgress completionTimestamps');
+
+    if (!updatedVendor) {
+      return res.status(404).json({
+        success: false,
+        message: "Vendor not found"
+      });
+    }
 
     res.status(200).json({
       success: true,
-      message: "Shop details updated successfully"
+      message: "Shop details updated successfully",
+      data: {
+        shopDetails: {
+          name: updatedVendor.shopName,
+          email: updatedVendor.shopEmail,
+          contact: updatedVendor.shopContact,
+          holiday: updatedVendor.holiday,
+          imageCount: updatedVendor.shopImages.length
+        },
+        progress: {
+          completed: updatedVendor.formProgress.completedSteps.shopDetails,
+          lastUpdated: updatedVendor.completionTimestamps.shopDetails
+        }
+      }
     });
+
   } catch (error) {
+    console.error('Shop update error:', error);
+
+    // Handle duplicate key errors
+    if (error.code === 11000) {
+      return res.status(409).json({
+        success: false,
+        message: "Shop email already exists",
+        field: "shopEmail"
+      });
+    }
+
+    // Handle validation errors
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({
+        success: false,
+        message: "Validation failed",
+        errors: Object.values(error.errors).map(e => e.message)
+      });
+    }
+
     res.status(500).json({
       success: false,
       message: "Error updating shop details",
-      error: error.message
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
-};
+}
 
 async function uploadDocuments(req, res) {
   try {
+    const { id } = req.params;
     const files = req.files;
+
+    // Check if any files were uploaded
+    if (!files || Object.keys(files).length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No documents were uploaded"
+      });
+    }
+
     const updates = {
-      "documents.aadharFront": files.aadharFront?.[0]?.path,
-      "documents.aadharBack": files.aadharBack?.[0]?.path,
-      "documents.panCard": files.panCard?.[0]?.path,
-      "documents.shopCertificate": files.shopCertificate?.[0]?.path,
-      "formProgress.completedSteps.documents": true
+      updatedAt: new Date(),
+      "formProgress.completedSteps.documents": true,
+      "completionTimestamps.documents": new Date()
     };
 
-    await Vendor.findByIdAndUpdate(req.user._id, updates);
+    // Add document paths only for the files that were actually uploaded
+    if (files.aadharFront) updates["documents.aadharFront"] = files.aadharFront[0].path;
+    if (files.aadharBack) updates["documents.aadharBack"] = files.aadharBack[0].path;
+    if (files.panCard) updates["documents.panCard"] = files.panCard[0].path;
+    if (files.shopCertificate) updates["documents.shopCertificate"] = files.shopCertificate[0].path;
+
+    const updatedVendor = await Vendor.findByIdAndUpdate(
+      id,
+      updates,
+      { 
+        new: true,
+        runValidators: true
+      }
+    ).select('documents formProgress completionTimestamps');
+
+    if (!updatedVendor) {
+      return res.status(404).json({
+        success: false,
+        message: "Vendor not found"
+      });
+    }
 
     res.status(200).json({
       success: true,
-      message: "Documents uploaded successfully"
+      message: "Documents uploaded successfully",
+      data: {
+        documents: {
+          aadharFront: !!updatedVendor.documents.aadharFront,
+          aadharBack: !!updatedVendor.documents.aadharBack,
+          panCard: !!updatedVendor.documents.panCard,
+          shopCertificate: !!updatedVendor.documents.shopCertificate
+        },
+        progress: {
+          completed: updatedVendor.formProgress.completedSteps.documents,
+          lastUpdated: updatedVendor.completionTimestamps.documents
+        }
+      }
     });
+
   } catch (error) {
+    console.error('Document upload error:', error);
+    
+    // Handle file system errors
+    if (error.code === 'ENOENT') {
+      return res.status(500).json({
+        success: false,
+        message: "Error storing documents - file system error"
+      });
+    }
+
+    // Handle validation errors
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({
+        success: false,
+        message: "Document validation failed",
+        errors: Object.values(error.errors).map(e => e.message)
+      });
+    }
+
     res.status(500).json({
       success: false,
       message: "Error uploading documents",
-      error: error.message
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
-};
+}
 
 async function updateBankDetails(req, res) {
   try {
