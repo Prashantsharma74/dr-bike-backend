@@ -418,7 +418,7 @@ async function getProgress(req, res) {
     console.log("Decoded Token:", decoded);
 
     // 3. Check for required fields in payload
-    if (!decoded._id) {
+    if (!decoded.user_id) {
       return res.status(401).json({
         success: false,
         message: "Token missing required user_id field"
@@ -426,7 +426,7 @@ async function getProgress(req, res) {
     }
 
     // 4. Find vendor (now using user_id instead of _id)
-    const vendor = await Vendor.findById(decoded._id)
+    const vendor = await Vendor.findById(decoded.user_id)
       .select("formProgress completionTimestamps isActive adminApproved");
     // .select("formProgress completionTimestamps");
 
