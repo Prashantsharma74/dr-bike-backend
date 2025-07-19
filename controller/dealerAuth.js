@@ -519,46 +519,6 @@ async function updateProgress(req, res) {
   }
 };
 
-// async function updateBasicInfo(req, res) {
-//   try {
-    
-//     const { fullName, personalEmail, phone, gender, dateOfBirth } = req.body;
-
-//     // Validate required fields
-//     if (!fullName || !personalEmail || !phone) {
-//       return res.status(400).json({
-//         success: false,
-//         message: "Full name, email, and phone are required"
-//       });
-//     }
-
-//     const vendor = await Vendor.findByIdAndUpdate(
-//       req.user._id,
-//       {
-//         fullName,
-//         personalEmail,
-//         phone,
-//         gender,
-//         dateOfBirth,
-//         "formProgress.completedSteps.basicInfo": true
-//       },
-//       { new: true }
-//     );
-
-//     res.status(200).json({
-//       success: true,
-//       message: "Basic info updated successfully",
-//       data: vendor
-//     });
-//   } catch (error) {
-//     res.status(500).json({
-//       success: false,
-//       message: "Error updating basic info",
-//       error: error.message
-//     });
-//   }
-// };
-
 async function updateBasicInfo(req, res) {
   try {
     const { id } = req.params;
@@ -622,8 +582,18 @@ async function updateBasicInfo(req, res) {
 
 async function updateLocationInfo(req, res) {
   try {
-    const { address, city, state, pincode, latitude, longitude } = req.body;
+    const { id } = req.params;
+    const { 
+      address, 
+      city, 
+      state, 
+      pincode, 
+      latitude, 
+      longitude,
+      isPermanentAddress 
+    } = req.body;
 
+    // Validate required fields
     if (!address || !city || !state || !pincode) {
       return res.status(400).json({
         success: false,
@@ -631,28 +601,80 @@ async function updateLocationInfo(req, res) {
       });
     }
 
-    await Vendor.findByIdAndUpdate(
-      req.user._id,
-      {
-        address: { address, city, state, pincode },
-        latitude,
-        longitude,
-        "formProgress.completedSteps.locationInfo": true
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid vendor ID format"
+      });
+    }
+
+    const updateData = {
+      latitude,
+      longitude,
+      "formProgress.completedSteps.locationInfo": true,
+      "completionTimestamps.locationInfo": new Date(),
+      updatedAt: new Date()
+    };
+
+    if (isPermanentAddress) {
+      updateData.permanentAddress = { address, city, state };
+      updateData.shopPincode = pincode;
+    } else {
+      updateData.presentAddress = { address, city, state };
+      updateData.shopPincode = pincode;
+    }
+
+    const updatedVendor = await Vendor.findByIdAndUpdate(
+      id,
+      updateData,
+      { 
+        new: true,
+        runValidators: true
       }
-    );
+    ).select('presentAddress permanentAddress shopPincode latitude longitude formProgress completionTimestamps');
+
+    if (!updatedVendor) {
+      return res.status(404).json({
+        success: false,
+        message: "Vendor not found"
+      });
+    }
 
     res.status(200).json({
       success: true,
-      message: "Location info updated successfully"
+      message: "Location info updated successfully",
+      data: {
+        address: isPermanentAddress ? updatedVendor.permanentAddress : updatedVendor.presentAddress,
+        pincode: updatedVendor.shopPincode,
+        coordinates: {
+          latitude: updatedVendor.latitude,
+          longitude: updatedVendor.longitude
+        },
+        progress: {
+          completed: updatedVendor.formProgress.completedSteps.locationInfo,
+          lastUpdated: updatedVendor.completionTimestamps.locationInfo
+        }
+      }
     });
   } catch (error) {
+    console.error('Location update error:', error);
+    
+    // Handle specific MongoDB errors
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({
+        success: false,
+        message: "Validation failed",
+        errors: Object.values(error.errors).map(e => e.message)
+      });
+    }
+
     res.status(500).json({
       success: false,
       message: "Error updating location info",
-      error: error.message
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
-};
+}
 
 async function updateShopDetails(req, res) {
   try {
