@@ -4,7 +4,7 @@ var multer = require('multer');
 var fs = require('fs-extra');
 const {verifyUser} = require("../helper/verifyAuth");
 
-var { usersignin, verifyOTP, logout, sendOtp,changePassword, getProgress, updateProgress, updateBasicInfo, updateLocationInfo, updateShopDetails, uploadDocuments, updateBankDetails, submitForApproval, checkApprovalStatus, getPendingRegistrations, getDealerDetails, approveDealer, rejectDealer, } = require("../controller/dealerAuth")
+var { usersignin, verifyOTP, logout, sendOtp,changePassword, getProgress, updateProgress, updateBasicInfo, updateLocationInfo, updateShopDetails, uploadDocuments, updateBankDetails, submitForApproval, checkApprovalStatus, getPendingRegistrations, getDealerDetails, approveDealer, rejectDealer } = require("../controller/dealerAuth")
 
 const storage = multer.diskStorage({
     destination: (req, file, callback) => {

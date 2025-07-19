@@ -326,7 +326,7 @@ async function resendOtp(req, res) {
   }
 }
 
-exports.getProgress = async (req, res) => {
+async function getProgress (req, res) {
   try {
     const vendor = await Vendor.findById(req.user._id)
       .select("formProgress completionTimestamps");
@@ -349,7 +349,7 @@ exports.getProgress = async (req, res) => {
   }
 };
 
-exports.updateProgress = async (req, res) => {
+async function updateProgress (req, res) {
   try {
     const { section } = req.params;
     const validSections = ['basicInfo', 'locationInfo', 'shopDetails', 'documents', 'bankDetails'];
@@ -383,7 +383,7 @@ exports.updateProgress = async (req, res) => {
   }
 };
 
-exports.updateBasicInfo = async (req, res) => {
+async function updateBasicInfo (req, res) {
   try {
     const { fullName, personalEmail, phone, gender, dateOfBirth } = req.body;
     
@@ -422,7 +422,7 @@ exports.updateBasicInfo = async (req, res) => {
   }
 };
 
-exports.updateLocationInfo = async (req, res) => {
+async function updateLocationInfo (req, res) {
   try {
     const { address, city, state, pincode, latitude, longitude } = req.body;
     
@@ -456,7 +456,7 @@ exports.updateLocationInfo = async (req, res) => {
   }
 };
 
-exports.updateShopDetails = async (req, res) => {
+async function updateShopDetails (req, res) {
   try {
     const { shopName, shopEmail, shopContact, holiday } = req.body;
     const shopImages = req.files.map(file => file.path);
@@ -493,7 +493,7 @@ exports.updateShopDetails = async (req, res) => {
   }
 };
 
-exports.uploadDocuments = async (req, res) => {
+async function uploadDocuments (req, res) {
   try {
     const files = req.files;
     const updates = {
@@ -519,7 +519,7 @@ exports.uploadDocuments = async (req, res) => {
   }
 };
 
-exports.updateBankDetails = async (req, res) => {
+async function updateBankDetails (req, res) {
   try {
     const { accountHolderName, accountNumber, ifscCode, bankName } = req.body;
     const passbookImage = req.file?.path;
@@ -554,7 +554,7 @@ exports.updateBankDetails = async (req, res) => {
 };
 
 // Registration Submission & Status
-exports.submitForApproval = async (req, res) => {
+async function submitForApproval (req, res){
   try {
     const vendor = await Vendor.findById(req.user._id);
     
@@ -597,7 +597,7 @@ exports.submitForApproval = async (req, res) => {
   }
 };
 
-exports.checkApprovalStatus = async (req, res) => {
+async function checkApprovalStatus (req, res) {
   try {
     const vendor = await Vendor.findById(req.user._id)
       .select("registrationStatus adminNotes submittedAt approvedAt");
@@ -619,7 +619,7 @@ exports.checkApprovalStatus = async (req, res) => {
 };
 
 // Admin Endpoints
-exports.getPendingRegistrations = async (req, res) => {
+async function getPendingRegistrations (req, res) {
   try {
     const pendingVendors = await Vendor.find({ registrationStatus: 'Pending' })
       .select("shopName ownerName phone submittedAt");
@@ -638,7 +638,7 @@ exports.getPendingRegistrations = async (req, res) => {
   }
 };
 
-exports.getDealerDetails = async (req, res) => {
+async function getDealerDetails (req, res) {
   try {
     const vendor = await Vendor.findById(req.params.id)
       .select("-password -otp -otpExpiry");
@@ -663,7 +663,7 @@ exports.getDealerDetails = async (req, res) => {
   }
 };
 
-exports.approveDealer = async (req, res) => {
+async function approveDealer (req, res) {
   try {
     const vendor = await Vendor.findByIdAndUpdate(
       req.params.id,
@@ -692,7 +692,7 @@ exports.approveDealer = async (req, res) => {
   }
 };
 
-exports.rejectDealer = async (req, res) => {
+async function rejectDealer (req, res) {
   try {
     const { notes } = req.body;
     
@@ -786,15 +786,13 @@ module.exports = {
   updateProgress,
   updateBasicInfo,
   updateLocationInfo,
+  updateShopDetails,
+  uploadDocuments,
+  updateBankDetails,
+  submitForApproval,
   checkApprovalStatus,
   getPendingRegistrations,
-  submitForApproval,
   getDealerDetails,
   approveDealer,
-  rejectDealer,
-  updateBankDetails,
-  uploadDocuments,
-  updateShopDetails,
-  submitForApproval,
-  checkApprovalStatus
+  rejectDealer
 };
