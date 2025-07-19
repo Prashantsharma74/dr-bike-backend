@@ -4,7 +4,7 @@ var multer = require('multer');
 var fs = require('fs-extra');
 const {verifyUser} = require("../helper/verifyAuth");
 
-var { usersignin, verifyOTP, logout, sendOtp,changePassword} = require("../controller/dealerAuth")
+var { usersignin, verifyOTP, logout, sendOtp,changePassword, getProgress, updateProgress, submitForApproval, checkApprovalStatus} = require("../controller/dealerAuth")
 
 const storage = multer.diskStorage({
     destination: (req, file, callback) => {
@@ -25,6 +25,34 @@ router.post('/sendotp', sendOtp);
 router.post('/verifyotp', verifyOTP);
 router.post('/logout', logout);
 router.post('/changepassword', changePassword);
+
+router.get('/progress', getProgress);
+router.put('/progress/:section', updateProgress);
+// Form Submission Endpoints
+router.post('/basic-info', updateBasicInfo);
+router.post('/location-info', updateLocationInfo);
+router.post('/shop-details', upload.array('shopImages', 5), updateShopDetails);
+router.post('/upload-documents', 
+  upload.fields([
+    { name: 'aadharFront', maxCount: 1 },
+    { name: 'aadharBack', maxCount: 1 },
+    { name: 'panCard', maxCount: 1 },
+    { name: 'shopCertificate', maxCount: 1 }
+  ]), 
+  uploadDocuments
+);
+router.post('/bank-details', upload.single('passbookImage'), updateBankDetails);
+
+// Registration Submission & Status
+router.post('/submit-registration', submitForApproval);
+router.get('/registration-status', checkApprovalStatus);
+
+// Admin Routes (Only accessible by admin)
+router.get('/pending-registrations', getPendingRegistrations);
+router.get('/:id', getDealerDetails);
+router.put('/:id/approve', approveDealer);
+router.put('/:id/reject', rejectDealer);
+
 
 
 module.exports = router;

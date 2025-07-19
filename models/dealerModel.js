@@ -91,10 +91,87 @@ const dealerModel = new mongoose.Schema({
     min: 0,
     max: 18
   },
+  formProgress: {
+    currentStep: { type: Number, default: 1 }, // Tracks which step user should see next
+    completedSteps: {
+      type: Map, // Using Map for flexible field addition
+      of: Boolean,
+      default: {
+        'basicInfo': false,
+        'locationInfo': false,
+        'shopDetails': false,
+        'documents': false,
+        'bankDetails': false
+      }
+    },
+    lastActiveStep: { type: Number, default: 1 } // Last step user interacted with
+  },
+  completionTimestamps: {
+    basicInfo: Date,
+    locationInfo: Date,
+    shopDetails: Date,
+    documents: Date,
+    bankDetails: Date
+  },
+  registrationStatus: {
+    type: String,
+    enum: ['Draft', 'Pending', 'Approved', 'Rejected'],
+    default: 'Draft',
+    required: true
+  },
+  adminNotes: String,
+  submittedAt: Date,
+  approvedAt: Date,
+  approvedBy: { 
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Admin'
+  },
+    // Authentication Fields
+  otp: String,
+  otpExpiry: Date,
+  loginAttempts: { type: Number, default: 0 },
+  accountLockedUntil: Date,
   isVerify: { type: Boolean, default: false },
   isProfile: { type: Boolean, default: false },
   isDoc: { type: Boolean, default: false },
   isActive: { type: Boolean, default: false },
+  // Document Verification Status
+  documentVerification: {
+    aadhar: { type: Boolean, default: false },
+    pan: { type: Boolean, default: false },
+    bank: { type: Boolean, default: false },
+    shop: { type: Boolean, default: false }
+  },
+
+  // Shop Opening Information
+  shopOpeningDate: { type: Date, required: false },
+  businessHours: {
+    open: String,
+    close: String,
+    days: [String] // e.g., ['Monday', 'Tuesday', ...]
+  },
+  // Notification Preferences
+  notifications: {
+    email: { type: Boolean, default: true },
+    sms: { type: Boolean, default: true },
+    app: { type: Boolean, default: true }
+  }
 }, { timestamps: true });
+
+// Add index for better query performance
+dealerModel.index({ phone: 1, email: 1, registrationStatus: 1 });
+
+// Add pre-save hook to handle registration status changes
+dealerModel.pre('save', function(next) {
+  if (this.isModified('registrationStatus')) {
+    if (this.registrationStatus === 'Pending' && !this.submittedAt) {
+      this.submittedAt = new Date();
+    } else if (this.registrationStatus === 'Approved' && !this.approvedAt) {
+      this.approvedAt = new Date();
+      this.isActive = true;
+    }
+  }
+  next();
+});
 
 module.exports = mongoose.model("Vendor", dealerModel);
