@@ -2,6 +2,7 @@ var validation = require('../helper/validation');
 const otpAuth = require("../helper/otpAuth");
 const Dealer = require('../models/Dealer');
 const Vendor = require('../models/dealerModel');
+const jwt = require('jsonwebtoken');
 
 async function sendOtp(req, res) {
   try {
@@ -326,13 +327,64 @@ async function resendOtp(req, res) {
   }
 }
 
-async function getProgress (req, res) {
+// async function getProgress (req, res) {
+//   try {
+//     const vendor = await Vendor.findById(req.user._id)
+//       .select("formProgress completionTimestamps");
+    
+//     const nextStep = determineNextStep(vendor.formProgress.completedSteps);
+    
+//     res.status(200).json({
+//       success: true,
+//       currentStep: vendor.formProgress.currentStep,
+//       nextStep,
+//       completedSteps: Object.fromEntries(vendor.formProgress.completedSteps),
+//       timestamps: vendor.completionTimestamps
+//     });
+//   } catch (error) {
+//     res.status(500).json({ 
+//       success: false, 
+//       message: "Error fetching progress",
+//       error: error.message 
+//     });
+//   }
+// };
+
+async function getProgress(req, res) {
   try {
-    const vendor = await Vendor.findById(req.user._id)
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: "Authorization token required"
+      });
+    }
+
+    // 2. Verify token and decode user ID
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    if (!decoded._id) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid token format"
+      });
+    }
+
+    // 3. Find vendor using the decoded ID
+    const vendor = await Vendor.findById(decoded._id)
       .select("formProgress completionTimestamps");
     
+    if (!vendor) {
+      return res.status(404).json({
+        success: false,
+        message: "Vendor not found"
+      });
+    }
+
+    // 4. Determine next step
     const nextStep = determineNextStep(vendor.formProgress.completedSteps);
     
+    // 5. Return progress data
     res.status(200).json({
       success: true,
       currentStep: vendor.formProgress.currentStep,
@@ -340,14 +392,40 @@ async function getProgress (req, res) {
       completedSteps: Object.fromEntries(vendor.formProgress.completedSteps),
       timestamps: vendor.completionTimestamps
     });
+
   } catch (error) {
+    // Handle specific JWT errors
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid token",
+        error: error.message
+      });
+    }
+    
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({
+        success: false,
+        message: "Token expired"
+      });
+    }
+
+    // Generic error handling
     res.status(500).json({ 
       success: false, 
       message: "Error fetching progress",
       error: error.message 
     });
   }
-};
+}
+
+function determineNextStep(completedSteps) {
+  const stepsOrder = ['basicInfo', 'locationInfo', 'shopDetails', 'documents', 'bankDetails'];
+  for (const step of stepsOrder) {
+    if (!completedSteps.get(step)) return step;
+  }
+  return null;
+}
 
 async function updateProgress (req, res) {
   try {
@@ -720,15 +798,6 @@ async function rejectDealer (req, res) {
     });
   }
 };
-
-// Helper Functions
-function determineNextStep(completedSteps) {
-  const stepsOrder = ['basicInfo', 'locationInfo', 'shopDetails', 'documents', 'bankDetails'];
-  for (const step of stepsOrder) {
-    if (!completedSteps.get(step)) return step;
-  }
-  return null;
-}
 
 function getStepNumber(section) {
   const stepMap = {
