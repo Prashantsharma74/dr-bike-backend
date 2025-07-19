@@ -29,7 +29,7 @@ router.post('/changepassword', changePassword);
 router.get('/progress', getProgress);
 router.put('/progress/:section', updateProgress);
 // Form Submission Endpoints
-router.post('/basic-info', updateBasicInfo);
+router.post('/basic-info/:id', updateBasicInfo);
 router.post('/location-info', updateLocationInfo);
 router.post('/shop-details', upload.array('shopImages', 5), updateShopDetails);
 router.post('/upload-documents', 

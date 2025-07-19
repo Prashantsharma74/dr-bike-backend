@@ -519,8 +519,50 @@ async function updateProgress(req, res) {
   }
 };
 
+// async function updateBasicInfo(req, res) {
+//   try {
+    
+//     const { fullName, personalEmail, phone, gender, dateOfBirth } = req.body;
+
+//     // Validate required fields
+//     if (!fullName || !personalEmail || !phone) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Full name, email, and phone are required"
+//       });
+//     }
+
+//     const vendor = await Vendor.findByIdAndUpdate(
+//       req.user._id,
+//       {
+//         fullName,
+//         personalEmail,
+//         phone,
+//         gender,
+//         dateOfBirth,
+//         "formProgress.completedSteps.basicInfo": true
+//       },
+//       { new: true }
+//     );
+
+//     res.status(200).json({
+//       success: true,
+//       message: "Basic info updated successfully",
+//       data: vendor
+//     });
+//   } catch (error) {
+//     res.status(500).json({
+//       success: false,
+//       message: "Error updating basic info",
+//       error: error.message
+//     });
+//   }
+// };
+
 async function updateBasicInfo(req, res) {
   try {
+    const { id } = req.params;
+    console.log("Updating basic info for vendor ID:", id);
     const { fullName, personalEmail, phone, gender, dateOfBirth } = req.body;
 
     // Validate required fields
@@ -531,8 +573,20 @@ async function updateBasicInfo(req, res) {
       });
     }
 
+    console.log("Request body:", req.body);
+
+    // Validate ID format
+    // if (!mongoose.Types.ObjectId.isValid(id)) {
+    //   return res.status(400).json({
+    //     success: false,
+    //     message: "Invalid vendor ID format"
+    //   });
+    // }
+
+        console.log("1234567890");
+
     const vendor = await Vendor.findByIdAndUpdate(
-      req.user._id,
+      id,
       {
         fullName,
         personalEmail,
@@ -544,19 +598,42 @@ async function updateBasicInfo(req, res) {
       { new: true }
     );
 
+    console.log("Updated vendor:", vendor);
+
+    if (!vendor) {
+      return res.status(404).json({
+        success: false,
+        message: "Vendor not found"
+      });
+    }
+
     res.status(200).json({
       success: true,
       message: "Basic info updated successfully",
-      data: vendor
+      data: {
+        id: vendor._id,
+        fullName: vendor.fullName,
+        email: vendor.personalEmail,
+        updatedFields: Object.keys(req.body)
+      }
     });
   } catch (error) {
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyPattern)[0];
+      return res.status(409).json({
+        success: false,
+        message: `${field} already exists`,
+        field: field
+      });
+    }
+
     res.status(500).json({
       success: false,
       message: "Error updating basic info",
-      error: error.message
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
-};
+}
 
 async function updateLocationInfo(req, res) {
   try {
