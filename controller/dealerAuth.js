@@ -330,7 +330,7 @@ async function resendOtp(req, res) {
 // async function getProgress(req, res) {
 //   try {
 //     const token = req.headers.authorization?.replace('Bearer ', '');
-    
+
 //     if (!token) {
 //       return res.status(401).json({
 //         success: false,
@@ -350,7 +350,7 @@ async function resendOtp(req, res) {
 //     // 3. Find vendor using the decoded ID
 //     const vendor = await Vendor.findById(decoded._id)
 //       .select("formProgress completionTimestamps");
-    
+
 //     if (!vendor) {
 //       return res.status(404).json({
 //         success: false,
@@ -360,7 +360,7 @@ async function resendOtp(req, res) {
 
 //     // 4. Determine next step
 //     const nextStep = determineNextStep(vendor.formProgress.completedSteps);
-    
+
 //     // 5. Return progress data
 //     res.status(200).json({
 //       success: true,
@@ -379,7 +379,7 @@ async function resendOtp(req, res) {
 //         error: error.message
 //       });
 //     }
-    
+
 //     if (error.name === 'TokenExpiredError') {
 //       return res.status(401).json({
 //         success: false,
@@ -408,9 +408,9 @@ async function getProgress(req, res) {
     }
 
     const token = authHeader.split(' ')[1];
-    
+
     // 2. Verify token with same secret used in generation
-    const decoded = jwt.verify(token, process.env.JWT_SECRET, { 
+    const decoded = jwt.verify(token, process.env.JWT_SECRET, {
       algorithms: ['HS256'],
       ignoreExpiration: false
     });
@@ -418,7 +418,7 @@ async function getProgress(req, res) {
     console.log("Decoded Token:", decoded);
 
     // 3. Check for required fields in payload
-    if (!decoded._id) { 
+    if (!decoded._id) {
       return res.status(401).json({
         success: false,
         message: "Token missing required user_id field"
@@ -427,8 +427,9 @@ async function getProgress(req, res) {
 
     // 4. Find vendor (now using user_id instead of _id)
     const vendor = await Vendor.findById(decoded._id)
-      .select("formProgress completionTimestamps");
-    
+      .select("formProgress completionTimestamps isActive adminApproved");
+    // .select("formProgress completionTimestamps");
+
     if (!vendor) {
       return res.status(404).json({
         success: false,
@@ -442,7 +443,12 @@ async function getProgress(req, res) {
       currentStep: vendor.formProgress.currentStep,
       nextStep: determineNextStep(vendor.formProgress.completedSteps),
       completedSteps: Object.fromEntries(vendor.formProgress.completedSteps),
-      timestamps: vendor.completionTimestamps
+      timestamps: vendor.completionTimestamps,
+      status: {
+        adminApproved: vendor.adminApproved || false,
+        isActive: vendor.isActive || false,
+        isVerified: vendor.isVerify || false
+      }
     });
 
   } catch (error) {
@@ -454,7 +460,7 @@ async function getProgress(req, res) {
         details: error.message
       });
     }
-    
+
     if (error.name === 'TokenExpiredError') {
       return res.status(401).json({
         success: false,
@@ -463,8 +469,8 @@ async function getProgress(req, res) {
     }
 
     console.error('Progress Error:', error);
-    res.status(500).json({ 
-      success: false, 
+    res.status(500).json({
+      success: false,
       message: "Error fetching progress",
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
@@ -479,15 +485,15 @@ function determineNextStep(completedSteps) {
   return null;
 }
 
-async function updateProgress (req, res) {
+async function updateProgress(req, res) {
   try {
     const { section } = req.params;
     const validSections = ['basicInfo', 'locationInfo', 'shopDetails', 'documents', 'bankDetails'];
-    
+
     if (!validSections.includes(section)) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Invalid section" 
+      return res.status(400).json({
+        success: false,
+        message: "Invalid section"
       });
     }
 
@@ -505,18 +511,18 @@ async function updateProgress (req, res) {
       message: "Progress updated successfully"
     });
   } catch (error) {
-    res.status(500).json({ 
-      success: false, 
+    res.status(500).json({
+      success: false,
       message: "Error updating progress",
-      error: error.message 
+      error: error.message
     });
   }
 };
 
-async function updateBasicInfo (req, res) {
+async function updateBasicInfo(req, res) {
   try {
     const { fullName, personalEmail, phone, gender, dateOfBirth } = req.body;
-    
+
     // Validate required fields
     if (!fullName || !personalEmail || !phone) {
       return res.status(400).json({
@@ -552,10 +558,10 @@ async function updateBasicInfo (req, res) {
   }
 };
 
-async function updateLocationInfo (req, res) {
+async function updateLocationInfo(req, res) {
   try {
     const { address, city, state, pincode, latitude, longitude } = req.body;
-    
+
     if (!address || !city || !state || !pincode) {
       return res.status(400).json({
         success: false,
@@ -586,7 +592,7 @@ async function updateLocationInfo (req, res) {
   }
 };
 
-async function updateShopDetails (req, res) {
+async function updateShopDetails(req, res) {
   try {
     const { shopName, shopEmail, shopContact, holiday } = req.body;
     const shopImages = req.files.map(file => file.path);
@@ -623,7 +629,7 @@ async function updateShopDetails (req, res) {
   }
 };
 
-async function uploadDocuments (req, res) {
+async function uploadDocuments(req, res) {
   try {
     const files = req.files;
     const updates = {
@@ -649,7 +655,7 @@ async function uploadDocuments (req, res) {
   }
 };
 
-async function updateBankDetails (req, res) {
+async function updateBankDetails(req, res) {
   try {
     const { accountHolderName, accountNumber, ifscCode, bankName } = req.body;
     const passbookImage = req.file?.path;
@@ -684,14 +690,14 @@ async function updateBankDetails (req, res) {
 };
 
 // Registration Submission & Status
-async function submitForApproval (req, res){
+async function submitForApproval(req, res) {
   try {
     const vendor = await Vendor.findById(req.user._id);
-    
+
     // Check if all sections are completed
     const allCompleted = Array.from(vendor.formProgress.completedSteps.values())
       .every(val => val === true);
-    
+
     if (!allCompleted) {
       return res.status(400).json({
         success: false,
@@ -727,11 +733,11 @@ async function submitForApproval (req, res){
   }
 };
 
-async function checkApprovalStatus (req, res) {
+async function checkApprovalStatus(req, res) {
   try {
     const vendor = await Vendor.findById(req.user._id)
       .select("registrationStatus adminNotes submittedAt approvedAt");
-    
+
     res.status(200).json({
       success: true,
       status: vendor.registrationStatus,
@@ -749,11 +755,11 @@ async function checkApprovalStatus (req, res) {
 };
 
 // Admin Endpoints
-async function getPendingRegistrations (req, res) {
+async function getPendingRegistrations(req, res) {
   try {
     const pendingVendors = await Vendor.find({ registrationStatus: 'Pending' })
       .select("shopName ownerName phone submittedAt");
-    
+
     res.status(200).json({
       success: true,
       count: pendingVendors.length,
@@ -768,11 +774,11 @@ async function getPendingRegistrations (req, res) {
   }
 };
 
-async function getDealerDetails (req, res) {
+async function getDealerDetails(req, res) {
   try {
     const vendor = await Vendor.findById(req.params.id)
       .select("-password -otp -otpExpiry");
-    
+
     if (!vendor) {
       return res.status(404).json({
         success: false,
@@ -793,7 +799,7 @@ async function getDealerDetails (req, res) {
   }
 };
 
-async function approveDealer (req, res) {
+async function approveDealer(req, res) {
   try {
     const vendor = await Vendor.findByIdAndUpdate(
       req.params.id,
@@ -822,10 +828,10 @@ async function approveDealer (req, res) {
   }
 };
 
-async function rejectDealer (req, res) {
+async function rejectDealer(req, res) {
   try {
     const { notes } = req.body;
-    
+
     const vendor = await Vendor.findByIdAndUpdate(
       req.params.id,
       {
@@ -871,7 +877,7 @@ function getNextStepAfter(section) {
 async function notifyAdmin(vendorId) {
   const admins = await Admin.find({ role: 'admin' }).select("email");
   const adminEmails = admins.map(admin => admin.email);
-  
+
   await sendEmail({
     to: adminEmails,
     subject: 'New Vendor Registration Requires Approval',
