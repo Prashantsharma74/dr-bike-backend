@@ -803,11 +803,49 @@ async function uploadDocuments(req, res) {
   }
 }
 
+// async function updateBankDetails(req, res) {
+//   try {
+//     const { accountHolderName, accountNumber, ifscCode, bankName } = req.body;
+//     const passbookImage = req.file?.path;
+
+//     if (!accountHolderName || !accountNumber || !ifscCode || !bankName || !passbookImage) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "All bank details and passbook image are required"
+//       });
+//     }
+
+//     await Vendor.findByIdAndUpdate(
+//       req.user._id,
+//       {
+//         bankDetails: { accountHolderName, accountNumber, ifscCode, bankName },
+//         "documents.passbookImage": passbookImage,
+//         "formProgress.completedSteps.bankDetails": true
+//       }
+//     );
+
+//     res.status(200).json({
+//       success: true,
+//       message: "Bank details updated successfully"
+//     });
+//   } catch (error) {
+//     res.status(500).json({
+//       success: false,
+//       message: "Error updating bank details",
+//       error: error.message
+//     });
+//   }
+// };
+
+// Registration Submission & Status
+
 async function updateBankDetails(req, res) {
   try {
+    const { id } = req.params;
     const { accountHolderName, accountNumber, ifscCode, bankName } = req.body;
     const passbookImage = req.file?.path;
 
+    // Validate required fields
     if (!accountHolderName || !accountNumber || !ifscCode || !bankName || !passbookImage) {
       return res.status(400).json({
         success: false,
@@ -815,29 +853,99 @@ async function updateBankDetails(req, res) {
       });
     }
 
-    await Vendor.findByIdAndUpdate(
-      req.user._id,
+    // Validate ID format
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid vendor ID format"
+      });
+    }
+
+    // Validate IFSC code format (example validation)
+    if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(ifscCode)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid IFSC code format"
+      });
+    }
+
+    // Validate account number (basic check)
+    if (!/^\d{9,18}$/.test(accountNumber)) {
+      return res.status(400).json({
+        success: false,
+        message: "Account number must be 9-18 digits"
+      });
+    }
+
+    const updatedVendor = await Vendor.findByIdAndUpdate(
+      id,
       {
-        bankDetails: { accountHolderName, accountNumber, ifscCode, bankName },
+        bankDetails: { 
+          accountHolderName,
+          accountNumber,
+          ifscCode,
+          bankName 
+        },
         "documents.passbookImage": passbookImage,
-        "formProgress.completedSteps.bankDetails": true
+        "formProgress.completedSteps.bankDetails": true,
+        "completionTimestamps.bankDetails": new Date(),
+        updatedAt: new Date()
+      },
+      { 
+        new: true,
+        runValidators: true
       }
-    );
+    ).select('bankDetails documents.passbookImage formProgress completionTimestamps');
+
+    if (!updatedVendor) {
+      return res.status(404).json({
+        success: false,
+        message: "Vendor not found"
+      });
+    }
 
     res.status(200).json({
       success: true,
-      message: "Bank details updated successfully"
+      message: "Bank details updated successfully",
+      data: {
+        bankDetails: updatedVendor.bankDetails,
+        hasPassbookImage: !!updatedVendor.documents.passbookImage,
+        progress: {
+          completed: updatedVendor.formProgress.completedSteps.bankDetails,
+          lastUpdated: updatedVendor.completionTimestamps.bankDetails
+        }
+      }
     });
+
   } catch (error) {
+    console.error('Bank details update error:', error);
+    
+    // Handle duplicate account errors
+    if (error.code === 11000 && error.keyPattern?.bankDetails?.accountNumber) {
+      return res.status(409).json({
+        success: false,
+        message: "Bank account already registered",
+        field: "accountNumber"
+      });
+    }
+
+    // Handle validation errors
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({
+        success: false,
+        message: "Bank details validation failed",
+        errors: Object.values(error.errors).map(e => e.message)
+      });
+    }
+
     res.status(500).json({
       success: false,
       message: "Error updating bank details",
-      error: error.message
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
-};
+}
 
-// Registration Submission & Status
 async function submitForApproval(req, res) {
   try {
     const vendor = await Vendor.findById(req.user._id);
