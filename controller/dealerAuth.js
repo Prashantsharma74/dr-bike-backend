@@ -565,25 +565,12 @@ async function updateBasicInfo(req, res) {
     console.log("Updating basic info for vendor ID:", id);
     const { fullName, personalEmail, phone, gender, dateOfBirth } = req.body;
 
-    // Validate required fields
     if (!fullName || !personalEmail || !phone) {
       return res.status(400).json({
         success: false,
         message: "Full name, email, and phone are required"
       });
     }
-
-    console.log("Request body:", req.body);
-
-    // Validate ID format
-    // if (!mongoose.Types.ObjectId.isValid(id)) {
-    //   return res.status(400).json({
-    //     success: false,
-    //     message: "Invalid vendor ID format"
-    //   });
-    // }
-
-        console.log("1234567890");
 
     const vendor = await Vendor.findByIdAndUpdate(
       id,
@@ -597,8 +584,6 @@ async function updateBasicInfo(req, res) {
       },
       { new: true }
     );
-
-    console.log("Updated vendor:", vendor);
 
     if (!vendor) {
       return res.status(404).json({
