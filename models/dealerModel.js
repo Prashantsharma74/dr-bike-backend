@@ -69,6 +69,8 @@ const dealerModel = new mongoose.Schema({
     panCardFront: { type: String, required: false },
     aadharFront: { type: String, required: false },
     aadharBack: { type: String, required: false },
+    shopCertificate: { type: String, required: false },
+    faceVerificationImage: { type: String, required: false }
     // passbookImage: { type: String, required: true }
   },
 

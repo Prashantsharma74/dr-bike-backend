@@ -2,19 +2,19 @@
 var router = require('express').Router();
 var multer = require('multer');
 var fs = require('fs-extra');
-const {verifyUser} = require("../helper/verifyAuth");
+const { verifyUser } = require("../helper/verifyAuth");
 
-var { usersignin, verifyOTP, logout, sendOtp,changePassword, getProgress, updateProgress, updateBasicInfo, updateLocationInfo, updateShopDetails, uploadDocuments, updateBankDetails, submitForApproval, checkApprovalStatus, getPendingRegistrations, getDealerDetails, approveDealer, rejectDealer } = require("../controller/dealerAuth")
+var { usersignin, verifyOTP, logout, sendOtp, changePassword, getProgress, updateProgress, updateBasicInfo, updateLocationInfo, updateShopDetails, uploadDocuments, updateBankDetails, submitForApproval, checkApprovalStatus, getPendingRegistrations, getDealerDetails, approveDealer, rejectDealer } = require("../controller/dealerAuth")
 
 const storage = multer.diskStorage({
-    destination: (req, file, callback) => {
-        var path = `./upload/vendors`;
-        fs.mkdirsSync(path);
-        callback(null, path);
-    },
-    filename(req, file, callback) {
-        callback(null, Date.now() + '_' + file.originalname);
-    },
+  destination: (req, file, callback) => {
+    var path = `./upload/vendors`;
+    fs.mkdirsSync(path);
+    callback(null, path);
+  },
+  filename(req, file, callback) {
+    callback(null, Date.now() + '_' + file.originalname);
+  },
 });
 const upload = multer({ storage });
 
@@ -32,13 +32,14 @@ router.put('/progress/:section', updateProgress);
 router.post('/basic-info/:id', updateBasicInfo);
 router.post('/location-info/:id', updateLocationInfo);
 router.post('/shop-details/:id', upload.array('shopImages', 5), updateShopDetails);
-router.post('/upload-documents/:id', 
+router.post('/upload-documents/:id',
   upload.fields([
     { name: 'aadharFront', maxCount: 1 },
     { name: 'aadharBack', maxCount: 1 },
     { name: 'panCard', maxCount: 1 },
-    { name: 'shopCertificate', maxCount: 1 }
-  ]), 
+    { name: 'shopCertificate', maxCount: 1 },
+    { name: 'faceVerificationImage', maxCount: 1 }
+  ]),
   uploadDocuments
 );
 router.post('/bank-details/:id', upload.single('passbookImage'), updateBankDetails);

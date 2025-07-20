@@ -622,14 +622,6 @@ async function updateShopDetails(req, res) {
       });
     }
 
-    // // Validate ID format
-    // if (!mongoose.Types.ObjectId.isValid(id)) {
-    //   return res.status(400).json({
-    //     success: false,
-    //     message: "Invalid vendor ID format"
-    //   });
-    // }
-
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(shopEmail)) {
@@ -717,91 +709,91 @@ async function updateShopDetails(req, res) {
   }
 }
 
-async function uploadDocuments(req, res) {
-  try {
-    const { id } = req.params;
-    const files = req.files;
+// async function uploadDocuments(req, res) {
+//   try {
+//     const { id } = req.params;
+//     const files = req.files;
 
-    // Check if any files were uploaded
-    if (!files || Object.keys(files).length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: "No documents were uploaded"
-      });
-    }
+//     // Check if any files were uploaded
+//     if (!files || Object.keys(files).length === 0) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "No documents were uploaded"
+//       });
+//     }
 
-    const updates = {
-      updatedAt: new Date(),
-      "formProgress.completedSteps.documents": true,
-      "completionTimestamps.documents": new Date()
-    };
+//     const updates = {
+//       updatedAt: new Date(),
+//       "formProgress.completedSteps.documents": true,
+//       "completionTimestamps.documents": new Date()
+//     };
 
-    // Add document paths only for the files that were actually uploaded
-    if (files.aadharFront) updates["documents.aadharFront"] = files.aadharFront[0].path;
-    if (files.aadharBack) updates["documents.aadharBack"] = files.aadharBack[0].path;
-    if (files.panCard) updates["documents.panCard"] = files.panCard[0].path;
-    if (files.shopCertificate) updates["documents.shopCertificate"] = files.shopCertificate[0].path;
+//     // Add document paths only for the files that were actually uploaded
+//     if (files.aadharFront) updates["documents.aadharFront"] = files.aadharFront[0].path;
+//     if (files.aadharBack) updates["documents.aadharBack"] = files.aadharBack[0].path;
+//     if (files.panCard) updates["documents.panCard"] = files.panCard[0].path;
+//     if (files.shopCertificate) updates["documents.shopCertificate"] = files.shopCertificate[0].path;
 
-    const updatedVendor = await Vendor.findByIdAndUpdate(
-      id,
-      updates,
-      { 
-        new: true,
-        runValidators: true
-      }
-    ).select('documents formProgress completionTimestamps');
+//     const updatedVendor = await Vendor.findByIdAndUpdate(
+//       id,
+//       updates,
+//       { 
+//         new: true,
+//         runValidators: true
+//       }
+//     ).select('documents formProgress completionTimestamps');
 
-    if (!updatedVendor) {
-      return res.status(404).json({
-        success: false,
-        message: "Vendor not found"
-      });
-    }
+//     if (!updatedVendor) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "Vendor not found"
+//       });
+//     }
 
-    res.status(200).json({
-      success: true,
-      message: "Documents uploaded successfully",
-      data: {
-        documents: {
-          aadharFront: !!updatedVendor.documents.aadharFront,
-          aadharBack: !!updatedVendor.documents.aadharBack,
-          panCard: !!updatedVendor.documents.panCard,
-          shopCertificate: !!updatedVendor.documents.shopCertificate
-        },
-        progress: {
-          completed: updatedVendor.formProgress.completedSteps.documents,
-          lastUpdated: updatedVendor.completionTimestamps.documents
-        }
-      }
-    });
+//     res.status(200).json({
+//       success: true,
+//       message: "Documents uploaded successfully",
+//       data: {
+//         documents: {
+//           aadharFront: !!updatedVendor.documents.aadharFront,
+//           aadharBack: !!updatedVendor.documents.aadharBack,
+//           panCard: !!updatedVendor.documents.panCard,
+//           shopCertificate: !!updatedVendor.documents.shopCertificate
+//         },
+//         progress: {
+//           completed: updatedVendor.formProgress.completedSteps.documents,
+//           lastUpdated: updatedVendor.completionTimestamps.documents
+//         }
+//       }
+//     });
 
-  } catch (error) {
-    console.error('Document upload error:', error);
+//   } catch (error) {
+//     console.error('Document upload error:', error);
     
-    // Handle file system errors
-    if (error.code === 'ENOENT') {
-      return res.status(500).json({
-        success: false,
-        message: "Error storing documents - file system error"
-      });
-    }
+//     // Handle file system errors
+//     if (error.code === 'ENOENT') {
+//       return res.status(500).json({
+//         success: false,
+//         message: "Error storing documents - file system error"
+//       });
+//     }
 
-    // Handle validation errors
-    if (error.name === 'ValidationError') {
-      return res.status(400).json({
-        success: false,
-        message: "Document validation failed",
-        errors: Object.values(error.errors).map(e => e.message)
-      });
-    }
+//     // Handle validation errors
+//     if (error.name === 'ValidationError') {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Document validation failed",
+//         errors: Object.values(error.errors).map(e => e.message)
+//       });
+//     }
 
-    res.status(500).json({
-      success: false,
-      message: "Error uploading documents",
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
-  }
-}
+//     res.status(500).json({
+//       success: false,
+//       message: "Error uploading documents",
+//       error: process.env.NODE_ENV === 'development' ? error.message : undefined
+//     });
+//   }
+// }
 
 // async function updateBankDetails(req, res) {
 //   try {
@@ -838,6 +830,91 @@ async function uploadDocuments(req, res) {
 // };
 
 // Registration Submission & Status
+
+async function uploadDocuments(req, res) {
+  try {
+    const { id } = req.params;
+    const files = req.files;
+    const { aadharCardNo, panCardNo, shopOpeningDate } = req.body;
+
+    if (!files || Object.keys(files).length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No documents were uploaded"
+      });
+    }
+
+    const updates = {
+      updatedAt: new Date(),
+      "formProgress.completedSteps.documents": true,
+      "completionTimestamps.documents": new Date()
+    };
+
+    // ✅ Add uploaded file paths
+    if (files.aadharFront) updates["documents.aadharFront"] = files.aadharFront[0].path;
+    if (files.aadharBack) updates["documents.aadharBack"] = files.aadharBack[0].path;
+    if (files.panCard) updates["documents.panCardFront"] = files.panCard[0].path;
+    if (files.shopCertificate) updates["documents.shopCertificate"] = files.shopCertificate[0].path;
+    if (files.faceVerificationImage) updates["documents.faceVerificationImage"] = files.faceVerificationImage[0].path;
+
+    // ✅ Add text fields if provided
+    if (aadharCardNo) updates["aadharCardNo"] = aadharCardNo;
+    if (panCardNo) updates["panCardNo"] = panCardNo;
+    if (shopOpeningDate) updates["shopOpeningDate"] = new Date(shopOpeningDate);
+
+    const updatedVendor = await Vendor.findByIdAndUpdate(
+      id,
+      updates,
+      { new: true, runValidators: true }
+    ).select('documents aadharCardNo panCardNo shopOpeningDate formProgress completionTimestamps');
+
+    if (!updatedVendor) {
+      return res.status(404).json({
+        success: false,
+        message: "Vendor not found"
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Documents and info uploaded successfully",
+      data: {
+        documents: updatedVendor.documents,
+        aadharCardNo: updatedVendor.aadharCardNo,
+        panCardNo: updatedVendor.panCardNo,
+        shopOpeningDate: updatedVendor.shopOpeningDate,
+        progress: {
+          completed: updatedVendor.formProgress.completedSteps.documents,
+          lastUpdated: updatedVendor.completionTimestamps.documents
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('Document upload error:', error);
+
+    if (error.code === 'ENOENT') {
+      return res.status(500).json({
+        success: false,
+        message: "Error storing documents - file system error"
+      });
+    }
+
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({
+        success: false,
+        message: "Validation failed",
+        errors: Object.values(error.errors).map(e => e.message)
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: "Error uploading documents",
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+}
 
 async function updateBankDetails(req, res) {
   try {
