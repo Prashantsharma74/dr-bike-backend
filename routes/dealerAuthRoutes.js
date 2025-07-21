@@ -50,8 +50,8 @@ router.get('/registration-status', checkApprovalStatus);
 
 // Admin Routes (Only accessible by admin)
 router.get('/pending-registrations', getPendingRegistrations);
-router.get('/:id', getDealerDetails);
-router.put('/:id/approve', approveDealer);
-router.put('/:id/reject', rejectDealer);
+router.get('/pending-registrations/:id', getDealerDetails);
+router.put('/approve/:id', approveDealer);
+router.put('/reject/:id', rejectDealer);
 
 module.exports = router;

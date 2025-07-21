@@ -85,7 +85,7 @@ async function usersignin(req, res) {
         isActive: true,
         isVerify: false,
         isProfile: false,
-        isDoc: false
+        isDoc: false,
       });
     } else {
       dealer.otp = otp;
@@ -1027,7 +1027,6 @@ async function submitForApproval(req, res) {
   try {
     const vendor = await Vendor.findById(req.user._id);
 
-    // Check if all sections are completed
     const allCompleted = Array.from(vendor.formProgress.completedSteps.values())
       .every(val => val === true);
 
@@ -1038,7 +1037,6 @@ async function submitForApproval(req, res) {
       });
     }
 
-    // Check if all required documents are uploaded
     if (!vendor.documents.aadharFront || !vendor.documents.panCard || !vendor.documents.passbookImage) {
       return res.status(400).json({
         success: false,

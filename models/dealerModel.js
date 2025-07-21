@@ -7,6 +7,7 @@ const dealerModel = new mongoose.Schema({
     type: String,
     required: false,
     unique: true,
+    sparse: true,
     index: true,
     validate: {
       validator: function (v) {
@@ -118,7 +119,7 @@ const dealerModel = new mongoose.Schema({
   registrationStatus: {
     type: String,
     enum: ['Draft', 'Pending', 'Approved', 'Rejected'],
-    default: 'Draft',
+    default: 'Pending',
     required: true
   },
   adminNotes: String,
