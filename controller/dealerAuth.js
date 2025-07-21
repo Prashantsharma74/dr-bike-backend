@@ -1025,7 +1025,8 @@ async function updateBankDetails(req, res) {
 
 async function submitForApproval(req, res) {
   try {
-    const vendor = await Vendor.findById(req.user._id);
+    const {id} = req.params;
+    const vendor = await Vendor.findById(id);
 
     const allCompleted = Array.from(vendor.formProgress.completedSteps.values())
       .every(val => val === true);
