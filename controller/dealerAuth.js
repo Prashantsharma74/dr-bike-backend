@@ -2,6 +2,7 @@ var validation = require('../helper/validation');
 const otpAuth = require("../helper/otpAuth");
 const Dealer = require('../models/Dealer');
 const Vendor = require('../models/dealerModel');
+const Admin = require('../models/admin_model');
 const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 
@@ -769,7 +770,7 @@ async function updateShopDetails(req, res) {
 
 //   } catch (error) {
 //     console.error('Document upload error:', error);
-    
+
 //     // Handle file system errors
 //     if (error.code === 'ENOENT') {
 //       return res.status(500).json({
@@ -957,18 +958,18 @@ async function updateBankDetails(req, res) {
     const updatedVendor = await Vendor.findByIdAndUpdate(
       id,
       {
-        bankDetails: { 
+        bankDetails: {
           accountHolderName,
           accountNumber,
           ifscCode,
-          bankName 
+          bankName
         },
         "documents.passbookImage": passbookImage,
         "formProgress.completedSteps.bankDetails": true,
         "completionTimestamps.bankDetails": new Date(),
         updatedAt: new Date()
       },
-      { 
+      {
         new: true,
         runValidators: true
       }
@@ -996,7 +997,7 @@ async function updateBankDetails(req, res) {
 
   } catch (error) {
     console.error('Bank details update error:', error);
-    
+
     // Handle duplicate account errors
     if (error.code === 11000 && error.keyPattern?.bankDetails?.accountNumber) {
       return res.status(409).json({
@@ -1025,9 +1026,10 @@ async function updateBankDetails(req, res) {
 
 async function submitForApproval(req, res) {
   try {
-    const {id} = req.params;
+    const { id } = req.params;
     const vendor = await Vendor.findById(id);
-
+    console.log("Submitting registration for vendor ID:", id);
+    console.log("Vendor details:", vendor);
     const allCompleted = Array.from(vendor.formProgress.completedSteps.values())
       .every(val => val === true);
 
@@ -1038,10 +1040,10 @@ async function submitForApproval(req, res) {
       });
     }
 
-    if (!vendor.documents.aadharFront || !vendor.documents.panCard || !vendor.documents.passbookImage) {
+    if (!vendor.documents.aadharFront || !vendor.documents.panCardFront || !vendor.documents.shopCertificate) {
       return res.status(400).json({
         success: false,
-        message: "Please upload all required documents"
+        message: "Please upload all required documents (Aadhar Front, PAN Card Front, and Shop Certificate)"
       });
     }
 
@@ -1050,7 +1052,7 @@ async function submitForApproval(req, res) {
     await vendor.save();
 
     // Notify admin
-    await notifyAdmin(vendor._id);
+    // await notifyAdmin(vendor._id);
 
     res.status(200).json({
       success: true,
@@ -1206,17 +1208,17 @@ function getNextStepAfter(section) {
   return currentIndex < stepsOrder.length - 1 ? getStepNumber(stepsOrder[currentIndex + 1]) : 5;
 }
 
-async function notifyAdmin(vendorId) {
-  const admins = await Admin.find({ role: 'admin' }).select("email");
-  const adminEmails = admins.map(admin => admin.email);
+// async function notifyAdmin(vendorId) {
+//   const admins = await Admin.find({ role: 'admin' }).select("email");
+//   const adminEmails = admins.map(admin => admin.email);
 
-  await sendEmail({
-    to: adminEmails,
-    subject: 'New Vendor Registration Requires Approval',
-    html: `<p>A new vendor registration requires your approval. 
-           <a href="${process.env.ADMIN_PORTAL_URL}/vendors/${vendorId}">Review now</a></p>`
-  });
-}
+//   await sendEmail({
+//     to: adminEmails,
+//     subject: 'New Vendor Registration Requires Approval',
+//     html: `<p>A new vendor registration requires your approval. 
+//            <a href="${process.env.ADMIN_PORTAL_URL}/vendors/${vendorId}">Review now</a></p>`
+//   });
+// }
 
 async function sendApprovalEmail(vendor) {
   await sendEmail({
