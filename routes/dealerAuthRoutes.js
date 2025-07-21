@@ -45,7 +45,7 @@ router.post('/upload-documents/:id',
 router.post('/bank-details/:id', upload.single('passbookImage'), updateBankDetails);
 
 // Registration Submission & Status
-router.post('/submit-registration', submitForApproval);
+router.post('/submit-registration/:id', submitForApproval);
 router.get('/registration-status', checkApprovalStatus);
 
 // Admin Routes (Only accessible by admin)
