@@ -1051,9 +1051,6 @@ async function submitForApproval(req, res) {
     vendor.submittedAt = new Date();
     await vendor.save();
 
-    // Notify admin
-    // await notifyAdmin(vendor._id);
-
     res.status(200).json({
       success: true,
       message: "Registration submitted for admin approval"
@@ -1092,7 +1089,7 @@ async function checkApprovalStatus(req, res) {
 async function getPendingRegistrations(req, res) {
   try {
     const pendingVendors = await Vendor.find({ registrationStatus: 'Pending' })
-      .select("shopName ownerName phone submittedAt");
+      // .select("shopName ownerName phone submittedAt");
 
     res.status(200).json({
       success: true,
