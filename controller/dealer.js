@@ -1247,90 +1247,6 @@ const addDealerShopDetails = async (req, res) => {
   }
 };
 
-
-// const addDealerShopDetails = async (req, res) => {
-//   try {
-//     const data = jwt_decode(req.headers.token);
-//     const user_id = data.user_id;
-//     const user_type = data.user_type;
-
-//     let dealerId;
-
-//     if (user_type === 2) {
-//       // If dealer, get ID from token
-//       dealerId = user_id;
-//     } else if (user_type === 1) {
-//       // If admin, get ID from request body
-//       dealerId = req.body.dealer_id;
-//       if (!dealerId) {
-//         return res.status(200).send({ status: 200, message: "Dealer ID is required!" });
-//       }
-//     } else {
-//       return res.status(200).send({ status: 200, message: "Unauthorized access!" });
-//     }
-
-//     // Find the dealer
-//     const dealer = await Dealer.findById(dealerId);
-//     if (!dealer) {
-//       return res.status(200).send({ status: 200, message: "Dealer not found!" });
-//     }
-
-
-
-//     // Create an update object with only the provided fields
-//     let updateData = {};
-
-//     const allowedFields = [
-//       "shopName",
-//       "shopDescription",
-//       "shopPinCode",
-//       "shopCity",
-//       "shopState",
-//       "shopPhone",
-//       "businessEmail",
-
-//     ];
-
-//     allowedFields.forEach((field) => {
-//       if (req.body[field] !== undefined) {
-//         updateData[field] = req.body[field];
-//       }
-//     });
-
-//     // Handle shop images separately
-//     if (req.files?.shopImages) {
-//       const newImages = req.files.shopImages.map(file => file.filename);
-//       console.log("New Images:", newImages);
-
-//       updateFields.shopImages = dealer.shopImages 
-//           ? [...dealer.shopImages, ...newImages] 
-//           : newImages;
-//   }
-
-
-//     // ✅ Set confirmation flag
-//     updateData.isShopDetailsAdded = true;
-
-//     // Update dealer document
-//     await Dealer.findByIdAndUpdate(dealerId, { $set: updateData }, { new: true });
-
-//     return res.status(200).send({
-//       status: 200,
-//       success: true,
-//       message: "Shop details updated successfully",
-//       shopAdded: true,
-//     });
-
-//   } catch (error) {
-//     console.error("Error updating shop details:", error);
-//     return res.status(500).send({
-//       status: 500,
-//       message: "Internal server error",
-//       shopAdded: false,
-//     });
-//   }
-// };
-
 const addDealerDocuments = async (req, res) => {
   try {
     const data = jwt_decode(req.headers.token);
@@ -1407,7 +1323,7 @@ const getPendingWallets = async (req, res) => {
   try {
     const pendingWallets = await Wallet.find({
       order_status: 'PENDING',
-      Type: { $nin: ['Credit', 'Pending'] } // Exclude both Credit and Pending types
+      Type: { $nin: ['Credit', 'Pending'] }
     })
       .sort({ createdAt: -1 })
       .populate('dealer_id');
@@ -1425,8 +1341,6 @@ const getPendingWallets = async (req, res) => {
     });
   }
 };
-
-
 
 const updateWalletStatus = async (req, res) => {
   try {
@@ -1496,40 +1410,6 @@ const getAllDealersWithDocFalse = async (req, res) => {
   }
 }
 
-// const getAllDealersWithVerifyFalse = async (req, res) => {
-//   try{
-//     const data = jwt_decode(req.headers.token);
-//     const user_type = data.user_type;
-//     if(user_type === 1){
-//       const allDealers = await Dealer.find({isVerify: false});
-//       if(!allDealers){
-//         return res.status(404).json({
-//           success: false,
-//           message: "No Dealer found in the collection."
-//         })
-//       }
-//       return res.status(200).json({
-//         succcess: true,
-//         message: "Dealers list fetched successfully",
-//         data: allDealers
-//       })
-//     }
-//       else{
-//         return res.status(403).json({
-//           success: false,
-//           message: "Unauthorised access!"
-//         })
-//       }
-//   }
-//   catch(err){
-//     console.error("Error fetching Dealers details:", err);
-//     return res.status(500).json({
-//       status: false,
-//       message: "Internal server error"
-//     });
-//   }
-// }
-
 const getAllDealersWithVerifyFalse = async (req, res) => {
   try {
     const allDealers = await Dealer.find({ isVerify: false });
@@ -1555,7 +1435,6 @@ const getAllDealersWithVerifyFalse = async (req, res) => {
     });
   }
 };
-
 
 const updateDealerDocStatus = async (req, res) => {
   try {
@@ -1717,7 +1596,6 @@ async function singledealer(req, res) {
     });
   }
 }
-
 
 module.exports = {
   editDealer,

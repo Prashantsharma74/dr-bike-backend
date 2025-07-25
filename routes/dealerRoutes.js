@@ -530,7 +530,6 @@ router.get("/dealerWallet", getWallet);
 router.get("/dealersWithDocFalse", getAllDealersWithDocFalse);
 router.get("/dealersWithVerifyFalse", getAllDealersWithVerifyFalse);
 
-// router.post('/addDealer',upload.fields([{ name: 'image', maxCount: 1}]),addBike);
 router.delete("/deleteDealer", deleteDealer);
 router.post("/update_status", editDealerStatus);
 

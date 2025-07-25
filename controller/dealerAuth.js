@@ -1089,7 +1089,7 @@ async function checkApprovalStatus(req, res) {
 async function getPendingRegistrations(req, res) {
   try {
     const pendingVendors = await Vendor.find({ registrationStatus: 'Pending' })
-      // .select("shopName ownerName phone submittedAt");
+    // .select("shopName ownerName phone submittedAt");
 
     res.status(200).json({
       success: true,
@@ -1132,32 +1132,43 @@ async function getDealerDetails(req, res) {
 
 async function approveDealer(req, res) {
   try {
+    console.log("Id:- ", req.params.id);
+    
+    // First check if vendor exists
+    const vendorExists = await Vendor.findById(req.params.id);
+    if (!vendorExists) {
+      return res.status(404).json({
+        success: false,
+        message: "Vendor not found"
+      });
+    }
+
+    // Then try to update
     const vendor = await Vendor.findByIdAndUpdate(
       req.params.id,
       {
         registrationStatus: 'Approved',
         approvedAt: new Date(),
-        approvedBy: req.user._id,
         isActive: true
       },
       { new: true }
     );
 
-    // Send approval notification
-    await sendApprovalEmail(vendor);
-
     res.status(200).json({
       success: true,
-      message: "Vendor approved successfully"
+      message: "Vendor approved successfully",
+      data: vendor
     });
   } catch (error) {
+    console.error("Full error:", error); // Log the complete error
     res.status(500).json({
       success: false,
       message: "Error approving vendor",
-      error: error.message
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
-};
+}
 
 async function rejectDealer(req, res) {
   try {
@@ -1216,14 +1227,6 @@ function getNextStepAfter(section) {
 //            <a href="${process.env.ADMIN_PORTAL_URL}/vendors/${vendorId}">Review now</a></p>`
 //   });
 // }
-
-async function sendApprovalEmail(vendor) {
-  await sendEmail({
-    to: vendor.personalEmail,
-    subject: 'Your Vendor Account Has Been Approved',
-    html: `<p>Congratulations! Your vendor account for ${vendor.shopName} has been approved.</p>`
-  });
-}
 
 async function sendRejectionEmail(vendor, notes) {
   await sendEmail({

@@ -78,6 +78,5 @@ router.post('/verify-otp', verifyOtpAdmin);
 // Provider APP
 router.use('/dealerAuth', dealerauth);
 
-
 module.exports = router;
 
