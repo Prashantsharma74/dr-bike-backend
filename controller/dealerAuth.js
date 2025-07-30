@@ -1169,8 +1169,7 @@ async function approveDealer(req, res) {
         approvedAt: new Date(),
         isActive: true,
         'status.adminApproved': true,
-        'status.isActive': true,
-        'status.isVerified': vendorExists.isVerify
+        'status.isActive': true
       },
       { new: true }
     );
@@ -1183,7 +1182,7 @@ async function approveDealer(req, res) {
         status: {
           adminApproved: true,
           isActive: true,
-          isVerified: vendor.isVerify
+          isVerified: true
         }
       }
     });
