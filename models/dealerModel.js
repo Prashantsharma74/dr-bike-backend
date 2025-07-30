@@ -138,6 +138,11 @@ const dealerModel = new mongoose.Schema({
   isProfile: { type: Boolean, default: false },
   isDoc: { type: Boolean, default: false },
   isActive: { type: Boolean, default: false },
+  status: {
+    adminApproved: { type: Boolean, default: false },
+    isActive: { type: Boolean, default: false },
+    isVerified: { type: Boolean, default: false }
+  },
   // Document Verification Status
   documentVerification: {
     aadhar: { type: Boolean, default: false },
