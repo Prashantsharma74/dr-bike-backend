@@ -1133,7 +1133,7 @@ async function getDealerDetails(req, res) {
 async function approveDealer(req, res) {
   try {
     console.log("Id:- ", req.params.id);
-    
+
     // First check if vendor exists
     const vendorExists = await Vendor.findById(req.params.id);
     if (!vendorExists) {
@@ -1149,7 +1149,10 @@ async function approveDealer(req, res) {
       {
         registrationStatus: 'Approved',
         approvedAt: new Date(),
-        isActive: true
+        isActive: true,
+        'status.adminApproved': true,
+        'status.isActive': true,
+        'status.isVerified': vendorExists.isVerify
       },
       { new: true }
     );
@@ -1157,7 +1160,14 @@ async function approveDealer(req, res) {
     res.status(200).json({
       success: true,
       message: "Vendor approved successfully",
-      data: vendor
+      data: {
+        vendor,
+        status: {
+          adminApproved: true,
+          isActive: true,
+          isVerified: vendor.isVerify
+        }
+      }
     });
   } catch (error) {
     console.error("Full error:", error); // Log the complete error
@@ -1178,7 +1188,10 @@ async function rejectDealer(req, res) {
       req.params.id,
       {
         registrationStatus: 'Rejected',
-        adminNotes: notes
+        adminNotes: notes,
+        isActive: false,
+        'status.adminApproved': false,
+        'status.isActive': false,
       },
       { new: true }
     );
@@ -1188,7 +1201,14 @@ async function rejectDealer(req, res) {
 
     res.status(200).json({
       success: true,
-      message: "Vendor rejected successfully"
+      message: "Vendor rejected successfully",
+      data: {
+        status: {
+          adminApproved: false,
+          isActive: false,
+          isVerified: vendor.isVerify
+        }
+      }
     });
   } catch (error) {
     res.status(500).json({
