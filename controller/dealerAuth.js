@@ -1088,14 +1088,32 @@ async function checkApprovalStatus(req, res) {
 // Admin Endpoints
 async function getPendingRegistrations(req, res) {
   try {
-    const pendingVendors = await Vendor.find({ registrationStatus: 'Pending' })
+    const pendingVendors = await Vendor.find({ registrationStatus: 'Pending' }).lean();
     // .select("shopName ownerName phone submittedAt");
+
+    // Map through vendors to ensure status structure is consistent
+    const formattedVendors = pendingVendors.map(vendor => {
+      return {
+        ...vendor,
+        status: {
+          adminApproved: vendor.status?.adminApproved || false,
+          isActive: vendor.status?.isActive || false,
+          isVerified: vendor.status?.isVerified || false
+        }
+      };
+    });
 
     res.status(200).json({
       success: true,
-      count: pendingVendors.length,
-      vendors: pendingVendors
+      count: formattedVendors.length,
+      vendors: formattedVendors
     });
+
+    // res.status(200).json({
+    //   success: true,
+    //   count: pendingVendors.length,
+    //   vendors: pendingVendors
+    // });
   } catch (error) {
     res.status(500).json({
       success: false,
