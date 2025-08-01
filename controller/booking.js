@@ -438,52 +438,106 @@ async function getbooking(req, res) {
 // }
 
 
+// const getuserbookings = async (req, res) => {
+//   try {
+//     const data = jwt_decode(req.headers.token);
+//     const user_id = data.user_id;
+//     const user_type = data.user_type;
+//     const type = data.type;
+
+//     console.log(user_type, "user_type")
+//     if (!user_id) {
+//       return res.status(200).json({ status: 200, message: "Unauthorized access!" });
+//     }
+
+//     let filter = {};
+
+//     if (user_type == 2) {
+//       filter = { dealer_id: user_id };
+//     } else if (user_type == 4) {
+//       filter = { user_id: user_id };
+//     } else {
+//       return res.status(200).json({ status: 200, message: "Access denied!" });
+//     }
+//     console.log(filter, "filter")
+
+//     const userBookings = await booking.find(filter)
+//       .populate("services") 
+//       .populate("dealer_id") 
+//       .populate("pickupAndDropId")
+//       .populate("user_id") 
+//       .sort({ create_date: -1 });
+
+//     if (!userBookings || userBookings.length === 0) {
+//       return res.status(200).json({ status: 200, message: "No bookings found!" });
+//     }
+
+//     res.status(200).json({ status: 200, data: userBookings });
+
+//   } catch (error) {
+//     console.error("Error fetching user bookings:", error);
+//     res.status(500).json({ status: 500, message: "Internal Server Error" });
+//   }
+// };
+
 const getuserbookings = async (req, res) => {
   try {
-    const data = jwt_decode(req.headers.token);
-    const user_id = data.user_id;
-    const user_type = data.user_type;
-    const type = data.type;
+    // Extract user_id from URL params
+    const { user_id } = req.params;
 
-    console.log(user_type, "user_type")
+    // Extract user_type from query params (e.g., /api/bookings/123?user_type=2)
+    const { user_type } = req.query;
+
+    // Validate required fields
     if (!user_id) {
-      return res.status(200).json({ status: 200, message: "Unauthorized access!" });
+      return res.status(400).json({
+        status: 400,
+        message: "User ID is required in URL (e.g., /api/bookings/123)"
+      });
     }
 
+    if (!user_type || ![2, 4].includes(Number(user_type))) {
+      return res.status(400).json({
+        status: 400,
+        message: "Valid user_type (2 for dealer, 4 for user) is required in query params"
+      });
+    }
+
+    // Set filter based on user_type
     let filter = {};
-
     if (user_type == 2) {
-      filter = { dealer_id: user_id }; // Fetch bookings for the dealer
+      filter = { dealer_id: user_id }; // Dealer's bookings
     } else if (user_type == 4) {
-      filter = { user_id: user_id }; // Fetch bookings for the user
-    } else {
-      return res.status(200).json({ status: 200, message: "Access denied!" });
+      filter = { user_id: user_id };   // User's bookings
     }
-    console.log(filter, "filter")
 
-    // Fetch bookings for the user and populate related fields
+    // Fetch bookings from MongoDB
     const userBookings = await booking.find(filter)
-      .populate("services") // Fetch service name and price
-      .populate("dealer_id") // Fetch dealer name and location
-      .populate("pickupAndDropId") // Fetch pickup & drop details
-      .populate("user_id") // Fetch pickup & drop details
-      // .populate({
-      //   path: "variant_id",
-      //   populate: {
-      //     path: "model_id", // This will populate model_id inside variant_id
-      //   },
-      // }) // Fetch pickup & drop details
-      .sort({ create_date: -1 }); // Sort by most recent bookings first
+      .populate("services")
+      .populate("dealer_id")
+      .populate("pickupAndDropId")
+      .populate("user_id")
+      .sort({ create_date: -1 }); // Newest first
 
-    if (!userBookings || userBookings.length === 0) {
-      return res.status(200).json({ status: 200, message: "No bookings found!" });
+    if (!userBookings?.length) {
+      return res.status(404).json({
+        status: 404,
+        message: "No bookings found for this user"
+      });
     }
 
-    res.status(200).json({ status: 200, data: userBookings });
+    // Return successful response
+    res.status(200).json({
+      status: 200,
+      data: userBookings
+    });
 
   } catch (error) {
-    console.error("Error fetching user bookings:", error);
-    res.status(500).json({ status: 500, message: "Internal Server Error" });
+    console.error("Error fetching bookings:", error);
+    res.status(500).json({
+      status: 500,
+      message: "Internal Server Error"
+    });
   }
 };
 

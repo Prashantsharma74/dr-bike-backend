@@ -42,7 +42,7 @@ router.post('/addbooking/:id',addbooking)
 router.get('/getallbookings',getallbookings)
 
 
-router.get('/getuserbookings',getuserbookings)
+router.get('/getuserbookings/:user_id',getuserbookings)
 router.get('/getbooking/:id',getbooking)
 router.delete('/deletebooking',deletebooking)
 router.put('/updatebooking/:id',updatebooking)
