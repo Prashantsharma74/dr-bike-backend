@@ -521,7 +521,8 @@ const getuserbookings = async (req, res) => {
 
     if (!userBookings?.length) {
       return res.status(404).json({
-        status: 404,
+        status: 200,
+        success: true,
         message: "No bookings found for this user"
       });
     }
@@ -529,6 +530,7 @@ const getuserbookings = async (req, res) => {
     // Return successful response
     res.status(200).json({
       status: 200,
+      success: true,
       data: userBookings
     });
 
