@@ -168,46 +168,118 @@ async function checkPermission(user_id, requiredPermission) {
 // };
 
 
+// const dealerWithInRange = async (req, res) => {
+//   try {
+//     const { userLat, userLon } = req.query;
+
+//     // Ensure user latitude and longitude are provided
+//     if (!userLat || !userLon) {
+//       return res.status(200).json({ error: "User location (latitude & longitude) is required" });
+//     }
+
+//     // Fetch all active dealers
+//     const dealers = await Dealer.find({
+//       is_online: "on",
+//       wallet: { $gt: -500 },
+//       isBlock: false
+//     });
+
+//     console.log("dealer", dealers)
+//     // Filter dealers based on 3 km distance
+//     const nearbyDealers = dealers.filter(dealer => {
+//       const distance = calculateDistance(
+//         parseFloat(userLat),
+//         parseFloat(userLon),
+//         parseFloat(dealer.latitude),
+//         parseFloat(dealer.longitude)
+//       );
+//       return distance <= 3;
+//     });
+
+
+//     console.log("nearbyDealers", nearbyDealers)
+
+//     res.status(200).json({ success: true, data: nearbyDealers });
+
+//   } catch (error) {
+//     console.error("Error fetching nearby dealers:", error);
+//     res.status(500).json({ error: "Internal Server Error" });
+//   }
+// };
+
 const dealerWithInRange = async (req, res) => {
   try {
     const { userLat, userLon } = req.query;
 
-    // Ensure user latitude and longitude are provided
+    // Validate inputs
     if (!userLat || !userLon) {
-      return res.status(200).json({ error: "User location (latitude & longitude) is required" });
+      return res.status(400).json({
+        success: false,
+        message: "Latitude and longitude are required."
+      });
     }
 
-    // Fetch all active dealers
-    const dealers = await Dealer.find({
+    const latitude = parseFloat(userLat);
+    const longitude = parseFloat(userLon);
+
+    console.log(`📍 Searching dealers near lat: ${latitude}, lon: ${longitude}`);
+
+    if (isNaN(latitude) || isNaN(longitude)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid latitude or longitude."
+      });
+    }
+
+    // Fetch dealers within a rough bounding box first (optimization)
+    const dealers = await Vendor.find({
       is_online: "on",
       wallet: { $gt: -500 },
-      isBlock: false
+      isBlock: false,
+      latitude: { $gte: latitude - 0.03, $lte: latitude + 0.03 },
+      longitude: { $gte: longitude - 0.03, $lte: longitude + 0.03 },
     });
 
-    console.log("dealer", dealers)
-    // Filter dealers based on 3 km distance
+    console.log(`✅ Total Dealers Found: ${dealers}`);
+
+    // Calculate precise distances for filtered dealers
     const nearbyDealers = dealers.filter(dealer => {
       const distance = calculateDistance(
-        parseFloat(userLat),
-        parseFloat(userLon),
-        parseFloat(dealer.latitude),
-        parseFloat(dealer.longitude)
+        latitude,
+        longitude,
+        dealer.latitude,
+        dealer.longitude
       );
-      return distance <= 3;
+      return distance <= 3; // 3 km
     });
 
-
-    console.log("nearbyDealers", nearbyDealers)
-
-
-    res.status(200).json({ success: true, data: nearbyDealers });
+    return res.status(200).json({
+      success: true,
+      data: nearbyDealers
+    });
 
   } catch (error) {
-    console.error("Error fetching nearby dealers:", error);
-    res.status(500).json({ error: "Internal Server Error" });
+    console.error("Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error."
+    });
   }
 };
 
+// Helper: Calculate distance (Haversine formula)
+function calculateDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371; // Earth radius in km
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLon = (lon2 - lon1) * (Math.PI / 180);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * (Math.PI / 180)) *
+    Math.cos(lat2 * (Math.PI / 180)) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c; // Distance in km
+}
 
 const dealerWithInRange2 = async (req, res) => {
   try {
