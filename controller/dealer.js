@@ -11,6 +11,7 @@ const Bike = require('../models/bikeCompanyModel')
 const UserBike = require("../models/userBikeModel")
 const servicess = require("../models/service_model")
 const fs = require("fs");
+const mongoose = require('mongoose');
 const { log } = require("console");
 
 function calculateDistance(lat1, lon1, lat2, lon2) {
@@ -1218,35 +1219,78 @@ async function addAmount(req, res) {
   }
 }
 
+// async function getShopDetails(req, res) {
+//   try {
+//     const data = jwt_decode(req.headers.token);
+//     const user_type = data.user_type;
+
+//     if (user_type !== 4) {
+//       return res.status(200).json({ success: false, message: "Unauthorized access!" });
+//     }
+
+//     const { dealer_id } = req.query;
+
+//     if (!dealer_id) {
+//       return res.status(200).json({ success: false, message: "Dealer ID is required!" });
+//     }
+
+//     // Fetch dealer details along with services
+//     const dealer = await Vendor.findById(dealer_id)
+//       .select("shopName shopImages shopDescription goDigital expertAdvice ourPromise latitude longitude pickupAndDropDescription pickupAndDrop address")
+//       .populate("services");
+
+//     if (!dealer) {
+//       return res.status(200).json({ success: false, message: "Dealer not found!" });
+//     }
+
+//     const services = await servicess.find({ dealer_id: dealer_id });
+//     // Fetch ratings for the dealer
+//     const ratings = await Rating.find({ dealer_id: dealer_id });
+
+//     // Calculate average rating
+//     const totalRatings = ratings.length;
+//     const sumRatings = ratings.reduce((acc, curr) => acc + curr.rating, 0);
+//     const averageRating = totalRatings > 0 ? (sumRatings / totalRatings).toFixed(1) : "0.0";
+
+//     return res.status(200).json({
+//       success: true,
+//       message: "Shop details retrieved successfully!",
+//       data: {
+//         ...dealer.toObject(),
+//         services,
+//         averageRating
+//       }
+//     });
+
+
+//   } catch (error) {
+//     console.error("Error in getShopDetails:", error);
+//     return res.status(200).json({ success: false, message: "Internal server error!" });
+//   }
+// }
+
 async function getShopDetails(req, res) {
   try {
-    const data = jwt_decode(req.headers.token);
-    const user_type = data.user_type;
-
-    if (user_type !== 4) {
-      return res.status(200).json({ success: false, message: "Unauthorized access!" });
-    }
-
-    const { dealer_id } = req.query;
+    const { id } = req.params;
+    const dealer_id = id.trim();
 
     if (!dealer_id) {
-      return res.status(200).json({ success: false, message: "Dealer ID is required!" });
+      return res.status(400).json({ success: false, message: "Dealer ID is required!" });
     }
 
-    // Fetch dealer details along with services
-    const dealer = await Dealer.findById(dealer_id)
-      .select("shopName shopImages shopDescription goDigital expertAdvice ourPromise latitude longitude pickupAndDropDescription pickupAndDrop address")
+    if (!mongoose.Types.ObjectId.isValid(dealer_id)) {
+      return res.status(400).json({ success: false, message: "Invalid Dealer ID format!" });
+    }
+
+    const dealer = await Vendor.findById(dealer_id)
+      .select("shopName shopImages shopDescription goDigital expertAdvice ourPromise latitude longitude pickupAndDropDescription pickupAndDrop address services")
       .populate("services");
 
     if (!dealer) {
-      return res.status(200).json({ success: false, message: "Dealer not found!" });
+      return res.status(404).json({ success: false, message: "Dealer not found!" });
     }
 
-    const services = await servicess.find({ dealer_id: dealer_id });
-    // Fetch ratings for the dealer
     const ratings = await Rating.find({ dealer_id: dealer_id });
-
-    // Calculate average rating
     const totalRatings = ratings.length;
     const sumRatings = ratings.reduce((acc, curr) => acc + curr.rating, 0);
     const averageRating = totalRatings > 0 ? (sumRatings / totalRatings).toFixed(1) : "0.0";
@@ -1256,15 +1300,13 @@ async function getShopDetails(req, res) {
       message: "Shop details retrieved successfully!",
       data: {
         ...dealer.toObject(),
-        services,
         averageRating
       }
     });
 
-
   } catch (error) {
     console.error("Error in getShopDetails:", error);
-    return res.status(200).json({ success: false, message: "Internal server error!" });
+    return res.status(500).json({ success: false, message: "Internal server error!" });
   }
 }
 

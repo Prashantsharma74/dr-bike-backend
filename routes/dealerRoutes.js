@@ -538,7 +538,7 @@ router.post('/processTransaction/:id', WalletAdd);
 //  Payout of cashfree ---- NOT IN Use
 router.post('/AddAmout/:id', addAmount)
 router.post('/prepare-transfer', tranfer)
-router.get('/getShopDetails', getShopDetails)
+router.get('/getShopDetails/:id', getShopDetails)
 
 router.post(
   "/add-shop-details",

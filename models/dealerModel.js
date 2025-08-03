@@ -163,7 +163,11 @@ const dealerModel = new mongoose.Schema({
     email: { type: Boolean, default: true },
     sms: { type: Boolean, default: true },
     app: { type: Boolean, default: true }
-  }
+  },
+  services: [{
+  type: mongoose.Schema.Types.ObjectId,
+  ref: 'service' 
+}]
 }, { timestamps: true });
 
 // Add index for better query performance
