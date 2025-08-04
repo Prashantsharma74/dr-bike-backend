@@ -49,7 +49,7 @@ router.put('/updatebooking/:id',updatebooking)
 router.post('/createBooking',createBooking)
 router.get('/getBookingDetails/:id',getBookingDetails)
 router.post('/updateBooking',updateBooking)
-router.post('/updateBookingStatus',updateBookingStatus)
+router.post('/updateBookingStatus/:bookingId/status',updateBookingStatus)
 router.post('/sendBookingOTP',sendBookingOTP)
 router.post('/verifyBookingOTP',verifyBookingOTP)
 router.post("/update-pickup-status", updatePickupStatus);

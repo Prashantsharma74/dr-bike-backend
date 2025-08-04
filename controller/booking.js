@@ -513,13 +513,12 @@ const getuserbookings = async (req, res) => {
       filter = { user_id: user_id };   // User's bookings
     }
 
-    // Fetch bookings from MongoDB
     const userBookings = await booking.find(filter)
       .populate("services")
       .populate("dealer_id")
       .populate("pickupAndDropId")
       .populate("user_id")
-      .sort({ create_date: -1 }); // Newest first
+      .sort({ create_date: -1 });
 
     if (!userBookings?.length) {
       return res.status(404).json({
@@ -835,41 +834,107 @@ async function updateBooking(req, res) {
   }
 }
 
+// async function updateBookingStatus(req, res) {
+//   try {
+//     const data = jwt_decode(req.headers.token);
+//     const user_id = data.user_id;
+
+//     const { bookingId, status } = req.body;
+
+//     if (!bookingId || !status) {
+//       return res.status(400).json({ success: false, message: "Booking ID and status are required" });
+//     }
+
+//     let existingBooking = await booking.findById(bookingId);
+//     if (!existingBooking) {
+//       return res.status(404).json({ success: false, message: "Booking not found" });
+//     }
+
+//     existingBooking.status = status;
+//     await existingBooking.save();
+
+//     if (status === "completed") {
+//       await handleBookingCompletion(existingBooking);
+//     }
+
+
+//     // Fetch customer details
+//     const customer = await customers.findById(existingBooking.user_id);
+//     if (customer && customer.device_token) {
+//       Notification(customer.device_token, `Your booking status has been updated to: ${status}`, customer._id.toString());
+//     }
+
+//     res.status(200).json({ success: true, message: "Booking status updated successfully", data: existingBooking });
+
+//   } catch (error) {
+//     console.error("Update Booking Status Error:", error);
+//     res.status(500).json({ success: false, message: "Internal Server Error" });
+//   }
+// }
+
 async function updateBookingStatus(req, res) {
   try {
-    const data = jwt_decode(req.headers.token);
-    const user_id = data.user_id;
+    const { bookingId } = req.params;
+    const { status, user_id } = req.body;
 
-    const { bookingId, status } = req.body;
-
-    if (!bookingId || !status) {
-      return res.status(400).json({ success: false, message: "Booking ID and status are required" });
+    if (!bookingId || !status || !user_id) {
+      return res.status(400).json({
+        success: false,
+        message: "Booking ID, status, and user ID are required"
+      });
     }
 
+    // Find and update booking
     let existingBooking = await booking.findById(bookingId);
     if (!existingBooking) {
-      return res.status(404).json({ success: false, message: "Booking not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Booking not found"
+      });
     }
 
+    // Verify the requesting user has rights to update this booking
+    if (existingBooking.user_id.toString() !== user_id &&
+      existingBooking.dealer_id.toString() !== user_id) {
+      return res.status(403).json({
+        success: false,
+        message: "Unauthorized to update this booking"
+      });
+    }
+
+    // Update status
     existingBooking.status = status;
     await existingBooking.save();
 
+    // Handle completion logic if needed
     if (status === "completed") {
       await handleBookingCompletion(existingBooking);
     }
 
-
-    // Fetch customer details
-    const customer = await customers.findById(existingBooking.user_id);
-    if (customer && customer.device_token) {
-      Notification(customer.device_token, `Your booking status has been updated to: ${status}`, customer._id.toString());
+    // Notify customer if they're not the one making the update
+    if (existingBooking.user_id.toString() !== user_id) {
+      const customer = await customers.findById(existingBooking.user_id);
+      if (customer?.device_token) {
+        Notification(
+          customer.device_token,
+          `Your booking status has been updated to: ${status}`,
+          customer._id.toString()
+        );
+      }
     }
 
-    res.status(200).json({ success: true, message: "Booking status updated successfully", data: existingBooking });
+    res.status(200).json({
+      success: true,
+      message: "Booking status updated successfully",
+      data: existingBooking
+    });
 
   } catch (error) {
     console.error("Update Booking Status Error:", error);
-    res.status(500).json({ success: false, message: "Internal Server Error" });
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error"
+    });
   }
 }
 
