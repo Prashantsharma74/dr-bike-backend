@@ -976,6 +976,35 @@ const sendBookingOTP = async (req, res) => {
 };
 
 
+// const verifyBookingOTP = async (req, res) => {
+//   try {
+//     const { bookingId, otp } = req.body;
+//     if (!bookingId || !otp) {
+//       return res.status(200).json({ success: false, message: "Booking ID and OTP are required" });
+//     }
+
+//     // Booking ka data fetch karna
+//     const bookingData = await booking.findById(bookingId).populate("dealer_id");
+//     if (!bookingData) {
+//       return res.status(200).json({ success: false, message: "Booking not found" });
+//     }
+
+//     // OTP Check karna
+//     if (bookingData.otp !== otp) {
+//       return res.status(200).json({ success: false, message: "Invalid OTP" });
+//     }
+
+//     // OTP Verify hone ke baad null kar dena
+//     bookingData.otp = null;
+//     await bookingData.save();
+
+//     res.status(200).json({ success: true, message: "OTP verified successfully by dealer" });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ success: false, message: "Internal Server Error" });
+//   }
+// };
+
 const verifyBookingOTP = async (req, res) => {
   try {
     const { bookingId, otp } = req.body;
@@ -989,8 +1018,8 @@ const verifyBookingOTP = async (req, res) => {
       return res.status(200).json({ success: false, message: "Booking not found" });
     }
 
-    // OTP Check karna
-    if (bookingData.otp !== otp) {
+    // Fixed OTP Check (9999)
+    if (otp !== "9999") {
       return res.status(200).json({ success: false, message: "Invalid OTP" });
     }
 

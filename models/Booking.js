@@ -7,7 +7,7 @@ const bookingSchema = new mongoose.Schema(
     user_id: { type: mongoose.Schema.Types.ObjectId, ref: "customers", required: true }, // User who made the booking
     dealer_id: { type: mongoose.Schema.Types.ObjectId, ref: "dealer", required: true }, // Dealer ID
     services: [{ type: mongoose.Schema.Types.ObjectId, ref: "service" }], // Multiple services
-    pickupAndDropId: { type: mongoose.Schema.Types.ObjectId, ref: "PicknDrop", default: null }, // Optional Pickup & Drop service
+    pickupAndDropId: { type: mongoose.Schema.Types.ObjectId, ref: "PicknDrop", default: null },
     status: {
       type: String,
       enum: ["pending", "confirmed", "completed", "Payment", "rejected", "user_cancelled", "cash received"],
@@ -21,9 +21,8 @@ const bookingSchema = new mongoose.Schema(
     serviceDate: { type: Date },
     billGenerated: { type: Boolean, default: false },
     lastServiceKm: { type: Number, default: 0 },
-    // Storing Multiple Services with Default Empty serviceName
     serviceSummary: [{
-      serviceName: { type: String, default: "" }, // Default empty string
+      serviceName: { type: String, default: "" }, 
       price: { type: Number, default: 0 }
     }],
     otp: { type: Number, default: null },
