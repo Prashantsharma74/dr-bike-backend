@@ -503,6 +503,8 @@ const getuserbookings = async (req, res) => {
       });
     }
 
+    console.log("user_type", user_type, "user_id", user_id);
+
     // Set filter based on user_type
     let filter = {};
     if (user_type == 2) {
