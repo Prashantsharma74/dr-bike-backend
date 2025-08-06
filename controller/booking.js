@@ -763,43 +763,104 @@ async function createBooking(req, res) {
   }
 }
 
-// Get Booking Details with Populated Data
+// Get Booking Details with Populated Data  
+// async function getBookingDetails(req, res) {
+//   try {
+//     const bookingId = req.params.id;
+//     const bookings = await booking.findById(bookingId)
+//       .populate("user_id")
+//       .populate("dealer_id")
+//       .populate("services")
+//       .populate("pickupAndDropId")
+//       .populate("userBike_id");
+
+//     if (!bookings) {
+//       return res.status(404).json({ success: false, message: "Booking not found" });
+//     }
+
+//     const userBikeCC = parseInt(bookings?.userBike_id?.bike_cc);
+//     const filteredServices = bookings.services.map(service => {
+//       const matchingBikes = service.bikes.filter(b => b.cc === userBikeCC);
+//       return {
+//         ...service.toObject(),
+//         bikes: matchingBikes
+//       };
+//     }).filter(service => service.bikes.length > 0);
+
+//     const result = {
+//       ...bookings.toObject(),
+//       services: filteredServices
+//     };
+
+//     res.status(200).json({ success: true, data: result });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ success: false, message: "Internal Server Error" });
+//   }
+// }
+
 async function getBookingDetails(req, res) {
   try {
     const bookingId = req.params.id;
-    const bookings = await booking.findById(bookingId)
-      .populate("user_id")
-      .populate("dealer_id")
-      .populate("services")
-      .populate("pickupAndDropId")
-      .populate("userBike_id");
-
-    if (!bookings) {
+    
+    // First, verify the booking exists without population
+    const bookingExists = await booking.findById(bookingId);
+    if (!bookingExists) {
       return res.status(404).json({ success: false, message: "Booking not found" });
     }
 
-    const userBikeCC = parseInt(bookings?.userBike_id?.bike_cc); // bike_cc is a string
-    const filteredServices = bookings.services.map(service => {
-      const matchingBikes = service.bikes.filter(b => b.cc === userBikeCC);
-      return {
-        ...service.toObject(),
-        bikes: matchingBikes
-      };
-    }).filter(service => service.bikes.length > 0);
+    // Then populate with debug logging
+    const bookings = await booking.findById(bookingId)
+      .populate("user_id")
+      .populate({
+        path: "dealer_id",
+        model: "Vendor" // Ensure this matches your model name
+      })
+      .populate({
+        path: "services",
+        model: "service" // Ensure this matches your service model name
+      })
+      .populate("pickupAndDropId")
+      .populate("userBike_id");
+
+    console.log("Raw populated data:", bookings);
+
+    // Check if services array exists but is empty
+    if (!bookings.services || bookings.services.length === 0) {
+      console.log("No services found for booking:", bookingId);
+      return res.status(200).json({ 
+        success: true, 
+        data: bookings,
+        message: "Booking found but no services associated"
+      });
+    }
+
+    const userBikeCC = parseInt(bookings?.userBike_id?.bike_cc || 0);
+    console.log("Filtering services for bike CC:", userBikeCC);
+
+    const filteredServices = bookings.services
+      .map(service => {
+        const matchingBikes = service.bikes?.filter(b => b.cc === userBikeCC) || [];
+        return {
+          ...service.toObject(),
+          bikes: matchingBikes
+        };
+      })
+      .filter(service => service.bikes.length > 0);
+
+    console.log("Filtered services count:", filteredServices.length);
 
     const result = {
       ...bookings.toObject(),
-      services: filteredServices
+      services: filteredServices.length > 0 ? filteredServices : bookings.services
     };
 
     res.status(200).json({ success: true, data: result });
   } catch (error) {
-    console.error(error);
+    console.error("Error in getBookingDetails:", error);
     res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 }
-
-
 
 async function updateBooking(req, res) {
   try {
@@ -1016,7 +1077,7 @@ const verifyBookingOTP = async (req, res) => {
     const bookingData = await booking.findById(bookingId).populate("dealer_id");
     if (!bookingData) {
       return res.status(200).json({ success: false, message: "Booking not found" });
-    }
+    } 
 
     // Fixed OTP Check (9999)
     if (otp !== "9999") {

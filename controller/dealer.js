@@ -1311,9 +1311,59 @@ async function addAmount(req, res) {
 //   }
 // }
 
+// async function getShopDetails(req, res) {
+//   try {
+//     const { id } = req.params;
+//     const dealer_id = id.trim();
+
+//     if (!dealer_id) {
+//       return res.status(400).json({ success: false, message: "Dealer ID is required!" });
+//     }
+
+//     if (!mongoose.Types.ObjectId.isValid(dealer_id)) {
+//       return res.status(400).json({ success: false, message: "Invalid Dealer ID format!" });
+//     }
+
+//     // Fetch dealer with populated services
+//     const dealer = await Vendor.findById(dealer_id)
+//       .select("shopName shopImages shopDescription goDigital expertAdvice ourPromise latitude longitude pickupAndDropDescription pickupAndDrop address services")
+//       .populate({
+//         path: 'services',
+//         match: { dealer_id: dealer_id } // Ensure we only populate services for this dealer
+//       });
+
+//     if (!dealer) {
+//       return res.status(404).json({ success: false, message: "Dealer not found!" });
+//     }
+
+//     // Alternative service fetch if populate isn't working
+//     const services = await Service.find({ dealer_id: dealer_id });
+
+//     const ratings = await Rating.find({ dealer_id: dealer_id });
+//     const totalRatings = ratings.length;
+//     const sumRatings = ratings.reduce((acc, curr) => acc + curr.rating, 0);
+//     const averageRating = totalRatings > 0 ? (sumRatings / totalRatings).toFixed(1) : "0.0";
+
+//     return res.status(200).json({
+//       success: true,
+//       message: "Shop details retrieved successfully!",
+//       data: {
+//         ...dealer.toObject(),
+//         services: services, // Use the separately fetched services if populate fails
+//         averageRating
+//       }
+//     });
+
+//   } catch (error) {
+//     console.error("Error in getShopDetails:", error);
+//     return res.status(500).json({ success: false, message: "Internal server error!" });
+//   }
+// }
+
 async function getShopDetails(req, res) {
   try {
     const { id } = req.params;
+    const { cc } = req.body; // Get CC from request body
     const dealer_id = id.trim();
 
     if (!dealer_id) {
@@ -1329,7 +1379,7 @@ async function getShopDetails(req, res) {
       .select("shopName shopImages shopDescription goDigital expertAdvice ourPromise latitude longitude pickupAndDropDescription pickupAndDrop address services")
       .populate({
         path: 'services',
-        match: { dealer_id: dealer_id } // Ensure we only populate services for this dealer
+        match: { dealer_id: dealer_id }
       });
 
     if (!dealer) {
@@ -1337,8 +1387,19 @@ async function getShopDetails(req, res) {
     }
 
     // Alternative service fetch if populate isn't working
-    const services = await Service.find({ dealer_id: dealer_id });
-    
+    let services = await Service.find({ dealer_id: dealer_id });
+
+    // Filter services to only include bikes with matching CC if cc is provided
+    if (cc) {
+      services = services.map(service => {
+        const filteredBikes = service.bikes.filter(bike => bike.cc === cc);
+        return {
+          ...service.toObject(),
+          bikes: filteredBikes
+        };
+      }).filter(service => service.bikes.length > 0); // Remove services with no matching bikes
+    }
+
     const ratings = await Rating.find({ dealer_id: dealer_id });
     const totalRatings = ratings.length;
     const sumRatings = ratings.reduce((acc, curr) => acc + curr.rating, 0);
@@ -1349,7 +1410,7 @@ async function getShopDetails(req, res) {
       message: "Shop details retrieved successfully!",
       data: {
         ...dealer.toObject(),
-        services: services, // Use the separately fetched services if populate fails
+        services: services,
         averageRating
       }
     });
