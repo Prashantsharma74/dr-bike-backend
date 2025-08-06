@@ -162,10 +162,41 @@ const deleteAdditionalService = async (req, res) => {
     }
 };
 
+// 6. Get Additional Services by Dealer ID
+const getAdditionalServicesByDealerId = async (req, res) => {
+    try {
+        const { dealerId } = req.params;
+
+        if (!mongoose.Types.ObjectId.isValid(dealerId)) {
+            return res.status(400).json({
+                status: 400,
+                message: "Invalid dealer ID format"
+            });
+        }
+
+        const services = await AdditionalService.find({ dealer_id: dealerId })
+            .populate("dealer_id", "shopName email")
+            .sort({ id: -1 });
+
+        res.status(200).json({
+            status: 200,
+            message: services.length > 0 ? "Success" : "No additional services found for this dealer",
+            data: services
+        });
+    } catch (error) {
+        res.status(500).json({
+            status: 500,
+            message: "Failed to fetch additional services by dealer",
+            error: error.message
+        });
+    }
+};
+
 module.exports = {
     addAdditionalService,
     getAllAdditionalServices,
     getAdditionalServiceById,
     updateAdditionalService,
-    deleteAdditionalService
+    deleteAdditionalService,
+    getAdditionalServicesByDealerId
 };
