@@ -163,9 +163,11 @@ const deleteAdditionalService = async (req, res) => {
 };
 
 // 6. Get Additional Services by Dealer ID
+// Get Additional Services by Dealer ID with optional CC filter
 const getAdditionalServicesByDealerId = async (req, res) => {
     try {
         const { dealerId } = req.params;
+        const { cc } = req.query; // Get CC from query params
 
         if (!mongoose.Types.ObjectId.isValid(dealerId)) {
             return res.status(400).json({
@@ -174,19 +176,36 @@ const getAdditionalServicesByDealerId = async (req, res) => {
             });
         }
 
-        const services = await AdditionalService.find({ dealer_id: dealerId })
+        // Build the query object
+        const query = { dealer_id: dealerId };
+        
+        // Add CC filter if provided
+        if (cc) {
+            query['bikes.cc'] = Number(cc);
+        }
+
+        const services = await AdditionalService.find(query)
             .populate("dealer_id", "shopName email")
             .sort({ id: -1 });
 
+        // Filter bikes array if CC was specified
+        let result = services;
+        if (cc) {
+            result = services.map(service => ({
+                ...service.toObject(),
+                bikes: service.bikes.filter(bike => bike.cc === Number(cc))
+            }));
+        }
+
         res.status(200).json({
             status: 200,
-            message: services.length > 0 ? "Success" : "No additional services found for this dealer",
-            data: services
+            message: result.length > 0 ? "Success" : "No additional services found",
+            data: result
         });
     } catch (error) {
         res.status(500).json({
             status: 500,
-            message: "Failed to fetch additional services by dealer",
+            message: "Failed to fetch additional services",
             error: error.message
         });
     }
