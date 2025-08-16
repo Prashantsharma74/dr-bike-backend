@@ -4,9 +4,9 @@ const AutoIncrement = require("mongoose-sequence")(mongoose);
 const bookingSchema = new mongoose.Schema(
   {
     id: { type: Number },
-    user_id: { type: mongoose.Schema.Types.ObjectId, ref: "customers", required: true }, // User who made the booking
-    dealer_id: { type: mongoose.Schema.Types.ObjectId, ref: "dealer", required: true }, // Dealer ID
-    services: [{ type: mongoose.Schema.Types.ObjectId, ref: "service" }], // Multiple services
+    user_id: { type: mongoose.Schema.Types.ObjectId, ref: "customers", required: true },
+    dealer_id: { type: mongoose.Schema.Types.ObjectId, ref: "dealer", required: true }, 
+    services: [{ type: mongoose.Schema.Types.ObjectId, ref: "service" }],
     pickupAndDropId: { type: mongoose.Schema.Types.ObjectId, ref: "PicknDrop", default: null },
     status: {
       type: String,
@@ -26,8 +26,8 @@ const bookingSchema = new mongoose.Schema(
       price: { type: Number, default: 0 }
     }],
     otp: { type: Number, default: null },
-    tax: { type: Number, default: 0 }, // Tax for all services
-    totalBill: { type: Number, default: 0 }, // Total Bill after all services
+    tax: { type: Number, default: 0 }, 
+    totalBill: { type: Number, default: 0 }, 
 
     billStatus: {
       type: String,
@@ -37,7 +37,7 @@ const bookingSchema = new mongoose.Schema(
     additionalNotes: { type: [String], default: [] },
 
 
-    pickupDate: { type: Date, default: null }, // ✅ Added Pickup Date
+    pickupDate: { type: Date, default: null },
     create_date: { type: Date, default: Date.now },
     dealer_id: {
       type: mongoose.Schema.Types.ObjectId,

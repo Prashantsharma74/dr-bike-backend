@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const booking = require("../models/Booking");
 const additionaloptions = require("../models/additionalOptionsModel");
 const service = require("../models/service_model");
@@ -10,7 +11,6 @@ const Role = require('../models/Roles_modal')
 const Admin = require('../models/admin_model')
 const { Notification } = require("../helper/pushNotification");
 const { handleBookingCompletion } = require("../controller/reward")
-
 
 async function checkPermission(user_id, requiredPermission) {
   try {
@@ -384,111 +384,12 @@ async function getbooking(req, res) {
   }
 }
 
-
-// async function getuserbookings(req, res) {
-//   try {
-//     const data = jwt_decode(req.headers.token);
-//     const user_id = data.user_id;
-//     const user_type = data.user_type;
-//     const type = data.type;
-//     if (user_id == null || user_type != 1 && user_type != 4) {
-//       var response = {
-//         status: 401,
-//         message: "admin is un-authorised !",
-//       };
-//       return res.status(401).send(response);
-//     }
-
-//     let bookingresponce = await booking.find({ created_by: req.params.id })
-//     .populate({ path: "service_id", select: ['name', 'image', 'description'] })
-//     .populate({ path: "created_by", select: ['first_name', 'last_name', 'phone', 'address', 'city'] })
-//     .populate({ path: "additonal_options"})
-//     .sort({ "_id": -1 })
-//     .lean();
-
-//  if (bookingresponce.length > 0) {
-//       const formattedBookings = bookingresponce.map(booking => ({
-//         ...booking,
-//         bookingId: `B-${booking.id.toString().padStart(3, '0')}`,
-//       }));
-
-//       var response = {
-//         status: 200,
-//         message: 'Successfully retrieved bookings',
-//         data: formattedBookings,
-//         image_base_url: process.env.BASE_URL,
-//       };
-//       return res.status(200).send(response);
-//     } else {
-//       var response = {
-//         status: 201,
-//         data: [],
-//         message: 'No bookings found',
-//       };
-//       return res.status(201).send(response);
-//     }
-//   } catch (error) {
-//     console.log("error", error);
-//     response = {
-//       status: 201,
-//       message: "Operation was not successful",
-//     };
-//     return res.status(201).send(response);
-//   }
-// }
-
-
-// const getuserbookings = async (req, res) => {
-//   try {
-//     const data = jwt_decode(req.headers.token);
-//     const user_id = data.user_id;
-//     const user_type = data.user_type;
-//     const type = data.type;
-
-//     console.log(user_type, "user_type")
-//     if (!user_id) {
-//       return res.status(200).json({ status: 200, message: "Unauthorized access!" });
-//     }
-
-//     let filter = {};
-
-//     if (user_type == 2) {
-//       filter = { dealer_id: user_id };
-//     } else if (user_type == 4) {
-//       filter = { user_id: user_id };
-//     } else {
-//       return res.status(200).json({ status: 200, message: "Access denied!" });
-//     }
-//     console.log(filter, "filter")
-
-//     const userBookings = await booking.find(filter)
-//       .populate("services") 
-//       .populate("dealer_id") 
-//       .populate("pickupAndDropId")
-//       .populate("user_id") 
-//       .sort({ create_date: -1 });
-
-//     if (!userBookings || userBookings.length === 0) {
-//       return res.status(200).json({ status: 200, message: "No bookings found!" });
-//     }
-
-//     res.status(200).json({ status: 200, data: userBookings });
-
-//   } catch (error) {
-//     console.error("Error fetching user bookings:", error);
-//     res.status(500).json({ status: 500, message: "Internal Server Error" });
-//   }
-// };
-
 const getuserbookings = async (req, res) => {
   try {
-    // Extract user_id from URL params
     const { user_id } = req.params;
 
-    // Extract user_type from query params (e.g., /api/bookings/123?user_type=2)
     const { user_type } = req.query;
 
-    // Validate required fields
     if (!user_id) {
       return res.status(400).json({
         status: 400,
@@ -630,7 +531,6 @@ async function deletebooking(req, res) {
   }
 }
 
-
 async function updatebooking(req, res) {
   try {
     const data = jwt_decode(req.headers.token);
@@ -763,46 +663,10 @@ async function createBooking(req, res) {
   }
 }
 
-// Get Booking Details with Populated Data  
-// async function getBookingDetails(req, res) {
-//   try {
-//     const bookingId = req.params.id;
-//     const bookings = await booking.findById(bookingId)
-//       .populate("user_id")
-//       .populate("dealer_id")
-//       .populate("services")
-//       .populate("pickupAndDropId")
-//       .populate("userBike_id");
-
-//     if (!bookings) {
-//       return res.status(404).json({ success: false, message: "Booking not found" });
-//     }
-
-//     const userBikeCC = parseInt(bookings?.userBike_id?.bike_cc);
-//     const filteredServices = bookings.services.map(service => {
-//       const matchingBikes = service.bikes.filter(b => b.cc === userBikeCC);
-//       return {
-//         ...service.toObject(),
-//         bikes: matchingBikes
-//       };
-//     }).filter(service => service.bikes.length > 0);
-
-//     const result = {
-//       ...bookings.toObject(),
-//       services: filteredServices
-//     };
-
-//     res.status(200).json({ success: true, data: result });
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).json({ success: false, message: "Internal Server Error" });
-//   }
-// }
-
 async function getBookingDetails(req, res) {
   try {
     const bookingId = req.params.id;
-    
+
     // First, verify the booking exists without population
     const bookingExists = await booking.findById(bookingId);
     if (!bookingExists) {
@@ -828,8 +692,8 @@ async function getBookingDetails(req, res) {
     // Check if services array exists but is empty
     if (!bookings.services || bookings.services.length === 0) {
       console.log("No services found for booking:", bookingId);
-      return res.status(200).json({ 
-        success: true, 
+      return res.status(200).json({
+        success: true,
         data: bookings,
         message: "Booking found but no services associated"
       });
@@ -894,44 +758,6 @@ async function updateBooking(req, res) {
     res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 }
-
-// async function updateBookingStatus(req, res) {
-//   try {
-//     const data = jwt_decode(req.headers.token);
-//     const user_id = data.user_id;
-
-//     const { bookingId, status } = req.body;
-
-//     if (!bookingId || !status) {
-//       return res.status(400).json({ success: false, message: "Booking ID and status are required" });
-//     }
-
-//     let existingBooking = await booking.findById(bookingId);
-//     if (!existingBooking) {
-//       return res.status(404).json({ success: false, message: "Booking not found" });
-//     }
-
-//     existingBooking.status = status;
-//     await existingBooking.save();
-
-//     if (status === "completed") {
-//       await handleBookingCompletion(existingBooking);
-//     }
-
-
-//     // Fetch customer details
-//     const customer = await customers.findById(existingBooking.user_id);
-//     if (customer && customer.device_token) {
-//       Notification(customer.device_token, `Your booking status has been updated to: ${status}`, customer._id.toString());
-//     }
-
-//     res.status(200).json({ success: true, message: "Booking status updated successfully", data: existingBooking });
-
-//   } catch (error) {
-//     console.error("Update Booking Status Error:", error);
-//     res.status(500).json({ success: false, message: "Internal Server Error" });
-//   }
-// }
 
 async function updateBookingStatus(req, res) {
   try {
@@ -1036,36 +862,6 @@ const sendBookingOTP = async (req, res) => {
   }
 };
 
-
-// const verifyBookingOTP = async (req, res) => {
-//   try {
-//     const { bookingId, otp } = req.body;
-//     if (!bookingId || !otp) {
-//       return res.status(200).json({ success: false, message: "Booking ID and OTP are required" });
-//     }
-
-//     // Booking ka data fetch karna
-//     const bookingData = await booking.findById(bookingId).populate("dealer_id");
-//     if (!bookingData) {
-//       return res.status(200).json({ success: false, message: "Booking not found" });
-//     }
-
-//     // OTP Check karna
-//     if (bookingData.otp !== otp) {
-//       return res.status(200).json({ success: false, message: "Invalid OTP" });
-//     }
-
-//     // OTP Verify hone ke baad null kar dena
-//     bookingData.otp = null;
-//     await bookingData.save();
-
-//     res.status(200).json({ success: true, message: "OTP verified successfully by dealer" });
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).json({ success: false, message: "Internal Server Error" });
-//   }
-// };
-
 const verifyBookingOTP = async (req, res) => {
   try {
     const { bookingId, otp } = req.body;
@@ -1077,7 +873,7 @@ const verifyBookingOTP = async (req, res) => {
     const bookingData = await booking.findById(bookingId).populate("dealer_id");
     if (!bookingData) {
       return res.status(200).json({ success: false, message: "Booking not found" });
-    } 
+    }
 
     // Fixed OTP Check (9999)
     if (otp !== "9999") {
@@ -1126,8 +922,6 @@ const updatePickupStatus = async (req, res) => {
     res.status(500).json({ success: false, message: error });
   }
 };
-
-
 
 async function addNoteToBooking(req, res) {
   try {
@@ -1231,7 +1025,6 @@ async function deleteNoteFromBooking(req, res) {
   }
 }
 
-
 // By Prashant 
 async function getallbookings(req, res) {
   try {
@@ -1267,6 +1060,332 @@ async function getallbookings(req, res) {
   }
 }
 
+// async function updateBookingStatusDealer(req, res) {
+//   try {
+//     const { booking_id } = req.params;
+//     const {
+//       status,
+//       dealer_id,
+//       additional_services = [],
+//       service_summary = [],
+//       final_cost,
+//       tax
+//     } = req.body;
+//     console.log("Body", req.body)
+//     console.log("Booking ID", booking_id)
+//     // Validate status
+//     const validStatuses = ["pending", "confirmed", "completed", "Payment", "rejected", "user_cancelled", "cash received"];
+//     if (!validStatuses.includes(status)) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Invalid status value"
+//       });
+//     }
+
+//     console.log("Validaated Status", validStatuses)
+
+//     const booking = await booking.findById(booking_id);
+//     if (!booking) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "Booking not found"
+//       });
+//     }
+
+//     console.log("Booking", booking)
+
+//     if (booking.status === status) {
+//       return res.status(200).json({
+//         success: true,
+//         message: `Status already ${status}`,
+//         data: booking
+//       });
+//     }
+
+//     // Prepare update
+//     const updateData = { status };
+
+//     // Status-specific logic
+//     if (status === "confirmed" && dealer_id) {
+//       const dealer = await Dealer.findById(dealer_id);
+//       if (!dealer) {
+//         return res.status(404).json({
+//           success: false,
+//           message: "Dealer not found"
+//         });
+//       }
+//       updateData.dealer_id = dealer_id;
+//       updateData.dealer_name = dealer.name;
+//       updateData.dealer_address = dealer.address;
+//       updateData.dealer_phone = dealer.phone;
+//     }
+
+//     if (status === "completed") {
+//       if (!final_cost) {
+//         return res.status(400).json({
+//           success: false,
+//           message: "final_cost required for completion"
+//         });
+//       }
+//       updateData.final_cost = final_cost;
+//       updateData.tax = tax || 0;
+//       updateData.totalBill = final_cost + (tax || 0);
+//       updateData.billStatus = 'paid';
+//       updateData.serviceDate = new Date();
+
+//       if (service_summary.length > 0) {
+//         updateData.serviceSummary = service_summary;
+//       }
+//     }
+
+//     // Handle additional services
+//     if (additional_services.length > 0) {
+//       const services = await AdditionalOptions.find({
+//         _id: { $in: additional_services }
+//       });
+
+//       if (services.length !== additional_services.length) {
+//         return res.status(404).json({
+//           success: false,
+//           message: "Some services not found"
+//         });
+//       }
+
+//       updateData.$addToSet = {
+//         services: { $each: additional_services }
+//       };
+//     }
+
+//     // Execute update
+//     const updatedBooking = await booking.findByIdAndUpdate(
+//       booking_id,
+//       updateData,
+//       { new: true }
+//     );
+
+//     return res.status(200).json({
+//       success: true,
+//       message: "Booking updated successfully",
+//       data: {
+//         booking_id: updatedBooking._id,
+//         status: updatedBooking.status,
+//         totalBill: updatedBooking.totalBill,
+//         services: updatedBooking.services,
+//         dealer_info: {
+//           name: updatedBooking.dealer_name,
+//           phone: updatedBooking.dealer_phone
+//         }
+//       }
+//     });
+
+//   } catch (error) {
+//     console.error("Booking update error:", error);
+//     return res.status(500).json({
+//       success: false,
+//       message: "Internal server error",
+//       error: error.message
+//     });
+//   }
+// }
+
+async function updateBookingStatusDealer(req, res) {
+  try {
+    const { booking_id } = req.params;
+    const {
+      status,
+      dealer_id,
+      additional_services = [],
+      service_summary = [],
+      final_cost,
+      tax
+    } = req.body;
+
+    console.log("Request Body:", req.body);
+    console.log("Booking ID:", booking_id);
+
+    const validStatuses = ["pending", "confirmed", "completed", "Payment", "rejected", "user_cancelled", "cash received"];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid status value"
+      });
+    }
+
+    const bookings = await booking.findById(booking_id);
+    if (!bookings) {
+      return res.status(404).json({
+        success: false,
+        message: "Booking not found"
+      });
+    }
+
+    console.log("Current Booking Status:", bookings.status);
+
+    // Skip if status unchanged
+    if (bookings.status === status) {
+      return res.status(200).json({
+        success: true,
+        message: `Status already ${status}`,
+        data: bookings
+      });
+    }
+
+    // Prepare update data
+    const updateData = { status };
+    console.log("Updated Data", updateData)
+
+    // Status-specific logic
+    if (status === "confirmed" && dealer_id) {
+      const dealer = await Dealer.findById(dealer_id);
+      console.log("Dealer", dealer)
+      if (!dealer) {
+        return res.status(404).json({
+          success: false,
+          message: "Dealer not found"
+        });
+      }
+      updateData.dealer_id = dealer_id;
+      updateData.dealer_name = dealer.name;
+      updateData.dealer_address = dealer.address;
+      updateData.dealer_phone = dealer.phone;
+    }
+
+    if (status === "completed") {
+      if (!final_cost) {
+        return res.status(400).json({
+          success: false,
+          message: "final_cost required for completion"
+        });
+      }
+      updateData.final_cost = final_cost;
+      updateData.tax = tax || 0;
+      updateData.totalBill = final_cost + (tax || 0);
+      updateData.billStatus = 'paid';
+      updateData.serviceDate = new Date();
+
+      if (service_summary.length > 0) {
+        updateData.serviceSummary = service_summary;
+      }
+    }
+    console.log("additional_services", additional_services)
+
+    // if (additional_services.length > 0) {
+    //   console.log("additional_services 2", additional_services)
+    //   const services = await additionaloptions.find({
+    //     _id: { $in: additional_services }
+    //   });
+
+    //   console.log("Additional Options", services)
+
+    //   if (services.length !== additional_services.length) {
+    //     return res.status(404).json({
+    //       success: false,
+    //       message: "Some services not found"
+    //     });
+    //   }
+
+    //   updateData.$addToSet = {
+    //     services: { $each: additional_services }
+    //   };
+    // }
+
+    if (additional_services.length > 0) {
+      console.log("Processing additional services...");
+      console.log("Raw additional_services:", additional_services);
+
+      try {
+        console.log("Checking AdditionalOptions model reference...");
+        console.log("Type of AdditionalOptions:", typeof AdditionalOptions);
+
+        console.log("Validating service IDs...");
+        const validServiceIds = additional_services.filter(id => {
+          const isValid = mongoose.Types.ObjectId.isValid(id);
+          if (!isValid) {
+            console.error(`Invalid ObjectId: ${id}`);
+          }
+          return isValid;
+        });
+
+        if (validServiceIds.length !== additional_services.length) {
+          const invalidIds = additional_services.filter(id => !mongoose.Types.ObjectId.isValid(id));
+          console.error("Invalid service IDs found:", invalidIds);
+          return res.status(400).json({
+            success: false,
+            message: "Invalid service ID format",
+            invalidIds
+          });
+        }
+
+        const serviceObjectIds = validServiceIds.map(id => new mongoose.Types.ObjectId(id));
+        console.log("Converted ObjectIds:", serviceObjectIds);
+
+        console.log("Querying database for services...");
+        const services = await AdditionalOptions.find({
+          _id: { $in: serviceObjectIds }
+        }).lean();
+
+        console.log("Found services:", services);
+
+        if (services.length !== additional_services.length) {
+          const foundIds = services.map(s => s._id.toString());
+          const missingIds = additional_services.filter(id => !foundIds.includes(id));
+          console.error("Missing services:", missingIds);
+          return res.status(404).json({
+            success: false,
+            message: "Some services not found",
+            missingIds
+          });
+        }
+
+        updateData.$addToSet = {
+          services: { $each: serviceObjectIds }
+        };
+        console.log("Update data prepared with services:", updateData);
+
+      } catch (error) {
+        console.error("Error processing additional services:", error);
+        console.error("Error details:", {
+          message: error.message,
+          stack: error.stack,
+          name: error.name
+        });
+        throw error;
+      }
+    }
+
+    const updatedBooking = await booking.findByIdAndUpdate(
+      booking_id,
+      updateData,
+      { new: true }
+    );
+
+    console.log("Updated", updatedBooking)
+
+    return res.status(200).json({
+      success: true,
+      message: "Booking updated successfully",
+      data: {
+        booking_id: updatedBooking._id,
+        status: updatedBooking.status,
+        totalBill: updatedBooking.totalBill,
+        services: updatedBooking.services,
+        dealer_info: updatedBooking.dealer_id ? {
+          name: updatedBooking.dealer_name,
+          phone: updatedBooking.dealer_phone
+        } : null
+      }
+    });
+
+  } catch (error) {
+    console.error("Booking update error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message
+    });
+  }
+}
+
 module.exports = {
   addbooking,
   getallbookings,
@@ -1284,5 +1403,6 @@ module.exports = {
   addNoteToBooking,
   getNotesFromBooking,
   updateNoteInBooking,
-  deleteNoteFromBooking
+  deleteNoteFromBooking,
+  updateBookingStatusDealer
 }
