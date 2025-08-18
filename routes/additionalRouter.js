@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const multer = require("multer");
 const path = require("path");
-const { addAdditionalService, getAllAdditionalServices, getAdditionalServiceById, updateAdditionalService, deleteAdditionalService, getAdditionalServicesByDealerId } = require("../controller/additionalServiceController");
+const { addAdditionalService, getAllAdditionalServices, getAdditionalServiceById, updateAdditionalService, deleteAdditionalService, getAdditionalServicesByDealerId, saveSelectedServices } = require("../controller/additionalServiceController");
 
 // Configure Multer directly in the router file
 const storage = multer.diskStorage({
@@ -43,5 +43,7 @@ router.get("/single-additional-service/:id", getAdditionalServiceById);
 router.put("/updated-additional-service/:id", upload.single("image"), updateAdditionalService);
 router.delete("/delete-additional-service/:id", deleteAdditionalService);
 router.get('/:dealerId', getAdditionalServicesByDealerId);
+// Save selected services
+router.post('/select-services', saveSelectedServices);
 
 module.exports = router;

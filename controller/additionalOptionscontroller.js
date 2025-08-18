@@ -310,7 +310,6 @@ async function servicelist(req, res) {
   }
 }
 
-
 async function singleService(req, res) {
   try {
     const { id } = req.params;
@@ -329,7 +328,6 @@ async function singleService(req, res) {
     return res.status(200).send({ status: 500, message: "Internal Server Error" });
   }
 }
-
 
 async function updateService(req, res) {
   try {
@@ -367,7 +365,6 @@ async function updateService(req, res) {
   }
 }
 
-
 async function deleteService(req, res) {
   try {
     const { service_id } = req.body;
@@ -385,7 +382,6 @@ async function deleteService(req, res) {
     return res.status(200).send({ status: 500, message: "Internal Server Error" });
   }
 }
-
 
 async function getServicesByDealer(req, res) {
   try {

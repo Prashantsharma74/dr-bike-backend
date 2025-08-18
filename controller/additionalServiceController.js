@@ -211,11 +211,80 @@ const getAdditionalServicesByDealerId = async (req, res) => {
     }
 };
 
+const saveSelectedServices = async (req, res) => {
+  try {
+    const { dealer_id, selected_services } = req.body;
+
+    // Validate dealer_id
+    if (!mongoose.Types.ObjectId.isValid(dealer_id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid dealer ID format"
+      });
+    }
+
+    // Validate selected services
+    if (!Array.isArray(selected_services) || selected_services.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Please select at least one service"
+      });
+    }
+
+    // Check if services exist
+    const validServices = await AdditionalOptions.find({
+      _id: { $in: selected_services }
+    });
+
+    if (validServices.length !== selected_services.length) {
+      const invalidServices = selected_services.filter(
+        id => !validServices.some(s => s._id.equals(id))
+      );
+      return res.status(400).json({
+        success: false,
+        message: "Some selected services are invalid",
+        invalidServices
+      });
+    }
+
+    // Update dealer with selected services
+    const updatedDealer = await Dealer.findByIdAndUpdate(
+      dealer_id,
+      { $addToSet: { services: { $each: selected_services } } },
+      { new: true }
+    );
+
+    if (!updatedDealer) {
+      return res.status(404).json({
+        success: false,
+        message: "Dealer not found"
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Services saved successfully",
+      data: {
+        dealer: updatedDealer.name,
+        selectedServices: validServices.map(s => s.name)
+      }
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to save services",
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
     addAdditionalService,
     getAllAdditionalServices,
     getAdditionalServiceById,
     updateAdditionalService,
     deleteAdditionalService,
-    getAdditionalServicesByDealerId
+    getAdditionalServicesByDealerId,
+    saveSelectedServices
 };

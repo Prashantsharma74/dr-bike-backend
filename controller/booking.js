@@ -531,7 +531,7 @@ async function deletebooking(req, res) {
   }
 }
 
-async function updatebooking(req, res) {
+async function updateBookings(req, res) {
   try {
     const data = jwt_decode(req.headers.token);
     const user_id = data.user_id;
@@ -636,6 +636,131 @@ async function updatebooking(req, res) {
 }
 
 // Create Booking
+// async function updateBookings(req, res) {
+//   try {
+//     const { user_id, booking_id } = req.params;
+//     const { 
+//       status, 
+//       dealer_id, 
+//       additional_options = [], 
+//       estimated_cost, 
+//       final_cost, 
+//       additional_data_moveable 
+//     } = req.body;
+
+//     // Validate required parameters
+//     if (!user_id || !booking_id) {
+//       return res.status(400).json({
+//         status: 400,
+//         message: "User ID and Booking ID are required in params"
+//       });
+//     }
+
+//     // Find booking
+//     const bookings = await booking.findById(booking_id);
+//     if (!bookings) {
+//       return res.status(404).json({ 
+//         status: 404, 
+//         message: "No Booking Found" 
+//       });
+//     }
+
+//     // Verify user exists and is authorized
+//     const user = await customers.findById(user_id);
+//     if (!user) {
+//       return res.status(401).json({
+//         status: 401,
+//         message: "Unauthorized - User not found"
+//       });
+//     }
+
+//     // Check if status is changing
+//     if (booking.status === status) {
+//       return res.status(200).json({ 
+//         status: 200, 
+//         message: `Booking is already ${status}` 
+//       });
+//     }
+
+//     // Handle completion status
+//     if (status === "completed") {
+//       await handleBookingCompletion(booking);
+      
+//       if (!final_cost) {
+//         return res.status(400).json({
+//           status: 400,
+//           message: "Final cost is required for completion"
+//         });
+//       }
+//     }
+
+//     // Verify dealer if provided
+//     let dealer = null;
+//     if (dealer_id) {
+//       dealer = await Dealer.findById(dealer_id);
+//       if (!dealer) {
+//         return res.status(404).json({ 
+//           status: 404, 
+//           message: "No Dealer Found" 
+//         });
+//       }
+//     }
+
+//     // Prepare update data
+//     const updateData = {
+//       status,
+//       ...(dealer_id && {
+//         dealer_id,
+//         dealer_name: dealer?.name,
+//         dealer_address: dealer?.address,
+//         dealer_phone: dealer?.phone
+//       }),
+//       ...(additional_options && { additional_options }),
+//       ...(estimated_cost && { estimated_cost }),
+//       ...(final_cost && { final_cost }),
+//       ...(additional_data_moveable && { additional_data_moveable })
+//     };
+
+//     // Update booking
+//     const updatedBooking = await booking.findByIdAndUpdate(
+//       booking_id,
+//       { $set: updateData },
+//       { new: true }
+//     );
+
+//     // Send notification
+//     const notificationMessage = status === "rejected" 
+//       ? `Sorry ${user.first_name}, your booking of ${booking.brand} ${booking.model} has been rejected`
+//       : `Hi ${user.first_name}, your booking of ${booking.brand} ${booking.model} has been ${status} successfully`;
+
+//     if (user.device_token || user.ftoken) {
+//       await Notification(
+//         user.device_token || user.ftoken,
+//         notificationMessage,
+//         user._id
+//       );
+//     }
+
+//     return res.status(200).json({
+//       status: 200,
+//       message: "Booking updated successfully",
+//       data: {
+//         booking_id: updatedBooking._id,
+//         status: updatedBooking.status,
+//         ...(updatedBooking.final_cost && { final_cost: updatedBooking.final_cost })
+//       }
+//     });
+
+//   } catch (error) {
+//     console.error("Booking update error:", error);
+//     return res.status(500).json({
+//       status: 500,
+//       message: "Internal server error",
+//       error: error.message
+//     });
+//   }
+// }
+
 async function createBooking(req, res) {
   try {
     const data = jwt_decode(req.headers.token);
@@ -728,9 +853,6 @@ async function getBookingDetails(req, res) {
 
 async function updateBooking(req, res) {
   try {
-    const data = jwt_decode(req.headers.token);
-    const user_id = data.user_id;
-
     const { bookingId, ...updateFields } = req.body;
 
     if (!bookingId) {
@@ -1060,339 +1182,13 @@ async function getallbookings(req, res) {
   }
 }
 
-// async function updateBookingStatusDealer(req, res) {
-//   try {
-//     const { booking_id } = req.params;
-//     const {
-//       status,
-//       dealer_id,
-//       additional_services = [],
-//       service_summary = [],
-//       final_cost,
-//       tax
-//     } = req.body;
-//     console.log("Body", req.body)
-//     console.log("Booking ID", booking_id)
-//     // Validate status
-//     const validStatuses = ["pending", "confirmed", "completed", "Payment", "rejected", "user_cancelled", "cash received"];
-//     if (!validStatuses.includes(status)) {
-//       return res.status(400).json({
-//         success: false,
-//         message: "Invalid status value"
-//       });
-//     }
-
-//     console.log("Validaated Status", validStatuses)
-
-//     const booking = await booking.findById(booking_id);
-//     if (!booking) {
-//       return res.status(404).json({
-//         success: false,
-//         message: "Booking not found"
-//       });
-//     }
-
-//     console.log("Booking", booking)
-
-//     if (booking.status === status) {
-//       return res.status(200).json({
-//         success: true,
-//         message: `Status already ${status}`,
-//         data: booking
-//       });
-//     }
-
-//     // Prepare update
-//     const updateData = { status };
-
-//     // Status-specific logic
-//     if (status === "confirmed" && dealer_id) {
-//       const dealer = await Dealer.findById(dealer_id);
-//       if (!dealer) {
-//         return res.status(404).json({
-//           success: false,
-//           message: "Dealer not found"
-//         });
-//       }
-//       updateData.dealer_id = dealer_id;
-//       updateData.dealer_name = dealer.name;
-//       updateData.dealer_address = dealer.address;
-//       updateData.dealer_phone = dealer.phone;
-//     }
-
-//     if (status === "completed") {
-//       if (!final_cost) {
-//         return res.status(400).json({
-//           success: false,
-//           message: "final_cost required for completion"
-//         });
-//       }
-//       updateData.final_cost = final_cost;
-//       updateData.tax = tax || 0;
-//       updateData.totalBill = final_cost + (tax || 0);
-//       updateData.billStatus = 'paid';
-//       updateData.serviceDate = new Date();
-
-//       if (service_summary.length > 0) {
-//         updateData.serviceSummary = service_summary;
-//       }
-//     }
-
-//     // Handle additional services
-//     if (additional_services.length > 0) {
-//       const services = await AdditionalOptions.find({
-//         _id: { $in: additional_services }
-//       });
-
-//       if (services.length !== additional_services.length) {
-//         return res.status(404).json({
-//           success: false,
-//           message: "Some services not found"
-//         });
-//       }
-
-//       updateData.$addToSet = {
-//         services: { $each: additional_services }
-//       };
-//     }
-
-//     // Execute update
-//     const updatedBooking = await booking.findByIdAndUpdate(
-//       booking_id,
-//       updateData,
-//       { new: true }
-//     );
-
-//     return res.status(200).json({
-//       success: true,
-//       message: "Booking updated successfully",
-//       data: {
-//         booking_id: updatedBooking._id,
-//         status: updatedBooking.status,
-//         totalBill: updatedBooking.totalBill,
-//         services: updatedBooking.services,
-//         dealer_info: {
-//           name: updatedBooking.dealer_name,
-//           phone: updatedBooking.dealer_phone
-//         }
-//       }
-//     });
-
-//   } catch (error) {
-//     console.error("Booking update error:", error);
-//     return res.status(500).json({
-//       success: false,
-//       message: "Internal server error",
-//       error: error.message
-//     });
-//   }
-// }
-
-async function updateBookingStatusDealer(req, res) {
-  try {
-    const { booking_id } = req.params;
-    const {
-      status,
-      dealer_id,
-      additional_services = [],
-      service_summary = [],
-      final_cost,
-      tax
-    } = req.body;
-
-    console.log("Request Body:", req.body);
-    console.log("Booking ID:", booking_id);
-
-    const validStatuses = ["pending", "confirmed", "completed", "Payment", "rejected", "user_cancelled", "cash received"];
-    if (!validStatuses.includes(status)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid status value"
-      });
-    }
-
-    const bookings = await booking.findById(booking_id);
-    if (!bookings) {
-      return res.status(404).json({
-        success: false,
-        message: "Booking not found"
-      });
-    }
-
-    console.log("Current Booking Status:", bookings.status);
-
-    // Skip if status unchanged
-    if (bookings.status === status) {
-      return res.status(200).json({
-        success: true,
-        message: `Status already ${status}`,
-        data: bookings
-      });
-    }
-
-    // Prepare update data
-    const updateData = { status };
-    console.log("Updated Data", updateData)
-
-    // Status-specific logic
-    if (status === "confirmed" && dealer_id) {
-      const dealer = await Dealer.findById(dealer_id);
-      console.log("Dealer", dealer)
-      if (!dealer) {
-        return res.status(404).json({
-          success: false,
-          message: "Dealer not found"
-        });
-      }
-      updateData.dealer_id = dealer_id;
-      updateData.dealer_name = dealer.name;
-      updateData.dealer_address = dealer.address;
-      updateData.dealer_phone = dealer.phone;
-    }
-
-    if (status === "completed") {
-      if (!final_cost) {
-        return res.status(400).json({
-          success: false,
-          message: "final_cost required for completion"
-        });
-      }
-      updateData.final_cost = final_cost;
-      updateData.tax = tax || 0;
-      updateData.totalBill = final_cost + (tax || 0);
-      updateData.billStatus = 'paid';
-      updateData.serviceDate = new Date();
-
-      if (service_summary.length > 0) {
-        updateData.serviceSummary = service_summary;
-      }
-    }
-    console.log("additional_services", additional_services)
-
-    // if (additional_services.length > 0) {
-    //   console.log("additional_services 2", additional_services)
-    //   const services = await additionaloptions.find({
-    //     _id: { $in: additional_services }
-    //   });
-
-    //   console.log("Additional Options", services)
-
-    //   if (services.length !== additional_services.length) {
-    //     return res.status(404).json({
-    //       success: false,
-    //       message: "Some services not found"
-    //     });
-    //   }
-
-    //   updateData.$addToSet = {
-    //     services: { $each: additional_services }
-    //   };
-    // }
-
-    if (additional_services.length > 0) {
-      console.log("Processing additional services...");
-      console.log("Raw additional_services:", additional_services);
-
-      try {
-        console.log("Checking AdditionalOptions model reference...");
-        console.log("Type of AdditionalOptions:", typeof AdditionalOptions);
-
-        console.log("Validating service IDs...");
-        const validServiceIds = additional_services.filter(id => {
-          const isValid = mongoose.Types.ObjectId.isValid(id);
-          if (!isValid) {
-            console.error(`Invalid ObjectId: ${id}`);
-          }
-          return isValid;
-        });
-
-        if (validServiceIds.length !== additional_services.length) {
-          const invalidIds = additional_services.filter(id => !mongoose.Types.ObjectId.isValid(id));
-          console.error("Invalid service IDs found:", invalidIds);
-          return res.status(400).json({
-            success: false,
-            message: "Invalid service ID format",
-            invalidIds
-          });
-        }
-
-        const serviceObjectIds = validServiceIds.map(id => new mongoose.Types.ObjectId(id));
-        console.log("Converted ObjectIds:", serviceObjectIds);
-
-        console.log("Querying database for services...");
-        const services = await AdditionalOptions.find({
-          _id: { $in: serviceObjectIds }
-        }).lean();
-
-        console.log("Found services:", services);
-
-        if (services.length !== additional_services.length) {
-          const foundIds = services.map(s => s._id.toString());
-          const missingIds = additional_services.filter(id => !foundIds.includes(id));
-          console.error("Missing services:", missingIds);
-          return res.status(404).json({
-            success: false,
-            message: "Some services not found",
-            missingIds
-          });
-        }
-
-        updateData.$addToSet = {
-          services: { $each: serviceObjectIds }
-        };
-        console.log("Update data prepared with services:", updateData);
-
-      } catch (error) {
-        console.error("Error processing additional services:", error);
-        console.error("Error details:", {
-          message: error.message,
-          stack: error.stack,
-          name: error.name
-        });
-        throw error;
-      }
-    }
-
-    const updatedBooking = await booking.findByIdAndUpdate(
-      booking_id,
-      updateData,
-      { new: true }
-    );
-
-    console.log("Updated", updatedBooking)
-
-    return res.status(200).json({
-      success: true,
-      message: "Booking updated successfully",
-      data: {
-        booking_id: updatedBooking._id,
-        status: updatedBooking.status,
-        totalBill: updatedBooking.totalBill,
-        services: updatedBooking.services,
-        dealer_info: updatedBooking.dealer_id ? {
-          name: updatedBooking.dealer_name,
-          phone: updatedBooking.dealer_phone
-        } : null
-      }
-    });
-
-  } catch (error) {
-    console.error("Booking update error:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Internal server error",
-      error: error.message
-    });
-  }
-}
-
 module.exports = {
   addbooking,
   getallbookings,
   getbooking,
   deletebooking,
   getuserbookings,
-  updatebooking,
+  updateBookings,
   createBooking,
   getBookingDetails,
   updateBooking,
@@ -1404,5 +1200,4 @@ module.exports = {
   getNotesFromBooking,
   updateNoteInBooking,
   deleteNoteFromBooking,
-  updateBookingStatusDealer
 }

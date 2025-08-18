@@ -9,7 +9,6 @@ const {
     getbooking, 
     deletebooking, 
     getuserbookings,
-    updatebooking,
     createBooking,
     getBookingDetails,
     updateBooking,
@@ -21,7 +20,8 @@ const {
     updateNoteInBooking,
     getNotesFromBooking,
     addNoteToBooking,
-    updateBookingStatusDealer
+    updateBookings,
+    // updateBookingStatusDealer
 } = require("../controller/booking")
 
 const storage = multer.diskStorage({
@@ -46,7 +46,7 @@ router.get('/getallbookings',getallbookings)
 router.get('/getuserbookings/:user_id',getuserbookings)
 router.get('/getbooking/:id',getbooking)
 router.delete('/deletebooking',deletebooking)
-router.put('/updatebooking/:id',updatebooking)
+router.put('/updatebooking/:id',updateBookings)
 router.post('/createBooking',createBooking)
 router.get('/getBookingDetails/:id',getBookingDetails)
 router.post('/updateBooking',updateBooking)
@@ -60,6 +60,6 @@ router.put('/updateNote', updateNoteInBooking);
 router.delete('/deleteNote', deleteNoteFromBooking);
 
 router.get("notification/:receiverId", getNotificationsByReceiverId);
-router.put('/updateBookingStatus/:booking_id', updateBookingStatusDealer);
+// router.put('/updateBookingStatus/:booking_id', updateBookingStatusDealer);
 
 module.exports = router;
