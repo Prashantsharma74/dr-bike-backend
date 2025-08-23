@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const booking = require("../models/Booking");
 const additionaloptions = require("../models/additionalOptionsModel");
+const AdditionalService = require("../models/additionalServiceSchema");
 const service = require("../models/service_model");
 const bike = require("../models/bikeModel");
 const Tracking = require("../models/Tracking");
@@ -685,7 +686,7 @@ async function updateBookings(req, res) {
 //     // Handle completion status
 //     if (status === "completed") {
 //       await handleBookingCompletion(booking);
-      
+
 //       if (!final_cost) {
 //         return res.status(400).json({
 //           status: 400,
@@ -803,11 +804,11 @@ async function getBookingDetails(req, res) {
       .populate("user_id")
       .populate({
         path: "dealer_id",
-        model: "Vendor" // Ensure this matches your model name
+        model: "Vendor" 
       })
       .populate({
         path: "services",
-        model: "service" // Ensure this matches your service model name
+        model: "service" 
       })
       .populate("pickupAndDropId")
       .populate("userBike_id");
@@ -859,12 +860,61 @@ async function updateBooking(req, res) {
       return res.status(400).json({ success: false, message: "Booking ID is required" });
     }
 
-    let existingBooking = await booking.findById(bookingId);
+    const existingBooking = await booking.findById(bookingId);
     if (!existingBooking) {
       return res.status(404).json({ success: false, message: "Booking not found" });
     }
 
-    // Update only the provided fields
+    // --- handle `services` specially (these are AdditionalService IDs) ---
+    if (Object.prototype.hasOwnProperty.call(updateFields, "services")) {
+      const services = updateFields.services;
+      delete updateFields.services; // prevent generic setter from overwriting
+
+      if (!Array.isArray(services)) {
+        return res.status(400).json({
+          success: false,
+          message: "`services` must be an array of AdditionalService ids",
+        });
+      }
+
+      // ❌ IMPORTANT: do NOT mirror into existingBooking.services
+      //    That field in your schema is for core `service` model, not additionalServices.
+      // existingBooking.services = services; // <-- remove this line if you had it
+
+      if (services.length === 0) {
+        existingBooking.additionalServices = [];
+      } else {
+        // validate ids
+        const invalid = services.filter((id) => !mongoose.Types.ObjectId.isValid(id));
+        if (invalid.length) {
+          return res.status(400).json({
+            success: false,
+            message: "Invalid service id(s) provided",
+            invalid,
+          });
+        }
+
+        // ensure all requested AdditionalService docs exist (optional but recommended)
+        const svcDocs = await AdditionalService.find({ _id: { $in: services } })
+          .select("_id") // we just need to verify existence
+          .lean();
+
+        const foundIds = new Set(svcDocs.map((s) => String(s._id)));
+        const missing = services.filter((id) => !foundIds.has(String(id)));
+        if (missing.length) {
+          return res.status(400).json({
+            success: false,
+            message: "Some services do not exist",
+            missing,
+          });
+        }
+
+        // ✅ Assign ONLY ObjectIds to match your schema
+        existingBooking.additionalServices = services.map((id) => new mongoose.Types.ObjectId(id));
+      }
+    }
+
+    // --- generic field updates (everything except `services`) ---
     Object.keys(updateFields).forEach((key) => {
       if (updateFields[key] !== undefined) {
         existingBooking[key] = updateFields[key];
@@ -873,19 +923,122 @@ async function updateBooking(req, res) {
 
     await existingBooking.save();
 
-    res.status(200).json({ success: true, message: "Booking updated successfully", data: existingBooking });
+    // ✅ Populate the correct path for an ObjectId[] ref
+    await existingBooking.populate({
+      path: "additionalServices",
+      select: "_id id name image description bikes",
+    });
 
+    const data = existingBooking.toObject();
+    if (!Array.isArray(data.additionalServices)) data.additionalServices = [];
+
+    return res.status(200).json({
+      success: true,
+      message: "Booking updated successfully",
+      data,
+    });
   } catch (error) {
     console.error("Update Booking Error:", error);
-    res.status(500).json({ success: false, message: "Internal Server Error" });
+    return res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 }
+
+// async function updateBooking(req, res) {
+//   try {
+//     const { bookingId, ...updateFields } = req.body;
+
+//     if (!bookingId) {
+//       return res.status(400).json({ success: false, message: "Booking ID is required" });
+//     }
+
+//     let existingBooking = await booking.findById(bookingId);
+//     if (!existingBooking) {
+//       return res.status(404).json({ success: false, message: "Booking not found" });
+//     }
+
+//     if (Object.prototype.hasOwnProperty.call(updateFields, "services")) {
+//       const services = updateFields.services;      
+//       delete updateFields.services;                
+
+//       if (!Array.isArray(services)) {
+//         return res.status(400).json({
+//           success: false,
+//           message: "`services` must be an array of AdditionalService ids",
+//         });
+//       }
+
+//       existingBooking.services = services;
+
+//       if (services.length === 0) {
+//         existingBooking.additionalServices = [];
+//       } else {
+//         const invalid = services.filter((id) => !mongoose.Types.ObjectId.isValid(id));
+//         if (invalid.length) {
+//           return res.status(400).json({
+//             success: false,
+//             message: "Invalid service id(s) provided",
+//             invalid,
+//           });
+//         }
+
+//         const svcDocs = await AdditionalService.find({ _id: { $in: services } })
+//           .select("_id id name image description bikes")
+//           .lean();
+
+//         const foundIds = new Set(svcDocs.map((s) => String(s._id)));
+//         const missing = services.filter((id) => !foundIds.has(String(id)));
+//         if (missing.length) {
+//           return res.status(400).json({
+//             success: false,
+//             message: "Some services do not exist",
+//             missing,
+//           });
+//         }
+
+//         existingBooking.additionalServices = svcDocs.map((s) => ({
+//           service: s._id,  
+//           id: s.id,        
+//           name: s.name,
+//           image: s.image,
+//           description: s.description,
+//           bikes: s.bikes,
+//         }));
+//       }
+//     }
+
+//     // --- generic field updates (everything except services) ---
+//     Object.keys(updateFields).forEach((key) => {
+//       if (updateFields[key] !== undefined) {
+//         existingBooking[key] = updateFields[key];
+//       }
+//     });
+
+//     await existingBooking.save();
+
+//     // Always include additionalServices in response
+//     if (typeof existingBooking.populate === "function") {
+//       await existingBooking.populate("additionalServices.service");
+//     }
+//     const data = existingBooking.toObject ? existingBooking.toObject() : existingBooking;
+//     if (!Array.isArray(data.additionalServices)) data.additionalServices = [];
+
+//     return res.status(200).json({
+//       success: true,
+//       message: "Booking updated successfully",
+//       data,
+//     });
+//   } catch (error) {
+//     console.error("Update Booking Error:", error);
+//     return res.status(500).json({ success: false, message: "Internal Server Error" });
+//   }
+// }
 
 async function updateBookingStatus(req, res) {
   try {
     const { bookingId } = req.params;
     const { status, user_id } = req.body;
-
+    console.log("Booking id", bookingId)
+    console.log("Status", req.body)
     if (!bookingId || !status || !user_id) {
       return res.status(400).json({
         success: false,

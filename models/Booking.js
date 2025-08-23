@@ -5,9 +5,13 @@ const bookingSchema = new mongoose.Schema(
   {
     id: { type: Number },
     user_id: { type: mongoose.Schema.Types.ObjectId, ref: "customers", required: true },
-    dealer_id: { type: mongoose.Schema.Types.ObjectId, ref: "dealer", required: true }, 
+    dealer_id: { type: mongoose.Schema.Types.ObjectId, ref: "dealer", required: true },
     services: [{ type: mongoose.Schema.Types.ObjectId, ref: "service" }],
     pickupAndDropId: { type: mongoose.Schema.Types.ObjectId, ref: "PicknDrop", default: null },
+    additionalServices: {
+      type: [{ type: mongoose.Schema.Types.ObjectId, ref: "additionalServices" }],
+      default: [],
+    },
     status: {
       type: String,
       enum: ["pending", "confirmed", "completed", "Payment", "rejected", "user_cancelled", "cash received"],
@@ -22,12 +26,12 @@ const bookingSchema = new mongoose.Schema(
     billGenerated: { type: Boolean, default: false },
     lastServiceKm: { type: Number, default: 0 },
     serviceSummary: [{
-      serviceName: { type: String, default: "" }, 
+      serviceName: { type: String, default: "" },
       price: { type: Number, default: 0 }
     }],
     otp: { type: Number, default: null },
-    tax: { type: Number, default: 0 }, 
-    totalBill: { type: Number, default: 0 }, 
+    tax: { type: Number, default: 0 },
+    totalBill: { type: Number, default: 0 },
 
     billStatus: {
       type: String,
@@ -43,6 +47,11 @@ const bookingSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Vendor'
     },
+    services: [{ type: mongoose.Schema.Types.ObjectId, ref: 'service' }],
+    // services: {
+    //   type: mongoose.Schema.Types.ObjectId,
+    //   ref: 'service'
+    // },
   },
 
   { timestamps: true }
