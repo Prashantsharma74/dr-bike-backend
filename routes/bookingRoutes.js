@@ -57,7 +57,7 @@ router.post("/update-pickup-status", updatePickupStatus);
 router.post('/addNote', addNoteToBooking);
 router.get('/getNotes/:bookingId', getNotesFromBooking);
 router.put('/updateNote', updateNoteInBooking);
-router.delete('/deleteNote', deleteNoteFromBooking);
+router.post('/deleteNote', deleteNoteFromBooking);
 
 router.get("notification/:receiverId", getNotificationsByReceiverId);
 // router.put('/updateBookingStatus/:booking_id', updateBookingStatusDealer);
