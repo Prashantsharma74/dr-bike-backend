@@ -804,11 +804,11 @@ async function getBookingDetails(req, res) {
       .populate("user_id")
       .populate({
         path: "dealer_id",
-        model: "Vendor" 
+        model: "Vendor"
       })
       .populate({
         path: "services",
-        model: "service" 
+        model: "service"
       })
       .populate("pickupAndDropId")
       .populate("userBike_id");
@@ -1272,41 +1272,98 @@ async function updateNoteInBooking(req, res) {
   }
 }
 
+// async function deleteNoteFromBooking(req, res) {
+//   try {
+//     const { bookingId, noteIndex } = req.body;
+
+//     if (!bookingId || noteIndex === undefined) {
+//       return res.status(400).json({ success: false, message: "Booking ID and note index are required" });
+//     }
+
+//     const updatedBooking = await booking.findById(bookingId);
+
+//     if (!updatedBooking) {
+//       return res.status(404).json({ success: false, message: "Booking not found" });
+//     }
+
+//     if (noteIndex < 0 || noteIndex >= updatedBooking.additionalNotes.length) {
+//       return res.status(400).json({ success: false, message: "Invalid note index" });
+//     }
+
+//     updatedBooking.additionalNotes.splice(noteIndex, 1);
+//     await updatedBooking.save();
+
+//     res.status(200).json({ success: true, message: "Note deleted successfully", data: updatedBooking.additionalNotes });
+//   } catch (error) {
+//     console.error("Delete Note Error:", error);
+//     res.status(500).json({ success: false, message: "Internal Server Error" });
+//   }
+// }
+
+// By Prashant 
+
+// Drop-in replacement: same signature, no schema changes required.
 async function deleteNoteFromBooking(req, res) {
   try {
     const { bookingId, noteIndex } = req.body;
-
+    console.log("Body", req.body)
+    // Basic presence check
     if (!bookingId || noteIndex === undefined) {
-      return res.status(400).json({ success: false, message: "Booking ID and note index are required" });
+      return res.status(400).json({
+        success: false,
+        message: "Booking ID and note index are required",
+      });
     }
 
-    const updatedBooking = await booking.findById(bookingId);
+    // Coerce to integer and validate
+    const idx = Number(noteIndex);
+    if (!Number.isInteger(idx) || idx < 0) {
+      return res.status(400).json({
+        success: false,
+        message: "noteIndex must be a non-negative integer",
+      });
+    }
 
-    if (!updatedBooking) {
+    // Cheap fetch to verify existence and bounds
+    const doc = await booking.findById(bookingId).select("additionalNotes");
+    if (!doc) {
       return res.status(404).json({ success: false, message: "Booking not found" });
     }
-
-    if (noteIndex < 0 || noteIndex >= updatedBooking.additionalNotes.length) {
+    if (!Array.isArray(doc.additionalNotes) || idx >= doc.additionalNotes.length) {
       return res.status(400).json({ success: false, message: "Invalid note index" });
     }
 
-    updatedBooking.additionalNotes.splice(noteIndex, 1);
-    await updatedBooking.save();
+    // 1) Unset the element at the index (atomic)
+    const unsetPath = `additionalNotes.${idx}`;
+    await booking.updateOne(
+      { _id: bookingId },
+      { $unset: { [unsetPath]: 1 } }
+    );
 
-    res.status(200).json({ success: true, message: "Note deleted successfully", data: updatedBooking.additionalNotes });
+    // 2) Remove the created null hole
+    const updated = await booking.findByIdAndUpdate(
+      bookingId,
+      { $pull: { additionalNotes: null } },
+      { new: true, select: "additionalNotes" }
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Note deleted successfully",
+      data: updated?.additionalNotes ?? [],
+    });
   } catch (error) {
     console.error("Delete Note Error:", error);
-    res.status(500).json({ success: false, message: "Internal Server Error" });
+    return res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 }
 
-// By Prashant 
 async function getallbookings(req, res) {
   try {
     // Directly fetch bookings without auth
     const bookingresponce = await booking
       .find(req.query)
-      .populate("services") // Fetch service details
+      .populate("services")
       .populate("dealer_id") // Fetch dealer details
       .populate("pickupAndDropId") // Fetch pickup & drop details
       .populate("user_id") // Fetch user details
