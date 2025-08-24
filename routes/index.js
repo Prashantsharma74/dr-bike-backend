@@ -54,7 +54,7 @@ router.use('/offer', offer);
 router.use('/additionalOptions', verifyToken, additionalOption);
 router.use('/bookings', booking);
 router.use('/trackings', verifyToken, tracking);
-router.use('/pickndrop', verifyToken, pickndrop);
+router.use('/pickndrop', pickndrop);
 router.use('/payment', payment);
 router.get('/returnurl', Returnurl);
 router.get('/returnurlnew', ReturnurlNew);
