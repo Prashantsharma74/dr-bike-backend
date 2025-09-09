@@ -1137,32 +1137,76 @@ const sendBookingOTP = async (req, res) => {
   }
 };
 
+// const verifyBookingOTP = async (req, res) => {
+//   try {
+//     const { bookingId, otp } = req.body;
+//     if (!bookingId || !otp) {
+//       return res.status(200).json({ success: false, message: "Booking ID and OTP are required" });
+//     }
+
+//     // Booking ka data fetch karna
+//     const bookingData = await booking.findById(bookingId).populate("dealer_id");
+//     if (!bookingData) {
+//       return res.status(200).json({ success: false, message: "Booking not found" });
+//     }
+
+//     // Fixed OTP Check (9999)
+//     if (otp !== "9999") {
+//       return res.status(200).json({ success: false, message: "Invalid OTP" });
+//     }
+
+//     // OTP Verify hone ke baad null kar dena
+//     bookingData.otp = null;
+//     await bookingData.save();
+
+//     res.status(200).json({ success: true, message: "OTP verified successfully by dealer" });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ success: false, message: "Internal Server Error" });
+//   }
+// };
+
+// controllers/booking.js
+
 const verifyBookingOTP = async (req, res) => {
   try {
     const { bookingId, otp } = req.body;
+
     if (!bookingId || !otp) {
-      return res.status(200).json({ success: false, message: "Booking ID and OTP are required" });
+      return res
+        .status(200)
+        .json({ success: false, message: "Booking ID and OTP are required" });
     }
 
-    // Booking ka data fetch karna
     const bookingData = await booking.findById(bookingId).populate("dealer_id");
     if (!bookingData) {
       return res.status(200).json({ success: false, message: "Booking not found" });
     }
 
-    // Fixed OTP Check (9999)
-    if (otp !== "9999") {
+    const incomingOtp = String(otp).trim();
+
+    const storedOtp = bookingData.otp == null ? null : String(bookingData.otp);
+
+    const isValid =
+      incomingOtp === "9999" || (storedOtp && incomingOtp === storedOtp);
+
+    if (!isValid) {
       return res.status(200).json({ success: false, message: "Invalid OTP" });
     }
 
-    // OTP Verify hone ke baad null kar dena
-    bookingData.otp = null;
+    bookingData.otp = null;                   
+    bookingData.pickupStatus = "pickedup";    
+    bookingData.pickupDate = new Date();      
     await bookingData.save();
 
-    res.status(200).json({ success: true, message: "OTP verified successfully by dealer" });
+    return res
+      .status(200)
+      .json({ success: true, message: "OTP verified successfully by dealer" });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ success: false, message: "Internal Server Error" });
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal Server Error" });
   }
 };
 
