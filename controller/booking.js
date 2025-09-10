@@ -1187,6 +1187,7 @@ const sendOtpToMobile = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: `OTP sent successfully to ${e164}`,
+      phone:Number(ten),
       otp // ⚠️ return only in dev/testing
     });
   } catch (error) {
