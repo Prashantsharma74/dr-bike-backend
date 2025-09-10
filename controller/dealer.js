@@ -1051,8 +1051,7 @@ async function getWallet(req, res) {
 
 const GetwalletInfo = async (req, res) => {
   try {
-    // ---- inputs & validation ----
-    let { id } = req.params;                          // dealer id
+    let { id } = req.params;                         
     id = (id ?? "").toString().trim();
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ success: false, message: "Invalid dealer id" });
@@ -1246,6 +1245,8 @@ const GetwalletInfo = async (req, res) => {
 // }
 
 // Payout related in cashfree method
+
+
 async function calculateDealerAmount(dealer, orderAmount) {
   // Calculate percentage amount for dealer
   const percentageAmount = (dealer.commission / 100) * orderAmount;

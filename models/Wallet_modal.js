@@ -3,10 +3,9 @@ const AutoIncrement = require('mongoose-sequence')(mongoose);
 
 const walletSchema = new mongoose.Schema({
     orderId: {
-        type: String, 
+        type: String,
         required: true,
-      },
-  
+    },
     dealer_id: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "dealer"
@@ -26,9 +25,9 @@ const walletSchema = new mongoose.Schema({
     },
     order_status: {
         type: String,
-        enum: ["ACTIVE", "PAID", "PENDING", "FAILED", "EXPIRED","APPROVED","REJECTED"], 
-        default: "PENDING", 
-      },
+        enum: ["ACTIVE", "PAID", "PENDING", "FAILED", "EXPIRED", "APPROVED", "REJECTED"],
+        default: "PENDING",
+    },
 }, {
     timestamps: true,
 });
