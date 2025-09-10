@@ -1137,36 +1137,54 @@ const sendBookingOTP = async (req, res) => {
   }
 };
 
-// const verifyBookingOTP = async (req, res) => {
-//   try {
-//     const { bookingId, otp } = req.body;
-//     if (!bookingId || !otp) {
-//       return res.status(200).json({ success: false, message: "Booking ID and OTP are required" });
-//     }
+const normalizePhone = (p) => String(p).replace(/\D/g, "").slice(-10);
+const sendOtpToMobile = async (req, res) => {
+  try {
+    const { phone } = req.body;
 
-//     // Booking ka data fetch karna
-//     const bookingData = await booking.findById(bookingId).populate("dealer_id");
-//     if (!bookingData) {
-//       return res.status(200).json({ success: false, message: "Booking not found" });
-//     }
+    if (!phone) {
+      return res.status(200).json({ success: false, message: "Phone is required" });
+    }
 
-//     // Fixed OTP Check (9999)
-//     if (otp !== "9999") {
-//       return res.status(200).json({ success: false, message: "Invalid OTP" });
-//     }
+    const normalized = normalizePhone(phone);
+    if (normalized.length !== 10) {
+      return res.status(200).json({ success: false, message: "Invalid phone number" });
+    }
 
-//     // OTP Verify hone ke baad null kar dena
-//     bookingData.otp = null;
-//     await bookingData.save();
+    // Static OTP (testing)
+    const otp = 1234;
+    // optional expiry: 5 minutes
+    const otpExpiry = new Date(Date.now() + 5 * 60 * 1000);
 
-//     res.status(200).json({ success: true, message: "OTP verified successfully by dealer" });
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).json({ success: false, message: "Internal Server Error" });
-//   }
-// };
+    // find-or-create by phone
+    let customer = await Customer.findOne({ phone: Number(normalized) });
+    if (!customer) {
+      customer = await Customer.create({
+        phone: Number(normalized),
+        otp,
+        // store expiry in a separate field if you add it to schema
+        // otpExpiry
+      });
+    } else {
+      customer.otp = otp;
+      // customer.otpExpiry = otpExpiry;
+      await customer.save();
+    }
 
-// controllers/booking.js
+    // TODO: integrate SMS service here
+    // await sendSms(`+91${normalized}`, `Your OTP is ${otp}`);
+
+    return res.status(200).json({
+      success: true,
+      message: `OTP sent to +91${normalized}`,
+      // ⚠️ return otp only in dev/testing
+      otp
+    });
+  } catch (err) {
+    console.error("sendOtpToMobile error:", err);
+    return res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+};
 
 const verifyBookingOTP = async (req, res) => {
   try {
@@ -1454,4 +1472,5 @@ module.exports = {
   getNotesFromBooking,
   updateNoteInBooking,
   deleteNoteFromBooking,
+  sendOtpToMobile
 }

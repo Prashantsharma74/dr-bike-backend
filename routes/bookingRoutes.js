@@ -21,6 +21,7 @@ const {
     getNotesFromBooking,
     addNoteToBooking,
     updateBookings,
+    sendOtpToMobile,
     // updateBookingStatusDealer
 } = require("../controller/booking")
 
@@ -52,6 +53,7 @@ router.get('/getBookingDetails/:id',getBookingDetails)
 router.post('/updateBooking',updateBooking)
 router.post('/updateBookingStatus/:bookingId/status',updateBookingStatus)
 router.post('/sendBookingOTP',sendBookingOTP)
+router.post('/sendBookingMobile',sendOtpToMobile)
 router.post('/verifyBookingOTP',verifyBookingOTP)
 router.post("/update-pickup-status", updatePickupStatus);
 router.post('/addNote', addNoteToBooking);

@@ -236,98 +236,176 @@ async function GetPaymentOrder(req, res) {
 }
 
 // this api is not deployed in production mode.
+// async function Cashpayment(req, res) {
+//   try {
+//     // const data = jwt_decode(req.headers.token);
+//     // const user_id = data.user_id;
+//     // const user_type = data.user_type;
+
+//     // if (user_id == null || (user_type != 1 && user_type != 3 && user_type != 4)) {
+//     //     return res.status(200).json({ status: 200, message: "Admin is unauthorized!" });
+//     // }
+
+//     const { customer_id, order_amount, pay_type, booking_id, dealer_id } = req.body;
+//     const order_id = Math.floor(1000000000000000 + Math.random() * 90000000000000).toString();
+
+//     const bookings = await Booking.findById(booking_id);
+//     console.log(bookings, "bookings")
+//     const dealer = await Dealer.findById(dealer_id);
+//     const trackings = await Tracking.findOne({ booking_id: booking_id });
+//     const PaymentCheck = await Payment.findOne({ booking_id: booking_id });
+
+//     if (!bookings) {
+//       return res.status(200).json({ status: 200, message: "No Booking Found" });
+//     }
+
+//     if (!dealer) {
+//       return res.status(200).json({ status: 200, message: "No Dealer Found" });
+//     }
+
+//     if (PaymentCheck) {
+//       return res.status(200).json({ status: 200, message: "Payment already received for thi booking", data: PaymentCheck });
+//     }
+
+//     // This represents 10%
+//     const commissionPercentage = (order_amount * dealer.commission) / 100; // Calculate commission amount as percentage of order_amount
+
+
+//     // Deduct commission amount from the dealer's wallet if payment type is cash
+//     // if (pay_type === "cash") {
+//     //     if (dealer.wallet >= commissionPercentage) {
+//     //         // Sufficient balance in dealer's wallet
+//     //       } else {
+//     //         // Insufficient balance in dealer's wallet, allow wallet to go into negative balance
+//     //         dealer.wallet -= commissionPercentage;
+//     //         await dealer.save();
+//     //       }
+//     //     }
+//     dealer.wallet -= commissionPercentage;
+//     await dealer.save();
+
+//     const datas = {
+//       orderId: order_id,
+//       booking_id: booking_id,
+//       dealer_id: dealer_id,
+//       user_id: customer_id,
+//       orderAmount: order_amount,
+//       payment_type: "cash",
+//       order_status: "PAID",
+//       order_currency: 'INR',
+//     };
+
+//     const payment = await Payment.create(datas);
+
+//     // Create wallet document
+//     const walletData = {
+//       dealer_id: dealer._id,
+//       user_id: customer_id,
+//       Amount: order_amount,
+//       Type: 'Debit',
+//       Note: 'Cash Payment received',
+//       Total: dealer.wallet,
+//     };
+//     await Wallet.create(walletData);
+
+//     // Update Booking status
+//     const updatebookStatus = await Booking.findByIdAndUpdate(
+//       { _id: booking_id },
+//       { $set: { status: "cash received" } },
+//       { new: true }
+//     );
+//     console.log(updatebookStatus, "status")
+//     // Update Tracking status
+//     await Tracking.findByIdAndUpdate(
+//       { _id: trackings._id },
+//       { $set: { status: "cash received" } },
+//       { new: true }
+//     );
+
+//     return res.status(200).json({ status: 200, message: "Cash Payment successful", data: payment });
+//   } catch (error) {
+//     console.error("Error:", error);
+//     return res.status(500).json({ status: 500, message: "Operation was not successful" });
+//   }
+// }
+
 async function Cashpayment(req, res) {
   try {
-      // const data = jwt_decode(req.headers.token);
-      // const user_id = data.user_id;
-      // const user_type = data.user_type;
+    const { customer_id, order_amount, pay_type, booking_id, dealer_id } = req.body;
+    const order_id = Math.floor(1000000000000000 + Math.random() * 90000000000000).toString();
 
-      // if (user_id == null || (user_type != 1 && user_type != 3 && user_type != 4)) {
-      //     return res.status(200).json({ status: 200, message: "Admin is unauthorized!" });
-      // }
+    const bookings  = await Booking.findById(booking_id);
+    const dealer    = await Dealer.findById(dealer_id);
+    const trackings = await Tracking.findOne({ booking_id });
+    const existingPayment = await Payment.findOne({ booking_id });
 
-      const { customer_id, order_amount, pay_type, booking_id, dealer_id} = req.body;
-      const order_id = Math.floor(1000000000000000 + Math.random() * 90000000000000).toString();
+    if (!bookings) return res.status(200).json({ status: 200, message: "No Booking Found" });
+    if (!dealer)   return res.status(200).json({ status: 200, message: "No Dealer Found" });
 
-      const bookings = await Booking.findById(booking_id);
-      console.log(bookings,"bookings")
-      const dealer = await Dealer.findById(dealer_id);
-      const trackings = await Tracking.findOne({ booking_id: booking_id });
-      const PaymentCheck = await Payment.findOne({ booking_id: booking_id });
-
-      if (!bookings) {
-          return res.status(200).json({ status: 200, message: "No Booking Found" });
-      }
-
-      if (!dealer) {
-          return res.status(200).json({ status: 200, message: "No Dealer Found" });
-      }
-
-      if (PaymentCheck) {
-          return res.status(200).json({ status: 200, message: "Payment already received for thi booking",data:PaymentCheck });
-      }
-
-    // This represents 10%
-      const commissionPercentage = (order_amount * dealer.commission) / 100; // Calculate commission amount as percentage of order_amount
-      
-
-      // Deduct commission amount from the dealer's wallet if payment type is cash
-      // if (pay_type === "cash") {
-      //     if (dealer.wallet >= commissionPercentage) {
-      //         // Sufficient balance in dealer's wallet
-      //       } else {
-      //         // Insufficient balance in dealer's wallet, allow wallet to go into negative balance
-      //         dealer.wallet -= commissionPercentage;
-      //         await dealer.save();
-      //       }
-      //     }
-      dealer.wallet -= commissionPercentage;
-      await dealer.save();
-
-      const datas = {
-          orderId: order_id,
-          booking_id: booking_id,
-          dealer_id: dealer_id,
-          user_id: customer_id,
-          orderAmount: order_amount,
-          payment_type: "cash",
-          order_status: "PAID",
-          order_currency: 'INR',
-      };
-
-      const payment = await Payment.create(datas);
-
-      // Create wallet document
-      const walletData = {
-          dealer_id: dealer._id,
-          user_id: customer_id,
-          Amount: order_amount,
-          Type: 'Debit',
-          Note: 'Cash Payment received',
-          Total: dealer.wallet,
-      };
-      await Wallet.create(walletData);
-
-      // Update Booking status
-    const updatebookStatus =   await Booking.findByIdAndUpdate(
-          { _id: booking_id },
-          { $set: { status: "cash received" } },
-          { new: true }
-      );
-console.log(updatebookStatus,"status")
-      // Update Tracking status
-      await Tracking.findByIdAndUpdate(
-          { _id: trackings._id },
-          { $set: { status: "cash received" } },
-          { new: true }
+    // ✅ If payment already exists -> ensure status completed, then return
+    if (existingPayment) {
+      // yahan pe ensure karo ki booking/tracking completed ho jaye
+      await Booking.findByIdAndUpdate(
+        booking_id,
+        { $set: { status: "completed", billStatus: "paid" } },   // <-- aapki policy ke hisaab se
+        { new: true }
       );
 
-      return res.status(200).json({ status: 200, message: "Cash Payment successful", data: payment });
+      if (trackings && trackings.status !== "completed") {
+        await Tracking.findByIdAndUpdate(trackings._id, { $set: { status: "completed" } }, { new: true });
+      }
+
+      return res.status(200).json({
+        status: 200,
+        message: "Payment already received; booking marked completed",
+        data: existingPayment
+      });
+    }
+
+    // 👇 fresh payment flow
+    const commissionAmount = (order_amount * dealer.commission) / 100;
+    dealer.wallet -= commissionAmount;
+    await dealer.save();
+
+    const payment = await Payment.create({
+      orderId: order_id,
+      booking_id,
+      dealer_id,
+      user_id: customer_id,
+      orderAmount: order_amount,
+      payment_type: "cash",
+      order_status: "PAID",
+      order_currency: "INR",
+      payment_by: "dealer"
+    });
+
+    await Wallet.create({
+      dealer_id: dealer._id,
+      user_id: customer_id,
+      Amount: order_amount,      // (optional: yahan commissionAmount rakhna zyada sahi ho sakta hai)
+      Type: "Debit",
+      Note: "Cash Payment received",
+      Total: dealer.wallet
+    });
+
+    // 🔁 Payment success -> booking complete + bill paid
+    await Booking.findByIdAndUpdate(
+      booking_id,
+      { $set: { status: "completed", billStatus: "paid" } },   // ← yahi aap chahte ho
+      { new: true }
+    );
+
+    if (trackings) {
+      await Tracking.findByIdAndUpdate(trackings._id, { $set: { status: "completed" } }, { new: true });
+    }
+
+    return res.status(200).json({ status: 200, message: "Cash Payment successful; booking completed", data: payment });
   } catch (error) {
-      console.error("Error:", error);
-      return res.status(500).json({ status: 500, message: "Operation was not successful" });
+    console.error("Error:", error);
+    return res.status(500).json({ status: 500, message: "Operation was not successful" });
   }
 }
+
 
 async function GetPayment(req, res) {
   try {
@@ -440,61 +518,61 @@ async function GetPayment(req, res) {
 
 async function paymentNew(req, res) {
   try {
-  var receipt = Math.floor(
-        1000000000000000 + Math.random() * 90000000000000
-      ).toString();
-  
-      const razorpayData = {
-        amount: req.body.amount,
-        currency: req.body.currency,
-        receipt: receipt,
-        notes: {
-          // orderNote: req.body.notes.orderNote,
-          customerName: req.body.customerName,
-          customerEmail: req.body.customerEmail,
-          customerPhone: req.body.customerPhone,
-          customer_id: req.body.customer_id,
-          booking_id: req.body.booking_id,
-          dealer_id: req.body.dealer_id,
-          method:req.body.method
-        },
-      };
-  
-      const config = {
-        auth: {
-          username: "rzp_test_TImTSdtCMH1eMv",
-        password: "5gpvEPZjQsa8klSeYdu1Ht4N"
-        },
-        headers: {
-          "Content-Type": "application/json",
-        },
-      };
-  
-      const response = await axios.post('https://api.razorpay.com/v1/orders', razorpayData, config);
+    var receipt = Math.floor(
+      1000000000000000 + Math.random() * 90000000000000
+    ).toString();
 
-      // const paymentData = {
-      //   // cf_order_id: result?.data.cf_order_id,
-      //   orderId: order_id,
-      //   booking_id: booking_id,
-      //   dealer_id: dealer_id,
-      //   user_id: customer_id,
-      //   orderAmount: order_amount,
-      //   order_status: "Order created",
-      //   // order_token: result?.data.order_token,
-      //   // users_id: customer?.id,
-      //   // dealers_id: dealer?.id,
-      // };
-      // await Payment.create(paymentData);
-  
-      res.json({ postData: response.data, url: 'https://api.razorpay.com/v1/checkout' });
-    } catch (error) {
-      console.log("error", error);
-      const response = {
-        status: 500,
-        message: "Operation was not successful"
-      };
-      return res.status(500).json(response);
-    }
+    const razorpayData = {
+      amount: req.body.amount,
+      currency: req.body.currency,
+      receipt: receipt,
+      notes: {
+        // orderNote: req.body.notes.orderNote,
+        customerName: req.body.customerName,
+        customerEmail: req.body.customerEmail,
+        customerPhone: req.body.customerPhone,
+        customer_id: req.body.customer_id,
+        booking_id: req.body.booking_id,
+        dealer_id: req.body.dealer_id,
+        method: req.body.method
+      },
+    };
+
+    const config = {
+      auth: {
+        username: "rzp_test_TImTSdtCMH1eMv",
+        password: "5gpvEPZjQsa8klSeYdu1Ht4N"
+      },
+      headers: {
+        "Content-Type": "application/json",
+      },
+    };
+
+    const response = await axios.post('https://api.razorpay.com/v1/orders', razorpayData, config);
+
+    // const paymentData = {
+    //   // cf_order_id: result?.data.cf_order_id,
+    //   orderId: order_id,
+    //   booking_id: booking_id,
+    //   dealer_id: dealer_id,
+    //   user_id: customer_id,
+    //   orderAmount: order_amount,
+    //   order_status: "Order created",
+    //   // order_token: result?.data.order_token,
+    //   // users_id: customer?.id,
+    //   // dealers_id: dealer?.id,
+    // };
+    // await Payment.create(paymentData);
+
+    res.json({ postData: response.data, url: 'https://api.razorpay.com/v1/checkout' });
+  } catch (error) {
+    console.log("error", error);
+    const response = {
+      status: 500,
+      message: "Operation was not successful"
+    };
+    return res.status(500).json(response);
+  }
 };
 
 
@@ -582,7 +660,7 @@ async function paymentNew(req, res) {
 //           orderId: result?.data.order_id,
 //           order_status: result?.data.order_status,
 //         }
-        
+
 //         // return res.status(201).send("ok");
 //         return res.status(201).json({ result: dataz });
 //         // res.render('response', { postData: JSON.stringify(dataz) });
@@ -608,7 +686,7 @@ async function paymentNew(req, res) {
 
 const secret_key = process.env.SECRETKEYTESTWEBHOOK;
 // router.post("/update_order", async (req, res) => {
-async function Returnurlweb (req, res){
+async function Returnurlweb(req, res) {
   // console.log(
   //   "update_order-------astropush123-------payment-----entity---------->",
   //   req.body.payload.payment.entity
@@ -627,10 +705,10 @@ async function Returnurlweb (req, res){
         var order_data = await Payment.findOne({ orderId: order_id });
         console.log("order_data------->", order_data);
         var error_data = "";
-        await paymentAttemptSave(order_data.user_id,order_id,order_data.amount,transaction_id,status,error_data,order_data.platform
+        await paymentAttemptSave(order_data.user_id, order_id, order_data.amount, transaction_id, status, error_data, order_data.platform
         );
         if (order_data) {
-          await user_wallet_add(order_data.amount,order_data.wallet_amount,transaction_id,order_data.wallet_offer_id,order_data.gst_amount,order_id,order_data.user_id
+          await user_wallet_add(order_data.amount, order_data.wallet_amount, transaction_id, order_data.wallet_offer_id, order_data.gst_amount, order_id, order_data.user_id
           );
         }
       }
@@ -678,8 +756,8 @@ async function Returnurlweb (req, res){
   }
 };
 
-function paymentAttemptSave(user_id,order_id,amount,transaction_id,status,error_data,platform) {
-  colcole.log("paymentAttemptSave",user_id,order_id,amount,transaction_id,status,error_data,platform );
+function paymentAttemptSave(user_id, order_id, amount, transaction_id, status, error_data, platform) {
+  colcole.log("paymentAttemptSave", user_id, order_id, amount, transaction_id, status, error_data, platform);
   // var admin_data = new PaymentAttempt();
   // admin_data.user_id = user_id;
   // admin_data.order_id = order_id;
@@ -696,8 +774,8 @@ function paymentAttemptSave(user_id,order_id,amount,transaction_id,status,error_
   // });
 }
 
-function user_wallet_add(amount,wallet_amount,transaction_id,wallet_offer_id,gst_amount,order_id,user_id) {
-  console.log("user_wallet_add", amount,wallet_amount,transaction_id,wallet_offer_id,gst_amount,order_id,user_id)
+function user_wallet_add(amount, wallet_amount, transaction_id, wallet_offer_id, gst_amount, order_id, user_id) {
+  console.log("user_wallet_add", amount, wallet_amount, transaction_id, wallet_offer_id, gst_amount, order_id, user_id)
 
 
   // var request = require("request");
@@ -726,30 +804,30 @@ function user_wallet_add(amount,wallet_amount,transaction_id,wallet_offer_id,gst
 }
 
 async function makeTransfer(vendorId, transferAmount, remark) {
-    try {
-        const response = await axios.post(`https://sandbox.cashfree.com/pg/easy-split/vendors/D-${vendorId}/transfer`, {
-            transfer_from: 'MERCHANT',
-            transfer_type: 'DIRECT_BANK_TRANSFER',
-            transfer_amount: transferAmount,
-            remark: remark
-        }, {
-            headers: {
-                'accept': 'application/json',
-                'content-type': 'application/json',
-                'x-api-version': '2023-08-01',
-                'x-client-id': '145051b44a8163dab2b9915df0150541',
-                'x-client-secret': '9f8c083893c1969049995373f3f922c5c7232db5'
-                // 'x-client-id': process.env.APP_ID,
-                // 'x-client-secret': process.env.SECRET_KEY,
-            }
-        });
-        
-        console.log('Response:', response.data);
-        return response.data;
-    } catch (error) {
-        console.error('Error:', error.response.data);
-        throw error;
-    }
+  try {
+    const response = await axios.post(`https://sandbox.cashfree.com/pg/easy-split/vendors/D-${vendorId}/transfer`, {
+      transfer_from: 'MERCHANT',
+      transfer_type: 'DIRECT_BANK_TRANSFER',
+      transfer_amount: transferAmount,
+      remark: remark
+    }, {
+      headers: {
+        'accept': 'application/json',
+        'content-type': 'application/json',
+        'x-api-version': '2023-08-01',
+        'x-client-id': '145051b44a8163dab2b9915df0150541',
+        'x-client-secret': '9f8c083893c1969049995373f3f922c5c7232db5'
+        // 'x-client-id': process.env.APP_ID,
+        // 'x-client-secret': process.env.SECRET_KEY,
+      }
+    });
+
+    console.log('Response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error:', error.response.data);
+    throw error;
+  }
 }
 
 async function saveCard(req, res) {
@@ -785,7 +863,7 @@ async function saveCard(req, res) {
   }
 };
 
-async function getAllCards (req, res) {
+async function getAllCards(req, res) {
   try {
     const data = jwt_decode(req.headers.token);
     const user_id = data.user_id;
@@ -799,15 +877,15 @@ async function getAllCards (req, res) {
   }
 };
 
-async function deleteCard (req, res) {
+async function deleteCard(req, res) {
   try {
-        const data = jwt_decode(req.headers.token);
+    const data = jwt_decode(req.headers.token);
     const user_id = data.user_id;
     const cardId = req.params.id;
     const card = await Card.findOne({ _id: cardId, user_id });
 
     if (!card) {
-            return res.status(200).json({ error: 'Card not found' });
+      return res.status(200).json({ error: 'Card not found' });
     }
     await card.remove();
     return res.status(200).json({ message: 'Card deleted successfully' });
@@ -851,13 +929,13 @@ async function ReturnurlNew(req, res) {
       user_id: result?.data.notes.customer_id,
       orderAmount: result?.data.amount / 100,
       order_status: result?.data.status,
-      method:result?.data.notes.method,
+      method: result?.data.notes.method,
       users_id: customer?.id,
       dealers_id: dealer?.id,
       payment_type: 'Online',
     };
 
-    
+
     if (result?.data.status === "paid") {
       await Payment.updateOne(
         { orderId: datass.orderId }, // match condition
@@ -866,8 +944,8 @@ async function ReturnurlNew(req, res) {
       );
       const amountPaid = result?.data.amount / 100;
       const commission = (10 / 100) * amountPaid;
-      console.log(commission,"commission")
-      
+      console.log(commission, "commission")
+
       if (result?.data.notes.method === "cash") {
         // Deduct the commission amount from dealer's wallet
         dealer.wallet -= commission;
@@ -999,7 +1077,7 @@ const razorpayInstance = new Razorpay({
 
 async function onDemandNew(req, res) {
   try {
-    
+
 
     const { amount, settle_full_balance, description, notes } = req.body;
 
@@ -1012,13 +1090,13 @@ async function onDemandNew(req, res) {
     };
 
     // Create settlement using Razorpay SDK
-    razorpayInstance.settlements.createOndemandSettlement(requestData, async function(error, settlement) {
+    razorpayInstance.settlements.createOndemandSettlement(requestData, async function (error, settlement) {
       if (error) {
         console.error('Error:', error);
-        res.status(500).json({ error: 'An error occurred while initiating settlement',error });
+        res.status(500).json({ error: 'An error occurred while initiating settlement', error });
       } else {
         console.log('Settlement created:', settlement);
-        
+
         // Step 2: Update dealer's wallet
         // const dealer = await Dealer.findById(dealer_id);
         // if (!dealer) {
@@ -1043,51 +1121,51 @@ async function onDemandNew(req, res) {
 
 async function paymentDealer(req, res) {
   try {
-  var receipt = Math.floor(
-        1000000000000000 + Math.random() * 90000000000000
-  ).toString();
-  
-      const razorpayData = {
-        amount: req.body.amount,
-        currency: req.body.currency,
-        receipt: receipt,
-        notes: {
-          // orderNote: req.body.notes.orderNote,
-          dealerName: req.body.dealerName,
-          dealerEmail: req.body.dealerEmail,
-          dealerPhone: req.body.dealerPhone,
-         
-          dealer_id: req.body.dealer_id,
-        },
-      };
-  
-      const config = {
-        auth: {
+    var receipt = Math.floor(
+      1000000000000000 + Math.random() * 90000000000000
+    ).toString();
+
+    const razorpayData = {
+      amount: req.body.amount,
+      currency: req.body.currency,
+      receipt: receipt,
+      notes: {
+        // orderNote: req.body.notes.orderNote,
+        dealerName: req.body.dealerName,
+        dealerEmail: req.body.dealerEmail,
+        dealerPhone: req.body.dealerPhone,
+
+        dealer_id: req.body.dealer_id,
+      },
+    };
+
+    const config = {
+      auth: {
         username: API_KEY_ID,
         password: API_KEY_SECRET
-        },
-        headers: {
-          "Content-Type": "application/json",
-        },
-      };
-  
-      const response = await axios.post('https://api.razorpay.com/v1/orders', razorpayData, config);
+      },
+      headers: {
+        "Content-Type": "application/json",
+      },
+    };
 
-  
-      res.json({ postData: response.data, url: 'https://api.razorpay.com/v1/checkout' });
-    } catch (error) {
-      console.log("error", error);
-      const response = {
-        status: 500,
-        message: "Operation was not successful"
-      };
-      return res.status(500).json(response);
-    }
+    const response = await axios.post('https://api.razorpay.com/v1/orders', razorpayData, config);
+
+
+    res.json({ postData: response.data, url: 'https://api.razorpay.com/v1/checkout' });
+  } catch (error) {
+    console.log("error", error);
+    const response = {
+      status: 500,
+      message: "Operation was not successful"
+    };
+    return res.status(500).json(response);
+  }
 };
 
-async function paymentDealerCash (req, res) {
+async function paymentDealerCash(req, res) {
   try {
-    const {amount, currency, dealerName, dealerEmail, dealerPhone, dealer_id } = req.body;
+    const { amount, currency, dealerName, dealerEmail, dealerPhone, dealer_id } = req.body;
     var order_id = Math.floor(1000000000000000 + Math.random() * 90000000000000).toString();
     const user = {
       order_meta: {
@@ -1103,53 +1181,53 @@ async function paymentDealerCash (req, res) {
         dealer_id: dealer_id,
         dealer_id: dealer_id,
       },
-      orderId:"Order_"+order_id,
+      orderId: "Order_" + order_id,
       order_amount: amount,
       order_currency: 'INR',
-      order_id: "Ord_"+order_id,
+      order_id: "Ord_" + order_id,
       order_note: "Recharge wallet"
     }
 
-  var receipt = Math.floor(
-        1000000000000000 + Math.random() * 90000000000000
-  ).toString();
-  
-      const razorpayData = {
-        amount: req.body.amount,
-        currency: req.body.currency,
-        receipt: receipt,
-        notes: {
-          // orderNote: req.body.notes.orderNote,
-          dealerName: req.body.dealerName,
-          dealerEmail: req.body.dealerEmail,
-          dealerPhone: req.body.dealerPhone,
-         
-          dealer_id: req.body.dealer_id,
-        },
-      };
-  
-      const config = {
-        auth: {
+    var receipt = Math.floor(
+      1000000000000000 + Math.random() * 90000000000000
+    ).toString();
+
+    const razorpayData = {
+      amount: req.body.amount,
+      currency: req.body.currency,
+      receipt: receipt,
+      notes: {
+        // orderNote: req.body.notes.orderNote,
+        dealerName: req.body.dealerName,
+        dealerEmail: req.body.dealerEmail,
+        dealerPhone: req.body.dealerPhone,
+
+        dealer_id: req.body.dealer_id,
+      },
+    };
+
+    const config = {
+      auth: {
         username: API_KEY_ID,
         password: API_KEY_SECRET
-        },
-        headers: {
-          "Content-Type": "application/json",
-        },
-      };
-  
-      const response = await axios.post('https://api.razorpay.com/v1/orders', razorpayData, config);
+      },
+      headers: {
+        "Content-Type": "application/json",
+      },
+    };
 
-  
-      res.json({ postData: response.data, url: 'https://api.razorpay.com/v1/checkout' });
-    } catch (error) {
-      console.log("error", error);
-      const response = {
-        status: 500,
-        message: "Operation was not successful"
-      };
-      return res.status(500).json(response);
-    }
+    const response = await axios.post('https://api.razorpay.com/v1/orders', razorpayData, config);
+
+
+    res.json({ postData: response.data, url: 'https://api.razorpay.com/v1/checkout' });
+  } catch (error) {
+    console.log("error", error);
+    const response = {
+      status: 500,
+      message: "Operation was not successful"
+    };
+    return res.status(500).json(response);
+  }
 };
 
 async function ReturnurlDealer(req, res) {
@@ -1171,7 +1249,7 @@ async function ReturnurlDealer(req, res) {
     console.log("result", result.data);
 
     const dealer = await Dealer.findById(result?.data.notes.dealer_id);
-   
+
 
     const datass = {
       orderId: result?.data.id,
@@ -1188,9 +1266,9 @@ async function ReturnurlDealer(req, res) {
     if (result?.data.status === "paid") {
       const amountPaid = result?.data.amount / 100;
       // const amountPaid = result?.data.amount
-      console.log(amountPaid,"amunt")
+      console.log(amountPaid, "amunt")
       const commission = 0;
-      console.log(dealer.wallet,"dealer")
+      console.log(dealer.wallet, "dealer")
       dealer.wallet += amountPaid - commission;
       await dealer.save();
 
@@ -1203,7 +1281,7 @@ async function ReturnurlDealer(req, res) {
       };
 
       await Wallet.create(walletData);
-    } 
+    }
     const dataz = {
       amount: result?.data.amount / 100,
       orderId: result?.data.id,
@@ -1225,103 +1303,103 @@ async function ReturnurlDealer(req, res) {
 
 const createContact = async (req, res) => {
   const { name, email, contact, dealerId } = req.body;
-  
+
   try {
-      // Create contact in Razorpay
-      const response = await axios.post('https://api.razorpay.com/v1/contacts', {
-          name,
-          email,
-          contact
-      }, {
-          auth: {
-              username: API_KEY_ID,
-              password: API_KEY_SECRET
-          }
-      });
+    // Create contact in Razorpay
+    const response = await axios.post('https://api.razorpay.com/v1/contacts', {
+      name,
+      email,
+      contact
+    }, {
+      auth: {
+        username: API_KEY_ID,
+        password: API_KEY_SECRET
+      }
+    });
 
-      // Save contact data to MongoDB
-      const contactData = {
-          name,
-          email,
-          contact,
-          dealerId
-      };
+    // Save contact data to MongoDB
+    const contactData = {
+      name,
+      email,
+      contact,
+      dealerId
+    };
 
-      const newContact = new contacts(contactData);
-      await newContact.save();
+    const newContact = new contacts(contactData);
+    await newContact.save();
 
-      res.json({ razorpayResponse: response.data });
+    res.json({ razorpayResponse: response.data });
   } catch (error) {
-      console.log(error);
-      res.status(500).json(error);
+    console.log(error);
+    res.status(500).json(error);
   }
 };
 
-const CreateFund =  async (req, res) => {
+const CreateFund = async (req, res) => {
   const { contact_id, account_type, bank_account, dealerId } = req.body;
-  
+
   try {
-      const response = await axios.post('https://api.razorpay.com/v1/fund_accounts', {
-          contact_id,
-          account_type,
-          bank_account
-      }, {
-          auth: {
-              username: API_KEY_ID,
-              password: API_KEY_SECRET
-          }
-      });
+    const response = await axios.post('https://api.razorpay.com/v1/fund_accounts', {
+      contact_id,
+      account_type,
+      bank_account
+    }, {
+      auth: {
+        username: API_KEY_ID,
+        password: API_KEY_SECRET
+      }
+    });
 
-      console.log("response =========>",response)
+    console.log("response =========>", response)
 
-      const { name, ifsc, account_number } = req.body.bank_account;
-      const fund_id = response.data.id
-      const fundAccountData = {
-        fund_id,
-        contact_id,
-        account_type,
-        name,
-        ifsc,
-        account_number,
-        dealerId
-      };
+    const { name, ifsc, account_number } = req.body.bank_account;
+    const fund_id = response.data.id
+    const fundAccountData = {
+      fund_id,
+      contact_id,
+      account_type,
+      name,
+      ifsc,
+      account_number,
+      dealerId
+    };
 
-      const newFundAccount = new FundAccount(fundAccountData);
+    const newFundAccount = new FundAccount(fundAccountData);
 
-      await newFundAccount.save();
+    await newFundAccount.save();
 
-      res.json(newFundAccount);
+    res.json(newFundAccount);
   } catch (error) {
-      console.log(error);
-      res.status(500).json(error);
+    console.log(error);
+    res.status(500).json(error);
   }
 };
 
-const AllFund =  async (req, res) => {
+const AllFund = async (req, res) => {
   try {
 
     const data = jwt_decode(req.headers.token);
     const user_id = data.user_id;
 
-      const fundAccounts = await FundAccount.find({ "dealerId": user_id });
-      res.json(fundAccounts);
+    const fundAccounts = await FundAccount.find({ "dealerId": user_id });
+    res.json(fundAccounts);
   } catch (error) {
-      console.log(error);
-      res.status(500).json({ message: 'Internal server error' });
+    console.log(error);
+    res.status(500).json({ message: 'Internal server error' });
   }
 };
 
-const AllContact =  async (req, res) => {
+const AllContact = async (req, res) => {
 
   try {
     const data = jwt_decode(req.headers.token);
     const user_id = data.user_id
     const contactAccounts = await contacts.find({ "dealerId": user_id });
 
-      res.json(contactAccounts);
+    res.json(contactAccounts);
   } catch (error) {
-      console.log(error);
-      res.status(500).json({ message: 'Internal server error' });
+    console.log(error);
+    res.status(500).json({ message: 'Internal server error' });
   }
 };
 
@@ -1452,9 +1530,9 @@ const PhonepaycheckStatus = async (req, res) => {
 
       // Retrieve the initial data from the database
       const paymentRecord = await Payment.findOne({ orderId: merchantTransactionId });
-      
+
       const dealer = await Dealer.findById(paymentRecord.dealer_id)
-     
+
 
       if (!paymentRecord) {
         return res.status(200).json({ msg: "Payment record not found", status: "error" });
@@ -1464,24 +1542,24 @@ const PhonepaycheckStatus = async (req, res) => {
         // Update the payment status in the database
         paymentRecord.order_status = 'success';
         await paymentRecord.save();
-       
+
         const amountPaid = paymentRecord.orderAmount / 100; // Convert orderAmount from cents to dollars
         console.log(amountPaid, "amountPaid");
-        
+
         const commissionRate = 10; // Commission rate in percentage
         const commissionAmount = (commissionRate / 100) * amountPaid; // Calculate commission amount
-        
+
         console.log(commissionAmount, "commissionAmount");
-        
+
         // Subtract commission from amountPaid to get the amount to add to dealer's wallet
         const amountToAddToWallet = amountPaid - commissionAmount;
-        
+
         // Add amountToAddToWallet to dealer's wallet
         dealer.wallet += amountToAddToWallet;
         await dealer.save();
 
-   
-  
+
+
         const walletData = {
           dealer_id: dealer?._id,
           Amount: amountPaid, // paid amount
@@ -1489,9 +1567,9 @@ const PhonepaycheckStatus = async (req, res) => {
           Note: 'recharge successfully by phonepay',
           Total: dealer.wallet // Updated wallet balance
         };
-  
+
         await Wallet.create(walletData);
-       
+
 
 
         return res.status(201).json(response.data);
@@ -1499,7 +1577,7 @@ const PhonepaycheckStatus = async (req, res) => {
         // Handle other response codes if necessary
         paymentRecord.order_status = 'failed';
         await paymentRecord.save();
-        
+
         return res.status(200).json(response.data);
       }
 
@@ -1528,10 +1606,10 @@ async function paymentDealerCash(req, res) {
         return_url: return_url || `https://mrbikedoctor.in/api/returnurl`
       },
       customer_details: {
-        customer_id: dealer_id,        
-        customer_name: dealerName,     
-        customer_email: dealerEmail,  
-        customer_phone: dealerPhone   
+        customer_id: dealer_id,
+        customer_name: dealerName,
+        customer_email: dealerEmail,
+        customer_phone: dealerPhone
       },
       orderId: "Order_" + order_id,
       order_amount: order_amount,
@@ -1551,21 +1629,21 @@ async function paymentDealerCash(req, res) {
         'x-client-secret': process.env.SECRET_KEY
       }
     })
-    .then((result) => {
-      console.log("Result:", result.data);
-      const response = {
-        status: 200,
-        message: "Payment Order Created Successfully",
-        order_token: result.data.order_token,
-        payment_link: result.data.payment_link,
-        return_data: result.data
-      };
-      return res.status(200).send(response);
-    })
-    .catch((e) => {
-      console.error("Error:", e.response ? e.response.data : e.message);
-      res.status(e.response ? e.response.status : 500).json({ error: e.response ? e.response.data : e.message });
-    });
+      .then((result) => {
+        console.log("Result:", result.data);
+        const response = {
+          status: 200,
+          message: "Payment Order Created Successfully",
+          order_token: result.data.order_token,
+          payment_link: result.data.payment_link,
+          return_data: result.data
+        };
+        return res.status(200).send(response);
+      })
+      .catch((e) => {
+        console.error("Error:", e.response ? e.response.data : e.message);
+        res.status(e.response ? e.response.status : 500).json({ error: e.response ? e.response.data : e.message });
+      });
 
   } catch (error) {
     console.error("Catch Error:", error);
@@ -1583,15 +1661,15 @@ async function ReturnurlDealerCash(req, res) {
   try {
 
     const order_id = req.query.order_id;
-    console.log("teststeste===========>",req.query.order_id);
+    console.log("teststeste===========>", req.query.order_id);
 
 
 
     // for testing
     await axios.get(`https://sandbox.cashfree.com/pg/orders/${order_id}`,
 
-    // for Production
-    // axios.get(`https://api.cashfree.com/pg/orders/${order_id}`,
+      // for Production
+      // axios.get(`https://api.cashfree.com/pg/orders/${order_id}`,
       {
         headers: {
           'Content-Type': 'application/json',
@@ -1601,7 +1679,7 @@ async function ReturnurlDealerCash(req, res) {
         }
       })
       .then(async (result) => {
-        console.log("result",result.data);
+        console.log("result", result.data);
 
         const customer = await customers.findById(result?.data.customer_details.customer_id);
         const dealer = await Dealer.findById(result?.data.customer_details.customer_id);
@@ -1620,29 +1698,29 @@ async function ReturnurlDealerCash(req, res) {
 
         await Payment.create(datass);
 
-        if(result?.data.order_status == "PAID"){
+        if (result?.data.order_status == "PAID") {
 
           await Payment.updateOne(
-            { orderId: datass.orderId }, 
-            datass, 
-            { upsert: true } 
+            { orderId: datass.orderId },
+            datass,
+            { upsert: true }
           );
 
           dealer.wallet += result?.data.order_amount
           await dealer.save();
 
-            const walletData = {
-              dealer_id: dealer?._id,
-              Amount: result?.data.order_amount,
-              Type: 'Credit', 
-              Note: 'RECHARGE', 
-              Total:  dealer.wallet
-            };
-                // Create wallet document
-           const check = await Wallet.create(walletData);
-           console.log(check,"data")
+          const walletData = {
+            dealer_id: dealer?._id,
+            Amount: result?.data.order_amount,
+            Type: 'Credit',
+            Note: 'RECHARGE',
+            Total: dealer.wallet
+          };
+          // Create wallet document
+          const check = await Wallet.create(walletData);
+          console.log(check, "data")
 
-         }
+        }
 
         const dataz = {
           amount: result?.data.order_amount,
@@ -1650,7 +1728,7 @@ async function ReturnurlDealerCash(req, res) {
           orderId: result?.data.order_id,
           order_status: result?.data.order_status,
         }
-        
+
         // // return res.status(201).send("ok");
         return res.status(201).json({ result: dataz });
         // res.render('response', { postData: JSON.stringify(dataz) });
@@ -1679,178 +1757,178 @@ const createBeneficiary = async (req, res) => {
     const data = jwt_decode(req.headers.token);
     const user_id = data.user_id;
     console.log(user_id);
-    console.log("dealer id >>>>>>>>>>",user_id);
+    console.log("dealer id >>>>>>>>>>", user_id);
 
-      const beneficiary_id = crypto.randomBytes(10).toString("hex");
-      const { beneficiary_name, beneficiary_instrument_details,beneficiary_contact_details } = req.body;
+    const beneficiary_id = crypto.randomBytes(10).toString("hex");
+    const { beneficiary_name, beneficiary_instrument_details, beneficiary_contact_details } = req.body;
 
-      // Ensure you have the required parameters
-      // if (!beneficiary_id || !beneficiary_name || !beneficiary_instrument_details) {
-      //     return res.status(200).json({
-      //         status: false,
-      //         error: 'Missing required parameters'
-      //     });
-      // }
+    // Ensure you have the required parameters
+    // if (!beneficiary_id || !beneficiary_name || !beneficiary_instrument_details) {
+    //     return res.status(200).json({
+    //         status: false,
+    //         error: 'Missing required parameters'
+    //     });
+    // }
 
-      // Construct the request body
-      let requestBody = {
-        beneficiary_id,
-          beneficiary_name,
-          beneficiary_instrument_details,
-          beneficiary_contact_details
-      };
+    // Construct the request body
+    let requestBody = {
+      beneficiary_id,
+      beneficiary_name,
+      beneficiary_instrument_details,
+      beneficiary_contact_details
+    };
 
-      // Make the API call to create a beneficiary
-      const response = await axios.post(
-          'https://sandbox.cashfree.com/payout/beneficiary',
-          requestBody,
-          {
-              headers: {
-                  'x-api-version': '2024-01-01',
-                  'x-client-id': APP_ID_P, 
-                  'x-client-secret': SECRET_KEY_P, 
-                  'Content-Type': 'application/json'
-              }
-          }
-      );
-
-      // Check if the response is successful
-      if (response.status === 201) {
-        const update_data = {
-          beneficiary_id : response.data.beneficiary_id,
-          beneficiary_accountNo : response.data.beneficiary_instrument_details?.bank_account_number,
-          beneficiary_ifsc : response.data.beneficiary_instrument_details?.bank_ifsc
+    // Make the API call to create a beneficiary
+    const response = await axios.post(
+      'https://sandbox.cashfree.com/payout/beneficiary',
+      requestBody,
+      {
+        headers: {
+          'x-api-version': '2024-01-01',
+          'x-client-id': APP_ID_P,
+          'x-client-secret': SECRET_KEY_P,
+          'Content-Type': 'application/json'
         }
-        // console.log("data",update_data);
-        const update_dealer = await Dealer.findByIdAndUpdate(user_id,update_data,{new:true})
-          res.status(201).json({ status: true, data: response.data });
-      } else {
-          res.status(response.status).json({ status: false, error: response.data });
       }
+    );
+
+    // Check if the response is successful
+    if (response.status === 201) {
+      const update_data = {
+        beneficiary_id: response.data.beneficiary_id,
+        beneficiary_accountNo: response.data.beneficiary_instrument_details?.bank_account_number,
+        beneficiary_ifsc: response.data.beneficiary_instrument_details?.bank_ifsc
+      }
+      // console.log("data",update_data);
+      const update_dealer = await Dealer.findByIdAndUpdate(user_id, update_data, { new: true })
+      res.status(201).json({ status: true, data: response.data });
+    } else {
+      res.status(response.status).json({ status: false, error: response.data });
+    }
   } catch (error) {
-      // Handle error response
-      res.status(error.response ? error.response.status : 500).json({
-          status: false,
-          error: error.response ? error.response.data : error.message
-      });
+    // Handle error response
+    res.status(error.response ? error.response.status : 500).json({
+      status: false,
+      error: error.response ? error.response.data : error.message
+    });
   }
 }
-const getBeneficiary = async(req,res)=>{
+const getBeneficiary = async (req, res) => {
   const data = jwt_decode(req.headers.token);
   const user_id = data.user_id;
-  console.log("userid",user_id)
+  console.log("userid", user_id)
 
   const dealer = await Dealer.findOne({ _id: user_id });
-  console.log(dealer,"dealer")
+  console.log(dealer, "dealer")
   const beneficiary_id = dealer?.beneficiary_id
   const bank_account_number = dealer?.beneficiary_accountNo
   const bank_ifsc = dealer?.beneficiary_ifsc
 
-try{
+  try {
 
-  const getResponse = await axios.get('https://sandbox.cashfree.com/payout/beneficiary', {
-    params: { 
-      beneficiary_id,
-      // bank_account_number,
-      // bank_ifsc
-    },  
-    headers: {
-      'x-api-version': '2024-01-01',
-      'x-client-id': APP_ID_P, 
-      'x-client-secret': SECRET_KEY_P, 
-      'Content-Type': 'application/json'
-    },
-  });
+    const getResponse = await axios.get('https://sandbox.cashfree.com/payout/beneficiary', {
+      params: {
+        beneficiary_id,
+        // bank_account_number,
+        // bank_ifsc
+      },
+      headers: {
+        'x-api-version': '2024-01-01',
+        'x-client-id': APP_ID_P,
+        'x-client-secret': SECRET_KEY_P,
+        'Content-Type': 'application/json'
+      },
+    });
 
-  if (getResponse.data.beneficiary_status === "VERIFIED") {
-    res.status(200).json({ status: true, data: getResponse.data });
-  } else {
+    if (getResponse.data.beneficiary_status === "VERIFIED") {
+      res.status(200).json({ status: true, data: getResponse.data });
+    } else {
 
       res.status(200).json({ status: false, message: getResponse.data });
+    }
+
+  } catch (error) {
+    console.log(error)
+    res.status(500).json({ status: false, message: error.message });
+
   }
 
-}catch(error){
-  console.log(error)
-  res.status(500).json({ status: false, message: error.message });
-
 }
-
-}
-async function transferFunds(req,res) {
+async function transferFunds(req, res) {
   const data = jwt_decode(req.headers.token);
   const user_id = data.user_id;
 
-    const {
-      transfer_amount,
-      transfer_remarks,
-    } = req.body;
-    
-    if (!transfer_amount) {
-      return res.status(200).json({ status: false, error: 'Missing transfer_amount required parameters' });
-    }
-    
-    const dealer = await Dealer.findOne({ _id: user_id });
-    console.log(dealer,"dealer")
-    const beneficiary_id = dealer.beneficiary_id
-    const bank_account_number = dealer.beneficiary_accountNo
-    const bank_ifsc = dealer.beneficiary_ifsc
-     console.log(dealer);
+  const {
+    transfer_amount,
+    transfer_remarks,
+  } = req.body;
 
-   const beneficiary_details =  {
+  if (!transfer_amount) {
+    return res.status(200).json({ status: false, error: 'Missing transfer_amount required parameters' });
+  }
+
+  const dealer = await Dealer.findOne({ _id: user_id });
+  console.log(dealer, "dealer")
+  const beneficiary_id = dealer.beneficiary_id
+  const bank_account_number = dealer.beneficiary_accountNo
+  const bank_ifsc = dealer.beneficiary_ifsc
+  console.log(dealer);
+
+  const beneficiary_details = {
     beneficiary_id,
     bank_account_number,
     bank_ifsc,
   }
-    
-    if (dealer.wallet < parseInt(transfer_amount, 10)) {
-      return res.status(200).json({ status: false, error: 'Insufficient funds in wallet' });
-    }
-    try {
-        const trans_id=crypto.randomBytes(16).toString('hex')
-      const response = await axios.post(
-        'https://sandbox.cashfree.com/payout/transfers',
-        {
-          transfer_id:trans_id,
-          transfer_amount,
-          transfer_currency:'INR',
-          transfer_mode :'banktransfer',
-          beneficiary_details,
-          transfer_remarks,
-          fundsource_id:"CASHFREE_171164"
-        },
-        {
-          headers: {
-            'x-api-version': '2024-01-01',
-            'x-request-id': crypto.randomBytes(16).toString('hex'),
-            'x-client-id': APP_ID_P,
-            'x-client-secret': SECRET_KEY_P
-          }
+
+  if (dealer.wallet < parseInt(transfer_amount, 10)) {
+    return res.status(200).json({ status: false, error: 'Insufficient funds in wallet' });
+  }
+  try {
+    const trans_id = crypto.randomBytes(16).toString('hex')
+    const response = await axios.post(
+      'https://sandbox.cashfree.com/payout/transfers',
+      {
+        transfer_id: trans_id,
+        transfer_amount,
+        transfer_currency: 'INR',
+        transfer_mode: 'banktransfer',
+        beneficiary_details,
+        transfer_remarks,
+        fundsource_id: "CASHFREE_171164"
+      },
+      {
+        headers: {
+          'x-api-version': '2024-01-01',
+          'x-request-id': crypto.randomBytes(16).toString('hex'),
+          'x-client-id': APP_ID_P,
+          'x-client-secret': SECRET_KEY_P
         }
-      );
+      }
+    );
 
-      res.status(response.status).json({ status: true, data: response.data });
+    res.status(response.status).json({ status: true, data: response.data });
 
-      if(dealer){
+    if (dealer) {
       const walletData = {
         dealer_id: dealer?._id,
-        Amount: response?.data.transfer_amount, 
-        Type: 'Debit', 
-        Note: 'Payout', 
-        Total:  dealer.wallet - response?.data.transfer_amount
+        Amount: response?.data.transfer_amount,
+        Type: 'Debit',
+        Note: 'Payout',
+        Total: dealer.wallet - response?.data.transfer_amount
       };
-     dealer.wallet= dealer.wallet -response?.data.transfer_amount;
+      dealer.wallet = dealer.wallet - response?.data.transfer_amount;
       await dealer.save();
       // Create wallet document
-     const check = await Wallet.create(walletData);
-     console.log(check,"data")
+      const check = await Wallet.create(walletData);
+      console.log(check, "data")
     }
-    } catch (error) {
-      console.error(error);
-      res.status(error.response ? error.response.status : 500).json({
-        status: false,
-        error: error.response ? error.response.data : error.message
-      });
-    }
+  } catch (error) {
+    console.error(error);
+    res.status(error.response ? error.response.status : 500).json({
+      status: false,
+      error: error.response ? error.response.data : error.message
+    });
+  }
 }
 
 // async function payment(req, res) {
@@ -2118,7 +2196,7 @@ async function Returnurl(req, res) {
 
       // Update Wallet Entry
       walletEntry.Type = "Credit";
-      walletEntry.order_status = "PAID"; 
+      walletEntry.order_status = "PAID";
       walletEntry.Note = "Payment received via Cashfree";
       walletEntry.Total = dealer.wallet;
       await walletEntry.save();
@@ -2151,7 +2229,7 @@ async function getValidToken() {
           "X-Client-Secret": process.env.CASHFREE_PAYOUT_CLIENT_SECRET // ✅ Use correct credentials
         }
       });
-console.log(response.data,"status")
+      console.log(response.data, "status")
       if (response.data.status === "SUCCESS") {
         process.env.CASHFREE_PAYOUT_TOKEN = response.data.data.token;
         process.env.CASHFREE_PAYOUT_TOKEN_EXPIRY = response.data.data.expiry;
@@ -2237,7 +2315,7 @@ async function approvePayout(req, res) {
       return res.status(404).json({ message: "Dealer not found" });
     }
 
-    console.log(walletTransaction.dealer_id,"dealer_id")
+    console.log(walletTransaction.dealer_id, "dealer_id")
 
     if (status === "APPROVED") {
       if (dealer.wallet < walletTransaction.Amount) {
@@ -2384,7 +2462,7 @@ async function bookingPaymentReturn(req, res) {
       payment_type: "Online",
     };
 
-    console.log(paymentInfo,"inforpayment")
+    console.log(paymentInfo, "inforpayment")
 
     await Payment.updateOne(
       { orderId: data.order_id },
@@ -2396,7 +2474,7 @@ async function bookingPaymentReturn(req, res) {
     dealer.wallet += finalWalletAmount;
     await dealer.save();
 
-   const storedInWallet =  await Wallet.create({
+    const storedInWallet = await Wallet.create({
       dealer_id: dealer._id,
       user_id: customer._id,
       orderId: data.order_id,
@@ -2406,7 +2484,7 @@ async function bookingPaymentReturn(req, res) {
       Total: dealer.wallet
     });
 
-    console.log(storedInWallet,"storedInWallet")
+    console.log(storedInWallet, "storedInWallet")
     // Update booking + tracking
     if (paymentInfo.booking_id) {
       await Booking.findByIdAndUpdate(paymentInfo.booking_id, { status: "Payment" });
