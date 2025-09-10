@@ -1157,9 +1157,9 @@ const sendOtpToMobile = async (req, res) => {
     const otpExpiry = new Date(Date.now() + 5 * 60 * 1000);
 
     // find-or-create by phone
-    let customer = await Customer.findOne({ phone: Number(normalized) });
+    let customer = await customers.findOne({ phone: Number(normalized) });
     if (!customer) {
-      customer = await Customer.create({
+      customer = await customers.create({
         phone: Number(normalized),
         otp,
         // store expiry in a separate field if you add it to schema
