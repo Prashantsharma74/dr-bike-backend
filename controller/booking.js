@@ -1112,13 +1112,14 @@ const sendBookingOTP = async (req, res) => {
     if (!bookingData) {
       return res.status(200).json({ success: false, message: "Booking not found" });
     }
-
+    console.log("Booking Data", bookingData)
     const dealer = await Dealer.findById(bookingData.dealer_id);
     if (!dealer || !dealer.phone) {
       return res.status(200).json({ success: false, message: "Dealer phone number not found" });
     }
+    console.log("Booking Data", bookingData)
 
-    const phoneNumber = dealer.phone; // Dealer ka phone number
+    const phoneNumber = dealer.phone;
 
     // OTP Generate karna
     const otp = Math.floor(100000 + Math.random() * 900000);
@@ -1137,54 +1138,107 @@ const sendBookingOTP = async (req, res) => {
   }
 };
 
-const normalizePhone = (p) => String(p).replace(/\D/g, "").slice(-10);
+// helpers (keep in same file or import)
+const normalize10 = (p) => String(p).replace(/\D/g, "").slice(-10); // last 10 digits
+const with91 = (ten) => `91${ten}`;
+
 const sendOtpToMobile = async (req, res) => {
   try {
-    const { phone } = req.body;
-
-    if (!phone) {
-      return res.status(200).json({ success: false, message: "Phone is required" });
+    const { bookingId } = req.body;
+    if (!bookingId) {
+      return res.status(200).json({ success: false, message: "Booking ID is required" });
     }
 
-    const normalized = normalizePhone(phone);
-    if (normalized.length !== 10) {
-      return res.status(200).json({ success: false, message: "Invalid phone number" });
+    // 1) Fetch booking + user
+    const bookingData = await booking
+      .findById(bookingId)
+      .populate("user_id", "phone first_name last_name");
+
+    if (!bookingData) {
+      return res.status(200).json({ success: false, message: "Booking not found" });
+    }
+    if (!bookingData.user_id || !bookingData.user_id.phone) {
+      return res.status(200).json({ success: false, message: "User phone number not found" });
     }
 
-    // Static OTP (testing)
-    const otp = 1234;
-    // optional expiry: 5 minutes
-    const otpExpiry = new Date(Date.now() + 5 * 60 * 1000);
+    const rawPhone = bookingData.user_id.phone; // may be 10-digit or 91XXXXXXXXXX (Number or String)
+    const ten = normalize10(rawPhone);
+    const e164 = with91(ten);
 
-    // find-or-create by phone
-    let customer = await customers.findOne({ phone: Number(normalized) });
+    // 2) Find the same customer by any stored representation (Number/String, 10/12 digits)
+    const customer =
+      await customers.findOne({ phone: { $in: [Number(ten), ten, Number(e164), e164] } }) ||
+      await customers.findById(bookingData.user_id._id); // fallback by id, just in case
+
     if (!customer) {
-      customer = await customers.create({
-        phone: Number(normalized),
-        otp,
-        // store expiry in a separate field if you add it to schema
-        // otpExpiry
-      });
-    } else {
-      customer.otp = otp;
-      // customer.otpExpiry = otpExpiry;
-      await customer.save();
+      return res.status(200).json({ success: false, message: "User not found for this booking" });
     }
 
-    // TODO: integrate SMS service here
-    // await sendSms(`+91${normalized}`, `Your OTP is ${otp}`);
+    // 3) Generate & save OTP on customer
+    const otp = 1234; // static for now (testing)
+    customer.otp = otp;
+    // Optional expiry support if you add it to schema:
+    // customer.otpExpiry = new Date(Date.now() + 5 * 60 * 1000);
+    await customer.save();
+
+    // 4) Send SMS (plug your provider here)
+    // await sendSms(`+${e164}`, `Your OTP is ${otp}`);
 
     return res.status(200).json({
       success: true,
-      message: `OTP sent to +91${normalized}`,
-      // ⚠️ return otp only in dev/testing
-      otp
+      message: `OTP sent successfully to ${e164}`,
+      otp // ⚠️ return only in dev/testing
     });
-  } catch (err) {
-    console.error("sendOtpToMobile error:", err);
+  } catch (error) {
+    console.error("sendOtpToMobile error:", error);
     return res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
+
+const verifyOtpForMobile = async (req, res) => {
+  try {
+    const { phone, otp } = req.body;
+
+    if (!phone || !otp) {
+      return res.status(200).json({ success: false, message: "Phone and OTP are required" });
+    }
+
+    const ten = normalize10(phone);
+    const e164 = with91(ten);
+
+    // Flexible lookup to match existing stored shapes
+    const customer = await customers.findOne({
+      phone: { $in: [Number(ten), ten, Number(e164), e164] }
+    });
+
+    if (!customer) {
+      return res.status(200).json({ success: false, message: "User not found" });
+    }
+
+    // Optional expiry check
+    // if (customer.otpExpiry && customer.otpExpiry < new Date()) {
+    //   return res.status(200).json({ success: false, message: "OTP expired" });
+    // }
+
+    if (Number(otp) !== Number(customer.otp)) {
+      return res.status(200).json({ success: false, message: "Invalid OTP" });
+    }
+
+    customer.otp = null; // clear after success
+    await customer.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "OTP verified successfully",
+      data: { customerId: customer._id }
+    });
+  } catch (err) {
+    console.error("verifyOtpForMobile error:", err);
+    return res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+};
+
+
 
 const verifyBookingOTP = async (req, res) => {
   try {
@@ -1212,9 +1266,9 @@ const verifyBookingOTP = async (req, res) => {
       return res.status(200).json({ success: false, message: "Invalid OTP" });
     }
 
-    bookingData.otp = null;                   
-    bookingData.pickupStatus = "pickedup";    
-    bookingData.pickupDate = new Date();      
+    bookingData.otp = null;
+    bookingData.pickupStatus = "pickedup";
+    bookingData.pickupDate = new Date();
     await bookingData.save();
 
     return res
@@ -1472,5 +1526,6 @@ module.exports = {
   getNotesFromBooking,
   updateNoteInBooking,
   deleteNoteFromBooking,
-  sendOtpToMobile
+  sendOtpToMobile,
+  verifyOtpForMobile
 }

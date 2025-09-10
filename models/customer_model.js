@@ -28,7 +28,7 @@ const CustomerSchema = new mongoose.Schema({
     },
     phone: {
         type: Number,
-        default: null, // Default `null` if not given
+        default: null, 
     },
     state: {
         type: String,
