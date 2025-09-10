@@ -899,8 +899,8 @@ async function editDealerStatus(req, res) {
 
 async function getWallet(req, res) {
   try {
-    const data = jwt_decode(req.headers.token);
-    const user_type = data.user_type;
+    // const data = jwt_decode(req.headers.token);
+    // const user_type = data.user_type;
 
     // if (user_type !== 4) {
     //   return res.status(200).json({ success: false, message: "Unauthorized access!" });
@@ -951,10 +951,6 @@ const GetwalletInfo = async (req, res) => {
         path: 'dealer_id',
         select: ['name', 'id']
       })
-    // .populate({
-    //   path:'user_id',
-    //   select:['id','first_name']
-    // })
 
 
     if (walletInfo) {
