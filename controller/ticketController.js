@@ -59,23 +59,45 @@ const replyToTicket = async (req, res) => {
 };
 
 // 📌 Get all tickets for the logged-in User/Dealer
+// const getMyTickets = async (req, res) => {
+//     try {
+//         const data = jwt_decode(req.headers.token);
+//         const user_id = data.user_id;
+//         const user_type = data.user_type;
+
+//         if (![2, 4].includes(user_type)) {
+//             return res.status(200).json({ success: false, message: "Unauthorized access" });
+//         }
+
+//         const tickets = await Ticket.find({ user_id }).sort({ created_at: -1 });
+//         res.status(200).json({ success: true, message: "Tickets retrieved successfully", data: tickets });
+
+//     } catch (error) {
+//         console.error("Fetch Tickets Error:", error);
+//         res.status(500).json({ success: false, message: "Internal server error" });
+//     }
+// };
+
 const getMyTickets = async (req, res) => {
-    try {
-        const data = jwt_decode(req.headers.token);
-        const user_id = data.user_id;
-        const user_type = data.user_type;
+  try {
+    const { user_id } = req.query;
 
-        if (![2, 4].includes(user_type)) {
-            return res.status(200).json({ success: false, message: "Unauthorized access" });
-        }
-
-        const tickets = await Ticket.find({ user_id }).sort({ created_at: -1 });
-        res.status(200).json({ success: true, message: "Tickets retrieved successfully", data: tickets });
-
-    } catch (error) {
-        console.error("Fetch Tickets Error:", error);
-        res.status(500).json({ success: false, message: "Internal server error" });
+    if (!user_id) {
+      return res.status(400).json({ success: false, message: "User ID is required" });
     }
+
+    const tickets = await Ticket.find({ user_id }).sort({ created_at: -1 });
+
+    res.status(200).json({
+      success: true,
+      message: "Tickets retrieved successfully",
+      data: tickets
+    });
+
+  } catch (error) {
+    console.error("Fetch Tickets Error:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
 };
 
 // 📌 Get all user & dealer tickets (Admin Only)

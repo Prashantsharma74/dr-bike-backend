@@ -334,13 +334,13 @@ async function Cashpayment(req, res) {
     const { customer_id, order_amount, pay_type, booking_id, dealer_id } = req.body;
     const order_id = Math.floor(1000000000000000 + Math.random() * 90000000000000).toString();
 
-    const bookings  = await Booking.findById(booking_id);
-    const dealer    = await Dealer.findById(dealer_id);
+    const bookings = await Booking.findById(booking_id);
+    const dealer = await Dealer.findById(dealer_id);
     const trackings = await Tracking.findOne({ booking_id });
     const existingPayment = await Payment.findOne({ booking_id });
 
     if (!bookings) return res.status(200).json({ status: 200, message: "No Booking Found" });
-    if (!dealer)   return res.status(200).json({ status: 200, message: "No Dealer Found" });
+    if (!dealer) return res.status(200).json({ status: 200, message: "No Dealer Found" });
 
     // ✅ If payment already exists -> ensure status completed, then return
     if (existingPayment) {
@@ -2252,7 +2252,8 @@ async function getValidToken() {
 async function dealerPayout(req, res) {
   try {
     const { dealer_id, amount } = req.body;
-
+    console.log("Body")
+    console.log("Body", req.body)
     // Validate required inputs
     if (!dealer_id || !amount) {
       return res.status(200).json({ message: "Missing required fields" });
