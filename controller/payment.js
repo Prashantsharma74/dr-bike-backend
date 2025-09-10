@@ -236,13 +236,13 @@ async function GetPaymentOrder(req, res) {
 // this api is not deployed in production mode.
 async function Cashpayment(req, res) {
   try {
-      const data = jwt_decode(req.headers.token);
-      const user_id = data.user_id;
-      const user_type = data.user_type;
+      // const data = jwt_decode(req.headers.token);
+      // const user_id = data.user_id;
+      // const user_type = data.user_type;
 
-      if (user_id == null || (user_type != 1 && user_type != 3 && user_type != 4)) {
-          return res.status(200).json({ status: 200, message: "Admin is unauthorized!" });
-      }
+      // if (user_id == null || (user_type != 1 && user_type != 3 && user_type != 4)) {
+      //     return res.status(200).json({ status: 200, message: "Admin is unauthorized!" });
+      // }
 
       const { customer_id, order_amount, pay_type, booking_id, dealer_id} = req.body;
       const order_id = Math.floor(1000000000000000 + Math.random() * 90000000000000).toString();
