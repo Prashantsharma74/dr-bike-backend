@@ -897,41 +897,84 @@ async function editDealerStatus(req, res) {
   }
 }
 
+// async function getWallet(req, res) {
+//   try {
+//     // const data = jwt_decode(req.headers.token);
+//     // const user_type = data.user_type;
+
+//     // if (user_type !== 4) {
+//     //   return res.status(200).json({ success: false, message: "Unauthorized access!" });
+//     // }
+
+//     const { dealer_id } = req.query;
+
+//     if (!dealer_id) {
+//       return res.status(200).json({ success: false, message: "Dealer ID is required!" });
+//     }
+
+//     // Fetch dealer details along with services
+//     const dealer = await Vendor.findById(dealer_id)
+//       .select("wallet")
+
+
+//     if (!dealer) {
+//       return res.status(200).json({ success: false, message: "Dealer not found!" });
+//     }
+
+//     // Fetch ratings for the dealer
+//     const ratings = await Rating.find({ dealer_id: dealer_id });
+
+//     // Calculate average rating
+//     const totalRatings = ratings.length;
+//     const sumRatings = ratings.reduce((acc, curr) => acc + curr.rating, 0);
+//     const averageRating = totalRatings > 0 ? (sumRatings / totalRatings).toFixed(1) : "0.0";
+
+//     return res.status(200).json({
+//       success: true,
+//       message: "wallet retrieved successfully!",
+//       data: {
+//         ...dealer.toObject(),
+//         averageRating
+//       }
+//     });
+
+//   } catch (error) {
+//     console.error("Error in getShopDetails:", error);
+//     return res.status(200).json({ success: false, message: "Internal server error!" });
+//   }
+// }
+
 async function getWallet(req, res) {
   try {
-    // const data = jwt_decode(req.headers.token);
-    // const user_type = data.user_type;
+    let { dealer_id } = req.query;
 
-    // if (user_type !== 4) {
-    //   return res.status(200).json({ success: false, message: "Unauthorized access!" });
-    // }
+    dealer_id = (dealer_id ?? '').toString().trim();
 
-    const { dealer_id } = req.query;
+    const objectIdMatch = dealer_id.match(/^[Oo]bject[Ii]d\(["']?([a-fA-F0-9]{24})["']?\)$/);
+    if (objectIdMatch) dealer_id = objectIdMatch[1];
 
     if (!dealer_id) {
-      return res.status(200).json({ success: false, message: "Dealer ID is required!" });
+      return res.status(400).json({ success: false, message: "Dealer ID is required!" });
+    }
+    if (!mongoose.Types.ObjectId.isValid(dealer_id)) {
+      return res.status(400).json({ success: false, message: "Invalid dealer_id format!" });
     }
 
-    // Fetch dealer details along with services
-    const dealer = await Dealer.findById(dealer_id)
-      .select("wallet")
-
-
+    const dealer = await Vendor.findById(dealer_id).select("wallet");
     if (!dealer) {
-      return res.status(200).json({ success: false, message: "Dealer not found!" });
+      return res.status(404).json({ success: false, message: "Dealer not found!" });
     }
 
-    // Fetch ratings for the dealer
-    const ratings = await Rating.find({ dealer_id: dealer_id });
+    // 3) Ratings with the same sanitized id
+    const ratings = await Rating.find({ dealer_id });
 
-    // Calculate average rating
     const totalRatings = ratings.length;
-    const sumRatings = ratings.reduce((acc, curr) => acc + curr.rating, 0);
+    const sumRatings = ratings.reduce((acc, curr) => acc + (Number(curr.rating) || 0), 0);
     const averageRating = totalRatings > 0 ? (sumRatings / totalRatings).toFixed(1) : "0.0";
 
     return res.status(200).json({
       success: true,
-      message: "wallet retrieved successfully!",
+      message: "Wallet retrieved successfully!",
       data: {
         ...dealer.toObject(),
         averageRating
@@ -939,10 +982,11 @@ async function getWallet(req, res) {
     });
 
   } catch (error) {
-    console.error("Error in getShopDetails:", error);
-    return res.status(200).json({ success: false, message: "Internal server error!" });
+    console.error("Error in getWallet:", error);
+    return res.status(500).json({ success: false, message: "Internal server error!" });
   }
 }
+
 
 const GetwalletInfo = async (req, res) => {
   try {
