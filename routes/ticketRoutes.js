@@ -12,7 +12,7 @@ const {
 // Routes
 router.post("/create", createTicket);
 router.post("/reply/:ticket_id", replyToTicket);
-router.get("/my-tickets", getMyTickets);
+router.get("/my-tickets/:user_id", getMyTickets);
 router.get("/user-dealer", getAllUserAndDealerTickets);
 router.put("/status/:ticket_id", updateTicketStatus);
 router.get("/tickets/:ticket_id", getTicketById);

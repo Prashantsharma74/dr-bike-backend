@@ -12,7 +12,7 @@ const createTicket = async (req, res) => {
         if (![2, 4].includes(user_type)) {
             return res.status(200).json({ success: false, message: "Only users or dealers can create tickets." });
         }
-                                                                        
+
         const newTicket = new Ticket({
             user_id,
             user_type,
@@ -79,25 +79,25 @@ const replyToTicket = async (req, res) => {
 // };
 
 const getMyTickets = async (req, res) => {
-  try {
-    const { user_id } = req.query;
+    try {
+        const { user_id } = req.params;
+        console.log("id", user_id)
+        if (!user_id) {
+            return res.status(400).json({ success: false, message: "User ID is required" });
+        }
 
-    if (!user_id) {
-      return res.status(400).json({ success: false, message: "User ID is required" });
+        const tickets = await Ticket.find({ user_id }).sort({ created_at: -1 });
+
+        res.status(200).json({
+            success: true,
+            message: "Tickets retrieved successfully",
+            data: tickets
+        });
+
+    } catch (error) {
+        console.error("Fetch Tickets Error:", error);
+        res.status(500).json({ success: false, message: "Internal server error" });
     }
-
-    const tickets = await Ticket.find({ user_id }).sort({ created_at: -1 });
-
-    res.status(200).json({
-      success: true,
-      message: "Tickets retrieved successfully",
-      data: tickets
-    });
-
-  } catch (error) {
-    console.error("Fetch Tickets Error:", error);
-    res.status(500).json({ success: false, message: "Internal server error" });
-  }
 };
 
 // 📌 Get all user & dealer tickets (Admin Only)
@@ -156,8 +156,8 @@ const getTicketById = async (req, res) => {
         const user_type = data.user_type;
         const { ticket_id } = req.params;
 
-     
-       
+
+
         // ✅ Find the ticket by ID and populate messages with sender details
         const ticket = await Ticket.findById(ticket_id).populate("messages.sender_id", "name email");
 

@@ -42,7 +42,7 @@ router.use('/adminauth', adminauth);
 router.use('/customers', customers);
 router.use('/service', service);
 router.use('/additional-service', additional);
-router.use('/ticket', verifyToken, ticket);
+router.use('/ticket', ticket);
 router.use('/servicefeature', verifyToken, servicefeature);
 router.use('/servicesalientfeature', verifyToken, servicesalientfeature);
 router.use('/bike', bikes);
