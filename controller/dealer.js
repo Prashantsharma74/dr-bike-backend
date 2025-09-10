@@ -1031,23 +1031,152 @@ async function getWallet(req, res) {
   }
 }
 
+// const GetwalletInfo = async (req, res) => {
+//   try {
+//     const walletInfo = await Wallet.find({ dealer_id: req.params.id }).sort({ "_id": -1 })
+//       .populate({
+//         path: 'dealer_id',
+//         select: ['name', 'id']
+//       })
+
+
+//     if (walletInfo) {
+//       res.status(200).send({ message: 'Get wallet information', data: walletInfo })
+//     }
+//   } catch (error) {
+//     console.error(error);
+//     return res.status(500).json({ success: false, message: 'Internal server error' });
+//   }
+// }
+
 const GetwalletInfo = async (req, res) => {
   try {
-    const walletInfo = await Wallet.find({ dealer_id: req.params.id }).sort({ "_id": -1 })
-      .populate({
-        path: 'dealer_id',
-        select: ['name', 'id']
-      })
-
-
-    if (walletInfo) {
-      res.status(200).send({ message: 'Get wallet information', data: walletInfo })
+    // ---- inputs & validation ----
+    let { id } = req.params;                          // dealer id
+    id = (id ?? "").toString().trim();
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ success: false, message: "Invalid dealer id" });
     }
+    const dealerId = new mongoose.Types.ObjectId(id);
+
+    // optional filters
+    const {
+      page = 1,
+      limit = 20,
+      type,                    // "Credit" | "Debit" | "Pending"
+      status,                  // "ACTIVE" | "PAID" | ...
+      from,                    // ISO date string
+      to,                      // ISO date string
+      search                   // orderId partial
+    } = req.query;
+
+    const match = { dealer_id: dealerId };
+    if (type) match.Type = type;
+    if (status) match.order_status = status;
+
+    if (from || to) {
+      match.createdAt = {};
+      if (from) match.createdAt.$gte = new Date(from);
+      if (to)   match.createdAt.$lte = new Date(to);
+    }
+    if (search) {
+      match.orderId = { $regex: String(search).trim(), $options: "i" };
+    }
+
+    const skip = (Number(page) - 1) * Number(limit);
+    const perPage = Math.max(1, Math.min(100, Number(limit)));
+
+    // ---- single aggregation: summary + paginated transactions ----
+    const [agg] = await Wallet.aggregate([
+      { $match: match },
+      { $sort: { _id: -1 } },
+      {
+        $facet: {
+          // transactions list (paginated)
+          transactions: [
+            { $skip: skip },
+            { $limit: perPage },
+            {
+              $lookup: {
+                from: "dealers",               // collection name for ref:"dealer"
+                localField: "dealer_id",
+                foreignField: "_id",
+                as: "dealer"
+              }
+            },
+            { $unwind: { path: "$dealer", preserveNullAndEmptyArrays: true } },
+            {
+              $project: {
+                _id: 0,
+                id: "$id",
+                orderId: 1,
+                amount: "$Amount",
+                type: "$Type",
+                note: "$Note",
+                totalAfterTxn: "$Total",
+                status: "$order_status",
+                createdAt: 1,
+                dealer: { name: "$dealer.name", id: "$dealer.id" }
+              }
+            }
+          ],
+          // counts for pagination
+          meta: [{ $count: "total" }],
+          // summary (totals)
+          summary: [
+            {
+              $group: {
+                _id: null,
+                credits: {
+                  $sum: { $cond: [{ $eq: ["$Type", "Credit"] }, "$Amount", 0] }
+                },
+                debits: {
+                  $sum: { $cond: [{ $eq: ["$Type", "Debit"] }, "$Amount", 0] }
+                },
+                pending: {
+                  $sum: { $cond: [{ $eq: ["$Type", "Pending"] }, "$Amount", 0] }
+                },
+                count: { $sum: 1 }
+              }
+            },
+            {
+              // currentBalance excludes Pending; if your "Total" is running balance,
+              // you can also take the latest doc's Total instead.
+              $addFields: {
+                currentBalance: { $subtract: ["$credits", "$debits"] }
+              }
+            },
+            { $project: { _id: 0 } }
+          ]
+        }
+      }
+    ]);
+
+    const transactions = agg?.transactions ?? [];
+    const totalDocs = agg?.meta?.[0]?.total ?? 0;
+    const summary = agg?.summary?.[0] ?? {
+      credits: 0, debits: 0, pending: 0, count: 0, currentBalance: 0
+    };
+
+    return res.status(200).json({
+      success: true,
+      message: "Wallet information",
+      data: {
+        summary,                                   
+        transactions,                              
+        pagination: {
+          page: Number(page),
+          limit: perPage,
+          total: totalDocs,
+          pages: Math.ceil(totalDocs / perPage)
+        }
+      }
+    });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ success: false, message: 'Internal server error' });
+    return res.status(500).json({ success: false, message: "Internal server error" });
   }
-}
+};
 
 // const WalletAdd =async(req, res) => {
 
