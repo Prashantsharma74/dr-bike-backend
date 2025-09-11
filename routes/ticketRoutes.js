@@ -10,7 +10,7 @@ const {
 } = require("../controller/ticketController");
 
 // Routes
-router.post("/create", createTicket);
+router.post("/create/:user_id", createTicket);
 router.post("/reply/:ticket_id", replyToTicket);
 router.get("/my-tickets/:user_id", getMyTickets);
 router.get("/user-dealer", getAllUserAndDealerTickets);

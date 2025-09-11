@@ -2,30 +2,69 @@ const Ticket = require("../models/ticket_model");
 const jwt_decode = require("jwt-decode");
 
 // 📌 Create a new ticket (User/Dealer -> Admin)
+// const createTicket = async (req, res) => {
+//     try {
+//         const data = jwt_decode(req.headers.token);
+//         const user_id = data.user_id;
+//         const user_type = data.user_type;
+//         const { subject, message } = req.body;
+
+//         if (![2, 4].includes(user_type)) {
+//             return res.status(200).json({ success: false, message: "Only users or dealers can create tickets." });
+//         }
+
+//         const newTicket = new Ticket({
+//             user_id,
+//             user_type,
+//             subject,
+//             messages: [{ sender_id: user_id, sender_type: user_type, message }]
+//         });
+
+//         await newTicket.save();
+//         res.status(200).json({ success: true, message: "Ticket created successfully", data: newTicket });
+
+//     } catch (error) {
+//         console.error("Ticket Creation Error:", error);
+//         res.status(500).json({ success: false, message: "Internal server error" });
+//     }
+// };
+
 const createTicket = async (req, res) => {
     try {
-        const data = jwt_decode(req.headers.token);
-        const user_id = data.user_id;
-        const user_type = data.user_type;
-        const { subject, message } = req.body;
+        // take user_id from params
+        const user_id = req.params.user_id;
+        const { user_type, subject, message } = req.body;
 
         if (![2, 4].includes(user_type)) {
-            return res.status(200).json({ success: false, message: "Only users or dealers can create tickets." });
+            return res.status(200).json({ 
+                success: false, 
+                message: "Only users or dealers can create tickets." 
+            });
         }
 
         const newTicket = new Ticket({
             user_id,
             user_type,
             subject,
-            messages: [{ sender_id: user_id, sender_type: user_type, message }]
+            messages: [
+                { sender_id: user_id, sender_type: user_type, message }
+            ]
         });
 
         await newTicket.save();
-        res.status(200).json({ success: true, message: "Ticket created successfully", data: newTicket });
+
+        res.status(200).json({ 
+            success: true, 
+            message: "Ticket created successfully", 
+            data: newTicket 
+        });
 
     } catch (error) {
         console.error("Ticket Creation Error:", error);
-        res.status(500).json({ success: false, message: "Internal server error" });
+        res.status(500).json({ 
+            success: false, 
+            message: "Internal server error" 
+        });
     }
 };
 
