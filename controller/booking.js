@@ -762,15 +762,49 @@ async function updateBookings(req, res) {
 //   }
 // }
 
+// async function createBooking(req, res) {
+//   try {
+//     const data = jwt_decode(req.headers.token);
+//     const user_id = data.user_id;
+
+//     const { dealer_id, services, pickupAndDropId, userBike_id, pickupDate } = req.body;
+//     if (!dealer_id || !services || services.length === 0) {
+//       return res.status(400).json({ success: false, message: "Dealer and at least one service are required" });
+//     }
+
+//     const newBooking = new booking({
+//       user_id,
+//       dealer_id,
+//       services,
+//       pickupAndDropId: pickupAndDropId || null,
+//       userBike_id,
+//       pickupDate
+//     });
+
+//     await newBooking.save();
+//     res.status(201).json({ success: true, message: "Booking created successfully", data: newBooking });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ success: false, message: "Internal Server Error" });
+//   }
+// }
+
 async function createBooking(req, res) {
   try {
+    // still using token for user_id (as in your code)
     const data = jwt_decode(req.headers.token);
     const user_id = data.user_id;
 
     const { dealer_id, services, pickupAndDropId, userBike_id, pickupDate } = req.body;
+
     if (!dealer_id || !services || services.length === 0) {
       return res.status(400).json({ success: false, message: "Dealer and at least one service are required" });
     }
+    if (!userBike_id) {
+      return res.status(400).json({ success: false, message: "User bike is required" });
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000);
 
     const newBooking = new booking({
       user_id,
@@ -778,14 +812,22 @@ async function createBooking(req, res) {
       services,
       pickupAndDropId: pickupAndDropId || null,
       userBike_id,
-      pickupDate
+      pickupDate,
+      otp,
     });
 
     await newBooking.save();
-    res.status(201).json({ success: true, message: "Booking created successfully", data: newBooking });
+
+    return res.status(201).json({
+      success: true,
+      message: "Booking created successfully",
+      data: newBooking,
+      otp 
+    });
+
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false, message: "Internal Server Error" });
+    console.error("createBooking error:", error);
+    return res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 }
 
