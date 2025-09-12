@@ -29,43 +29,97 @@ const jwt_decode = require("jwt-decode");
 //     }
 // };
 
+// const createTicket = async (req, res) => {
+//     try {
+//         // take user_id from params
+//         const user_id = req.params.user_id;
+//         const { user_type, subject, message } = req.body;
+
+//         if (![2, 4].includes(user_type)) {
+//             return res.status(200).json({ 
+//                 success: false, 
+//                 message: "Only users or dealers can create tickets." 
+//             });
+//         }
+
+//         const newTicket = new Ticket({
+//             user_id,
+//             user_type,
+//             subject,
+//             messages: [
+//                 { sender_id: user_id, sender_type: user_type, message }
+//             ]
+//         });
+
+//         await newTicket.save();
+
+//         res.status(200).json({ 
+//             success: true, 
+//             message: "Ticket created successfully", 
+//             data: newTicket 
+//         });
+
+//     } catch (error) {
+//         console.error("Ticket Creation Error:", error);
+//         res.status(500).json({ 
+//             success: false, 
+//             message: "Internal server error" 
+//         });
+//     }
+// };
+
 const createTicket = async (req, res) => {
-    try {
-        // take user_id from params
-        const user_id = req.params.user_id;
-        const { user_type, subject, message } = req.body;
+  try {
+    // ticket belongs to this user
+    const user_id = req.params.user_id;
 
-        if (![2, 4].includes(user_type)) {
-            return res.status(200).json({ 
-                success: false, 
-                message: "Only users or dealers can create tickets." 
-            });
-        }
+    // sender_id will come from body
+    const { subject, message, sender_id } = req.body;
 
-        const newTicket = new Ticket({
-            user_id,
-            user_type,
-            subject,
-            messages: [
-                { sender_id: user_id, sender_type: user_type, message }
-            ]
-        });
-
-        await newTicket.save();
-
-        res.status(200).json({ 
-            success: true, 
-            message: "Ticket created successfully", 
-            data: newTicket 
-        });
-
-    } catch (error) {
-        console.error("Ticket Creation Error:", error);
-        res.status(500).json({ 
-            success: false, 
-            message: "Internal server error" 
-        });
+    if (!user_id) {
+      return res.status(400).json({
+        success: false,
+        message: "User ID is required",
+      });
     }
+
+    if (!sender_id) {
+      return res.status(400).json({
+        success: false,
+        message: "Sender ID is required",
+      });
+    }
+
+    if (!subject || !message) {
+      return res.status(400).json({
+        success: false,
+        message: "Subject and message are required",
+      });
+    }
+
+    const newTicket = new Ticket({
+      user_id,
+      subject,
+      messages: [
+        { sender_id, message }   // ✅ store sender_id properly
+      ]
+    });
+
+    await newTicket.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Ticket created successfully",
+      data: newTicket,
+    });
+
+  } catch (error) {
+    console.error("Ticket Creation Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
 };
 
 // 📌 Reply to a ticket (Admin/User/Dealer)
