@@ -789,9 +789,54 @@ async function updateBookings(req, res) {
 //   }
 // }
 
+// async function createBooking(req, res) {
+//   try {
+//     // still using token for user_id (as in your code)
+//     const data = jwt_decode(req.headers.token);
+//     const user_id = data.user_id;
+
+//     const { dealer_id, services, pickupAndDropId, userBike_id, pickupDate } = req.body;
+
+//     if (!dealer_id || !services || services.length === 0) {
+//       return res.status(400).json({ success: false, message: "Dealer and at least one service are required" });
+//     }
+//     if (!userBike_id) {
+//       return res.status(400).json({ success: false, message: "User bike is required" });
+//     }
+
+//     const otp = Math.floor(100000 + Math.random() * 900000);
+
+//     const newBooking = new booking({
+//       user_id,
+//       dealer_id,
+//       services,
+//       pickupAndDropId: pickupAndDropId || null,
+//       userBike_id,
+//       pickupDate,
+//       otp,
+//     });
+
+//     await newBooking.save();
+
+//     return res.status(201).json({
+//       success: true,
+//       message: "Booking created successfully",
+//       data: newBooking,
+//       otp 
+//     });
+
+//   } catch (error) {
+//     console.error("createBooking error:", error);
+//     return res.status(500).json({ success: false, message: "Internal Server Error" });
+//   }
+// }
+
+function genOtp() {
+  return Math.floor(100000 + Math.random() * 9000);
+}
+
 async function createBooking(req, res) {
   try {
-    // still using token for user_id (as in your code)
     const data = jwt_decode(req.headers.token);
     const user_id = data.user_id;
 
@@ -804,7 +849,8 @@ async function createBooking(req, res) {
       return res.status(400).json({ success: false, message: "User bike is required" });
     }
 
-    const otp = Math.floor(100000 + Math.random() * 900000);
+    const pickupOtp = genOtp();
+    const deliveryOtp = genOtp();
 
     const newBooking = new booking({
       user_id,
@@ -812,8 +858,9 @@ async function createBooking(req, res) {
       services,
       pickupAndDropId: pickupAndDropId || null,
       userBike_id,
-      pickupDate,
-      otp,
+      pickupDate: pickupDate || null,
+      pickupOtp,
+      deliveryOtp,
     });
 
     await newBooking.save();
@@ -822,9 +869,9 @@ async function createBooking(req, res) {
       success: true,
       message: "Booking created successfully",
       data: newBooking,
-      otp 
+      pickupOtp,
+      deliveryOtp,
     });
-
   } catch (error) {
     console.error("createBooking error:", error);
     return res.status(500).json({ success: false, message: "Internal Server Error" });
@@ -1180,8 +1227,7 @@ const sendBookingOTP = async (req, res) => {
   }
 };
 
-// helpers (keep in same file or import)
-const normalize10 = (p) => String(p).replace(/\D/g, "").slice(-10); // last 10 digits
+const normalize10 = (p) => String(p).replace(/\D/g, "").slice(-10);
 const with91 = (ten) => `91${ten}`;
 
 const sendOtpToMobile = async (req, res) => {
@@ -1229,7 +1275,7 @@ const sendOtpToMobile = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: `OTP sent successfully to ${e164}`,
-      phone:Number(ten),
+      phone: Number(ten),
       otp // ⚠️ return only in dev/testing
     });
   } catch (error) {
