@@ -1327,47 +1327,125 @@ const verifyOtpForMobile = async (req, res) => {
   }
 };
 
+// const verifyBookingOTP = async (req, res) => {
+//   try {
+//     const { bookingId, otp } = req.body;
 
+//     if (!bookingId || !otp) {
+//       return res
+//         .status(200)
+//         .json({ success: false, message: "Booking ID and OTP are required" });
+//     }
 
+//     const bookingData = await booking.findById(bookingId).populate("dealer_id");
+//     if (!bookingData) {
+//       return res.status(200).json({ success: false, message: "Booking not found" });
+//     }
+
+//     const incomingOtp = String(otp).trim();
+
+//     const storedOtp = bookingData.otp == null ? null : String(bookingData.otp);
+
+//     const isValid =
+//       incomingOtp === "9999" || (storedOtp && incomingOtp === storedOtp);
+
+//     if (!isValid) {
+//       return res.status(200).json({ success: false, message: "Invalid OTP" });
+//     }
+
+//     bookingData.otp = null;
+//     bookingData.pickupStatus = "pickedup";
+//     bookingData.pickupDate = new Date();
+//     await bookingData.save();
+
+//     return res
+//       .status(200)
+//       .json({ success: true, message: "OTP verified successfully by dealer" });
+//   } catch (error) {
+//     console.error(error);
+//     return res
+//       .status(500)
+//       .json({ success: false, message: "Internal Server Error" });
+//   }
+// };
+
+// POST /api/bookings/verify-otp
+// Body: { bookingId, otp, stage?: "pickup" | "delivery" }
 const verifyBookingOTP = async (req, res) => {
   try {
-    const { bookingId, otp } = req.body;
+    const { bookingId, otp, stage } = req.body;
 
     if (!bookingId || !otp) {
-      return res
-        .status(200)
-        .json({ success: false, message: "Booking ID and OTP are required" });
+      return res.status(400).json({ success: false, message: "bookingId and otp are required" });
     }
 
-    const bookingData = await booking.findById(bookingId).populate("dealer_id");
-    if (!bookingData) {
-      return res.status(200).json({ success: false, message: "Booking not found" });
+    // optional: enforce 4-digit numeric
+    const incoming = String(otp).trim();
+    if (!/^\d{4}$/.test(incoming) && incoming !== "9999") {
+      return res.status(400).json({ success: false, message: "OTP must be 4 digits" });
     }
 
-    const incomingOtp = String(otp).trim();
+    const b = await booking.findById(bookingId);
+    if (!b) return res.status(404).json({ success: false, message: "Booking not found" });
 
-    const storedOtp = bookingData.otp == null ? null : String(bookingData.otp);
+    // Decide which stage to verify
+    let targetStage = stage;
+    if (!targetStage) {
+      // Auto-detect if not provided:
+      if (b.pickupOtp != null) targetStage = "pickup";
+      else if (b.deliveryOtp != null) targetStage = "delivery";
+      else {
+        return res.status(200).json({ success: true, message: "Nothing to verify (both OTPs already verified)" });
+      }
+    }
 
-    const isValid =
-      incomingOtp === "9999" || (storedOtp && incomingOtp === storedOtp);
+    if (!["pickup", "delivery"].includes(targetStage)) {
+      return res.status(400).json({ success: false, message: "stage must be 'pickup' or 'delivery'" });
+    }
 
+    // Prepare stored code and idempotency checks
+    const stored =
+      targetStage === "pickup"
+        ? (b.pickupOtp == null ? null : String(b.pickupOtp))
+        : (b.deliveryOtp == null ? null : String(b.deliveryOtp));
+
+    if (targetStage === "pickup" && b.pickupOtp == null) {
+      return res.status(200).json({ success: true, message: "Pickup already verified" });
+    }
+    if (targetStage === "delivery" && b.deliveryOtp == null) {
+      return res.status(200).json({ success: true, message: "Delivery already verified" });
+    }
+
+    // Validate (keep your override "9999" if you like)
+    const isValid = incoming === "9999" || (stored && incoming === stored);
     if (!isValid) {
-      return res.status(200).json({ success: false, message: "Invalid OTP" });
+      return res.status(200).json({ success: false, message: `Invalid ${targetStage} OTP` });
     }
 
-    bookingData.otp = null;
-    bookingData.pickupStatus = "pickedup";
-    bookingData.pickupDate = new Date();
-    await bookingData.save();
+    // Apply updates
+    if (targetStage === "pickup") {
+      b.pickupOtp = null;                       // clear after success
+      b.pickupStatus = "pickedup";
+      b.pickupDate = new Date();
+      if (b.status === "pending") b.status = "confirmed";
+      // optional if you add these fields:
+      // b.pickupVerifiedAt = new Date();
+    } else {
+      b.deliveryOtp = null;                     // clear after success
+      b.status = "completed";
+      b.serviceDate = b.serviceDate || new Date();
+      // b.deliveryVerifiedAt = new Date();
+    }
 
-    return res
-      .status(200)
-      .json({ success: true, message: "OTP verified successfully by dealer" });
+    await b.save();
+
+    return res.status(200).json({
+      success: true,
+      message: `${targetStage[0].toUpperCase()}${targetStage.slice(1)} OTP verified`,
+    });
   } catch (error) {
-    console.error(error);
-    return res
-      .status(500)
-      .json({ success: false, message: "Internal Server Error" });
+    console.error("verifyBookingOTP error:", error);
+    return res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
 
