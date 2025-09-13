@@ -1370,7 +1370,7 @@ const verifyOtpForMobile = async (req, res) => {
 // };
 
 // POST /api/bookings/verify-otp
-// Body: { bookingId, otp, stage?: "pickup" | "delivery" }
+
 const verifyBookingOTP = async (req, res) => {
   try {
     const { bookingId, otp, stage } = req.body;
