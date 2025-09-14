@@ -832,7 +832,7 @@ async function updateBookings(req, res) {
 // }
 
 function genOtp() {
-  return Math.floor(100000 + Math.random() * 9000);
+  return Math.floor(1000 + Math.random() * 9000);
 }
 
 async function createBooking(req, res) {
