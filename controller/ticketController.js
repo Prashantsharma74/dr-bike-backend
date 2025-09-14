@@ -230,33 +230,31 @@ const updateTicketStatus = async (req, res) => {
   }
 };
 
-// 📌 Get a single ticket by ID
+// Get single ticket by ID (no JWT check)
 const getTicketById = async (req, res) => {
   try {
-    const data = jwt_decode(req.headers.token);
-    const user_id = data.user_id;
-    const user_type = data.user_type;
     const { ticket_id } = req.params;
 
+    if (!ticket_id) {
+      return res.status(400).json({ success: false, message: "ticket_id is required" });
+    }
 
-
-    // ✅ Find the ticket by ID and populate messages with sender details
-    const ticket = await Ticket.findById(ticket_id).populate("messages.sender_id", "name email");
+    const ticket = await Ticket.findById(ticket_id)
+      .populate("messages.sender_id", "name email");
 
     if (!ticket) {
-      return res.status(200).json({ success: false, message: "Ticket not found" });
+      return res.status(404).json({ success: false, message: "Ticket not found" });
     }
 
-    // ✅ Allow only the ticket owner or an admin to access the ticket
-    if (user_type !== 1 && ticket.user_id.toString() !== user_id) {
-      return res.status(200).json({ success: false, message: "Unauthorized access" });
-    }
-
-    res.status(200).json({ success: true, message: "Ticket retrieved successfully", data: ticket });
+    return res.status(200).json({
+      success: true,
+      message: "Ticket retrieved successfully",
+      data: ticket,
+    });
 
   } catch (error) {
     console.error("Fetch Single Ticket Error:", error);
-    res.status(200).json({ success: false, message: "Internal server error" });
+    return res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
 
