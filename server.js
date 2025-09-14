@@ -19,47 +19,22 @@ app.all("*", function (req, res, next) {
   res.header("Access-Control-Allow-Origin", "*");
   res.header("Access-Control-Allow-Methods", "PUT, GET, POST, DELETE, OPTIONS");
   res.header("Access-Control-Allow-Headers", "Content-Type", 'Authorization');
-  // res.setHeader('Access-Control-Allow-Credentials', true);
   next();
 });
 
-// view engine setup
-/* app.set('views', path.join(__dirname, 'views'));
-app.set('view engine', 'jade'); */
-
-// Create Server
 var server = http.createServer(app);
 
-// parse requests of content-type - application/json
 app.use(cors())
 app.use(morgan("dev"));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(cookieParser());
-// app.use(express.json());
-// app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
-// Use the express-fileupload middleware
-// app.use(fileUpload());
-/* app.use(
-  fileUpload({
-      limits: {
-          fileSize: 10000000,
-      },
-      abortOnLimit: true,
-  })
-); */ // changes
 
 app.use(express.static(path.join(__dirname, 'public')));
-// app.use('/images', express.static('images'));
 app.use('/image', express.static('image'), serveIndex('image', { 'icons': true }));
 
-// parse requests of content-type - application/x-www-form-urlencoded
 app.use(bodyParser.urlencoded({ extended: true }));
-
-// app.get('/cashfreepayment', function(req, res, next) {
-//   res.render('index', { title: 'Cashfree PG simulator' });
-// });
 
 app.get('/', (req, res) => {
   res.send('API is running...');
@@ -72,8 +47,6 @@ app.get("/bikedoctor", (req, res) => {
 
 
 app.post('/upload', (req, res) => {
-  // Log the files to the console
-  // console.log(req.files);
 
   const { image } = req.files;
 
@@ -81,10 +54,8 @@ app.post('/upload', (req, res) => {
 
   if (!/^image/.test(image.mimetype)) return res.sendStatus(400);
 
-  // Move the uploaded image to our upload folder
   image.mv(__dirname + '/upload/' + Date.now() + "_" + image.name.replace(" ", ""));
 
-  // All good
   res.sendStatus(200);
 
 });
