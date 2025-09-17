@@ -4,11 +4,11 @@ const AutoIncrement = require('mongoose-sequence')(mongoose);
 const CustomerSchema = new mongoose.Schema({
     id: {
         type: Number,
-        default: 0, // Default ID as 0 (if not provided)
+        default: 0, 
     },
     first_name: {
         type: String,
-        default: "", // Default empty string if not given
+        default: "",
     },
     last_name: {
         type: String,
@@ -24,7 +24,7 @@ const CustomerSchema = new mongoose.Schema({
     },
     password: {
         type: String,
-        select: false, // Ensure password is not selected by default
+        select: false,
     },
     phone: {
         type: Number,
@@ -57,15 +57,15 @@ const CustomerSchema = new mongoose.Schema({
     userBike: [{ 
         type: mongoose.Schema.Types.ObjectId, 
         ref: "UserBike",
-        default: [], // Default empty array
+        default: [], 
     }], 
     otp: {
         type: Number,
-        default: null, // Default `null`
+        default: null,
     },
     isProfile: {
         type: Boolean,
-        default: false, // Default false
+        default: false,
     },
     reward_points: { type: Number, default: 0 },
 },
@@ -75,10 +75,6 @@ const CustomerSchema = new mongoose.Schema({
 }
 )
 
-// CustomerSchema.plugin(AutoIncrement);
 
 CustomerSchema.plugin(AutoIncrement, {id:'user_seq',inc_field: 'id'});
 module.exports = mongoose.model("customers",CustomerSchema);
-
-// const customers = mongoose.model('customers', CustomerSchema);
-// module.exports = customers;

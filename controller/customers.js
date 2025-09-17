@@ -1,7 +1,9 @@
 var validation = require("../helper/validation");
 require("dotenv").config();
+const mongoose = require("mongoose")
 var moment = require("moment");
 const customers = require("../models/customer_model");
+const Vendor = require('../models/dealerModel');
 const { is } = require("express/lib/request");
 const jwt_decode = require("jwt-decode");
 const otpAuth = require("../helper/otpAuth");
@@ -243,20 +245,54 @@ const deleteMyBike = async (req, res) => {
 
 
 
+// async function getcustomer(req, res) {
+//   try {
+//     const data = jwt_decode(req.headers.token);
+//     let user_id;
+
+//     if (data.user_type === 1) {
+//       user_id = req.query.user_id; // Admin ke case mein user_id query params se lega
+//     } else if (data.user_type === 4) {
+//       user_id = data.user_id; // User ke case mein token se lega
+//     } else {
+//       return res.status(403).json({ success: false, message: "Unauthorized access" });
+//     }
+
+//     const customer = await customers.findById(user_id);
+
+//     if (!customer) {
+//       return res.status(404).json({ success: false, message: "No Customer Account Found" });
+//     }
+
+//     return res.status(200).json({
+//       success: true,
+//       message: "success",
+//       data: customer,
+//       image_base_url: process.env.BASE_URL,
+//     });
+
+//   } catch (error) {
+//     console.error("Error:", error);
+//     return res.status(500).json({
+//       success: false,
+//       message: "Operation was not successful",
+//     });
+//   }
+// }
+
 async function getcustomer(req, res) {
   try {
-    const data = jwt_decode(req.headers.token);
-    let user_id;
+    const { user_id } = req.params;
 
-    if (data.user_type === 1) {
-      user_id = req.query.user_id; // Admin ke case mein user_id query params se lega
-    } else if (data.user_type === 4) {
-      user_id = data.user_id; // User ke case mein token se lega
-    } else {
-      return res.status(403).json({ success: false, message: "Unauthorized access" });
+    if (!user_id) {
+      return res.status(400).json({ success: false, message: "user_id is required" });
     }
 
-    const customer = await customers.findById(user_id);
+    if (!mongoose.Types.ObjectId.isValid(user_id)) {
+      return res.status(400).json({ success: false, message: "Invalid user_id" });
+    }
+
+    const customer = await Vendor.findById(user_id);
 
     if (!customer) {
       return res.status(404).json({ success: false, message: "No Customer Account Found" });
@@ -270,7 +306,7 @@ async function getcustomer(req, res) {
     });
 
   } catch (error) {
-    console.error("Error:", error);
+    console.error("Error in getcustomer:", error);
     return res.status(500).json({
       success: false,
       message: "Operation was not successful",

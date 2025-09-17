@@ -41,7 +41,8 @@ router.post('/addUserBike',verifyToken,addUserBike);
 
 router.put('/user-bike/:id',verifyToken,updateUserBike);
 router.get('/customerlist',customerlist);
-router.get('/customer',verifyToken,getcustomer);
+// router.get('/customer',getcustomer);
+router.get("/customer/:user_id", getcustomer);
 router.delete('/deletecustomer',deletecustomer);
 router.put('/editcustomer/:id',verifyToken,editcustomer);
 router.put('/editimage',verifyToken,upload.single("images"),changeImage);
