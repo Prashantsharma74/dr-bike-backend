@@ -95,9 +95,9 @@ const dealerModel = new mongoose.Schema({
     max: 18
   },
   formProgress: {
-    currentStep: { type: Number, default: 1 }, 
+    currentStep: { type: Number, default: 1 },
     completedSteps: {
-      type: Map, 
+      type: Map,
       of: Boolean,
       default: {
         'basicInfo': false,
@@ -125,11 +125,10 @@ const dealerModel = new mongoose.Schema({
   adminNotes: String,
   submittedAt: Date,
   approvedAt: Date,
-  approvedBy: { 
+  approvedBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Admin'
   },
-    // Authentication Fields
   otp: String,
   otpExpiry: Date,
   loginAttempts: { type: Number, default: 0 },
@@ -143,7 +142,6 @@ const dealerModel = new mongoose.Schema({
     isActive: { type: Boolean, default: false },
     isVerified: { type: Boolean, default: false }
   },
-  // Document Verification Status
   documentVerification: {
     aadhar: { type: Boolean, default: false },
     pan: { type: Boolean, default: false },
@@ -165,16 +163,23 @@ const dealerModel = new mongoose.Schema({
     app: { type: Boolean, default: true }
   },
   services: [{
-  type: mongoose.Schema.Types.ObjectId,
-  ref: 'service' 
-}]
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'service'
+  }],
+  gender: {
+    type: String,
+    enum: ["Male", "Female", "Other"],
+    default: null
+  },
+  dob: {
+    type: Date,
+    default: null
+  }
 }, { timestamps: true });
 
-// Add index for better query performance
 dealerModel.index({ phone: 1, email: 1, registrationStatus: 1 });
 
-// Add pre-save hook to handle registration status changes
-dealerModel.pre('save', function(next) {
+dealerModel.pre('save', function (next) {
   if (this.isModified('registrationStatus')) {
     if (this.registrationStatus === 'Pending' && !this.submittedAt) {
       this.submittedAt = new Date();

@@ -11,9 +11,9 @@ const UserBike = require('../models/userBikeModel')
 
 // async function customersignup(req, res) {
 
-    
+
 //   try {
-    
+
 //     if (req.body.email != "" && req.body.passwords != "") {
 //       var emailCheck = await customers.findOne({ email: req.body.email });
 
@@ -21,7 +21,7 @@ const UserBike = require('../models/userBikeModel')
 //             res.status(401).json({success:false, message:"Customer Already Exists"});
 //             return;
 //       }
-      
+
 //       if (!emailCheck) {
 //       if(req.file){
 //         const data = {
@@ -144,38 +144,38 @@ const updateUserBike = async (req, res) => {
 
 async function addProfile(req, res) {
   try {
-      const { first_name, last_name, state, city, address, pincode } = req.body;
-      
-      // Extract user_id from request (set by authentication middleware)
-      const user_id = req.user_id; 
-      console.log(user_id,"userid")
-      if (!user_id) {
-          return res.status(400).json({ success: false, message: "User ID is required" });
-      }
+    const { first_name, last_name, state, city, address, pincode } = req.body;
 
-      let user = await customers.findOne({ _id: user_id });
-      if (!user) {
-          return res.status(404).json({ success: false, message: "User not found" });
-      }
+    // Extract user_id from request (set by authentication middleware)
+    const user_id = req.user_id;
+    console.log(user_id, "userid")
+    if (!user_id) {
+      return res.status(400).json({ success: false, message: "User ID is required" });
+    }
 
-      // Update user profile fields
-      user.first_name = first_name;
-      user.last_name = last_name;
-      user.state = state;
-      user.city = city;
-      user.address = address;
-      user.pincode = pincode;
-      user.isProfile = true;
-      
-      if (req.file) {
-          user.image = req.file.filename;
-      }
+    let user = await customers.findOne({ _id: user_id });
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
 
-      await user.save();
+    // Update user profile fields
+    user.first_name = first_name;
+    user.last_name = last_name;
+    user.state = state;
+    user.city = city;
+    user.address = address;
+    user.pincode = pincode;
+    user.isProfile = true;
 
-      res.status(200).json({ success: true, message: "Profile added successfully.", profile: user });
+    if (req.file) {
+      user.image = req.file.filename;
+    }
+
+    await user.save();
+
+    res.status(200).json({ success: true, message: "Profile added successfully.", profile: user });
   } catch (error) {
-      res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
 }
 
@@ -231,7 +231,7 @@ const deleteMyBike = async (req, res) => {
 
   } catch (error) {
     console.error("❌ Error deleting user bike:", error);
-    
+
     return res.status(500).json({
       status: 500,
       message: "Internal Server Error",
@@ -297,7 +297,7 @@ async function getcustomer(req, res) {
     if (!customer) {
       return res.status(404).json({ success: false, message: "No Customer Account Found" });
     }
-
+    console.log("Customer", customer)
     return res.status(200).json({
       success: true,
       message: "success",
@@ -393,19 +393,19 @@ async function editcustomer(req, res) {
       address,
       pincode
     } = req.body;
-    
+
     const customerResp = await customers.findOne({ _id: req.params.id });
     // console.log("customerResp : ", customerResp);
     if (customerResp) {
       const data = {
         first_name: first_name,
         last_name: last_name,
-        email:email,
+        email: email,
         phone: phone,
         state: state,
         city: city,
         address: address,
-        pincode:pincode,
+        pincode: pincode,
         isProfile: true,
       };
       customers.findByIdAndUpdate(
@@ -494,10 +494,10 @@ const getMyBikes = async (req, res) => {
     const user_id = data.user_id;
 
     if (!user_id) {
-      return res.status(200).json({ 
-        status: 200, 
-        message: "Unauthorized access!", 
-        data: [] 
+      return res.status(200).json({
+        status: 200,
+        message: "Unauthorized access!",
+        data: []
       });
     }
 
@@ -507,15 +507,15 @@ const getMyBikes = async (req, res) => {
     res.status(200).json({
       status: 200,
       message: userBikes.length > 0 ? "Bikes retrieved successfully" : "No bikes found",
-      data: userBikes, 
+      data: userBikes,
     });
 
   } catch (error) {
     console.error("Error fetching user bikes:", error);
-    res.status(200).json({ 
-      status: 200, 
-      message: "Internal Server Error", 
-      data: [] 
+    res.status(200).json({
+      status: 200,
+      message: "Internal Server Error",
+      data: []
     });
   }
 };
@@ -533,7 +533,7 @@ const addUserBike = async (req, res) => {
       });
     }
 
-    const { name, model, bike_cc, plate_number,variant_id, } = req.body;
+    const { name, model, bike_cc, plate_number, variant_id, } = req.body;
 
     // Check if all required fields are provided
     if (!name || !model || !bike_cc || !plate_number) {
