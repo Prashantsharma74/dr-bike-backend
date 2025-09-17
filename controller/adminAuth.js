@@ -678,6 +678,49 @@ const sendOtp = async (req, res) => {
   }
 };
 
+// const verifyOtp = async (req, res) => {
+//   const phone = String(req.body.phone).trim();
+//   const otp = String(req.body.otp).trim();
+
+//   console.log("Received phone:", phone);
+//   console.log("Received otp:", otp);
+//   console.log("Stored otp:", otpStore.get(phone));
+
+//   if (!phone || !otp) {
+//     return res.status(400).json({ message: "Phone and OTP are required" });
+//   }
+
+//   const storedOtp = otpStore.get(phone);
+//   if (!storedOtp || storedOtp !== otp) {
+//     return res.status(401).json({ message: "Invalid or expired OTP" });
+//   }
+
+//   try {
+//     const user = await admin.findOne({ mobile: phone });
+//     if (!user) {
+//       return res.status(404).json({ message: "User not found with this number" });
+//     }
+
+//     if (user.status !== "active") {
+//       return res.status(403).json({ message: "User is inactive. Please contact admin." });
+//     }
+
+//     const token = jwt.sign(
+//       { id: user._id, role: user.role },
+//       'your_super_secret_key_here',
+//       { expiresIn: "1d" }
+//     );
+
+
+//     otpStore.delete(phone);
+
+//     return res.status(200).json({ message: "OTP verified", token });
+//   } catch (err) {
+//     console.error("Error during OTP verification:", err);
+//     return res.status(500).json({ message: "Server error" });
+//   }
+// };
+
 const verifyOtp = async (req, res) => {
   const phone = String(req.body.phone).trim();
   const otp = String(req.body.otp).trim();
@@ -696,7 +739,7 @@ const verifyOtp = async (req, res) => {
   }
 
   try {
-    const user = await admin.findOne({ mobile: phone });
+    const user = await admin.findOne({ mobile: phone }).lean(); // lean() returns plain object
     if (!user) {
       return res.status(404).json({ message: "User not found with this number" });
     }
@@ -707,14 +750,25 @@ const verifyOtp = async (req, res) => {
 
     const token = jwt.sign(
       { id: user._id, role: user.role },
-      'your_super_secret_key_here',
+      process.env.JWT_SECRET || "your_super_secret_key_here",
       { expiresIn: "1d" }
     );
 
-
     otpStore.delete(phone);
 
-    return res.status(200).json({ message: "OTP verified", token });
+    return res.status(200).json({
+      success: true,
+      message: "OTP verified",
+      token,
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        mobile: user.mobile,
+        role: user.role,
+        status: user.status,
+      },
+    });
   } catch (err) {
     console.error("Error during OTP verification:", err);
     return res.status(500).json({ message: "Server error" });
