@@ -242,25 +242,52 @@ const replyToTicket = async (req, res) => {
   }
 };
 
+// const getMyTickets = async (req, res) => {
+//   try {
+//     const { user_id } = req.params;
+//     console.log("id", user_id)
+//     if (!user_id) {
+//       return res.status(400).json({ success: false, message: "User ID is required" });
+//     }
+
+//     const tickets = await Ticket.find({ user_id }).sort({ created_at: -1 });
+
+//     res.status(200).json({
+//       success: true,
+//       message: "Tickets retrieved successfully",
+//       data: tickets
+//     });
+
+//   } catch (error) {
+//     console.error("Fetch Tickets Error:", error);
+//     res.status(500).json({ success: false, message: "Internal server error" });
+//   }
+// };
+
 const getMyTickets = async (req, res) => {
   try {
     const { user_id } = req.params;
-    console.log("id", user_id)
+
     if (!user_id) {
       return res.status(400).json({ success: false, message: "User ID is required" });
     }
 
-    const tickets = await Ticket.find({ user_id }).sort({ created_at: -1 });
+    if (!mongoose.Types.ObjectId.isValid(user_id)) {
+      return res.status(400).json({ success: false, message: "Invalid user_id" });
+    }
 
-    res.status(200).json({
+    const tickets = await Ticket.find({ user_id: new mongoose.Types.ObjectId(user_id) })
+      .sort({ created_at: -1 })
+      .lean();
+
+    return res.status(200).json({
       success: true,
       message: "Tickets retrieved successfully",
-      data: tickets
+      data: tickets,
     });
-
   } catch (error) {
     console.error("Fetch Tickets Error:", error);
-    res.status(500).json({ success: false, message: "Internal server error" });
+    return res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
 
