@@ -53,7 +53,7 @@ async function otpVerify(req, res) {
         await user.save();
 
         const token = validation.generateUserToken(user._id, 'logged', 4);
-        return res.status(200).cookie("token", token, { expires: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000), httpOnly: true }).json({ success: true, message: "OTP verified successfully", token });
+        return res.status(200).cookie("token", token, { expires: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000), httpOnly: true }).json({ success: true, message: "OTP verified successfully", token, user_id: user._id, });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
