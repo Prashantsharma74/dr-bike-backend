@@ -292,6 +292,41 @@ async function getcustomer(req, res) {
       return res.status(400).json({ success: false, message: "Invalid user_id" });
     }
 
+    const customer = await Vendor.findById(user_id);
+    // const customer = await customers.findById(user_id);
+
+    if (!customer) {
+      return res.status(404).json({ success: false, message: "No Customer Account Found" });
+    }
+    console.log("Customer", customer)
+    return res.status(200).json({
+      success: true,
+      message: "success",
+      data: customer,
+      image_base_url: process.env.BASE_URL,
+    });
+
+  } catch (error) {
+    console.error("Error in getcustomer:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Operation was not successful",
+    });
+  }
+}
+
+async function getcustomersData(req, res) {
+  try {
+    const { user_id } = req.params;
+
+    if (!user_id) {
+      return res.status(400).json({ success: false, message: "user_id is required" });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(user_id)) {
+      return res.status(400).json({ success: false, message: "Invalid user_id" });
+    }
+
     // const customer = await Vendor.findById(user_id);
     const customer = await customers.findById(user_id);
 
@@ -652,5 +687,6 @@ module.exports = {
   updateUserBike,
   getMyBikes,
   deleteMyBike,
-  addUserBike
+  addUserBike,
+  getcustomersData
 };

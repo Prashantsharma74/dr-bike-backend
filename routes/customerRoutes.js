@@ -2,7 +2,7 @@ var express = require('express');
 var multer = require('multer');
 var fs = require('fs-extra');
 const {verifyToken} =  require("../helper/verifyAuth")
-var { addProfile, customerlist, deletecustomer, editcustomer,getcustomer,changeImage,updateUserBike,getMyBikes,deleteMyBike,addUserBike} =  require('../controller/customers');
+var { addProfile, customerlist, deletecustomer, editcustomer,getcustomer,changeImage,updateUserBike,getMyBikes,deleteMyBike,addUserBike, getcustomersData} =  require('../controller/customers');
 const router = express.Router();
 
 
@@ -43,6 +43,7 @@ router.put('/user-bike/:id',verifyToken,updateUserBike);
 router.get('/customerlist',customerlist);
 // router.get('/customer',getcustomer);
 router.get("/customer/:user_id", getcustomer);
+router.get("/customersdata/:user_id", getcustomersData);
 router.delete('/deletecustomer',deletecustomer);
 router.put('/editcustomer/:id',verifyToken,editcustomer);
 router.put('/editimage',verifyToken,upload.single("images"),changeImage);
