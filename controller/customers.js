@@ -292,7 +292,8 @@ async function getcustomer(req, res) {
       return res.status(400).json({ success: false, message: "Invalid user_id" });
     }
 
-    const customer = await Vendor.findById(user_id);
+    // const customer = await Vendor.findById(user_id);
+    const customer = await customers.findById(user_id);
 
     if (!customer) {
       return res.status(404).json({ success: false, message: "No Customer Account Found" });
