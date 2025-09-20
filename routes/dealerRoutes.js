@@ -24,7 +24,9 @@ var {
   getAllDealersWithDocFalse,
   getAllDealersWithVerifyFalse,
   updateDealerDocStatus,
-  updateDealerVerfication
+  updateDealerVerfication,
+  setDealerOnline,
+  getActiveDealers
 } = require("../controller/dealer");
 const { log } = require("console");
 
@@ -564,6 +566,10 @@ router.get("/pending", getPendingWallets);
 router.put("/updatepending", updateWalletStatus);
 router.put("/updateDocStatus", updateDealerDocStatus);
 router.put("/updateVerification", updateDealerVerfication);
+
+router.post("/vendor/:dealerId/online", setDealerOnline);
+
+router.get("/vendor/active", getActiveDealers);
 
 
 module.exports = router;

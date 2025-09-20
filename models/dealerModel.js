@@ -72,7 +72,6 @@ const dealerModel = new mongoose.Schema({
     aadharBack: { type: String, required: false },
     shopCertificate: { type: String, required: false },
     faceVerificationImage: { type: String, required: false }
-    // passbookImage: { type: String, required: true }
   },
 
   bankDetails: {
@@ -149,14 +148,12 @@ const dealerModel = new mongoose.Schema({
     shop: { type: Boolean, default: false }
   },
 
-  // Shop Opening Information
   shopOpeningDate: { type: Date, required: false },
   businessHours: {
     open: String,
     close: String,
-    days: [String] // e.g., ['Monday', 'Tuesday', ...]
+    days: [String]
   },
-  // Notification Preferences
   notifications: {
     email: { type: Boolean, default: true },
     sms: { type: Boolean, default: true },
@@ -174,7 +171,8 @@ const dealerModel = new mongoose.Schema({
   dob: {
     type: Date,
     default: null
-  }
+  },
+  online: { type: Boolean, default: false }
 }, { timestamps: true });
 
 dealerModel.index({ phone: 1, email: 1, registrationStatus: 1 });

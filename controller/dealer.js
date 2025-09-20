@@ -16,7 +16,7 @@ const mongoose = require('mongoose');
 const { log } = require("console");
 
 function calculateDistance(lat1, lon1, lat2, lon2) {
-  const R = 6371; // Earth radius in kilometers
+  const R = 6371;
   const dLat = (lat2 - lat1) * (Math.PI / 180);
   const dLon = (lon2 - lon1) * (Math.PI / 180);
   const a =
@@ -1021,7 +1021,7 @@ async function getWallet(req, res) {
       data: {
         ...dealer.toObject(),
         averageRating,
-        walletAmount: dealer.wallet?.amount || dealer.wallet || 0  
+        walletAmount: dealer.wallet?.amount || dealer.wallet || 0
       }
     });
 
@@ -1051,7 +1051,7 @@ async function getWallet(req, res) {
 
 const GetwalletInfo = async (req, res) => {
   try {
-    let { id } = req.params;                         
+    let { id } = req.params;
     id = (id ?? "").toString().trim();
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ success: false, message: "Invalid dealer id" });
@@ -1076,7 +1076,7 @@ const GetwalletInfo = async (req, res) => {
     if (from || to) {
       match.createdAt = {};
       if (from) match.createdAt.$gte = new Date(from);
-      if (to)   match.createdAt.$lte = new Date(to);
+      if (to) match.createdAt.$lte = new Date(to);
     }
     if (search) {
       match.orderId = { $regex: String(search).trim(), $options: "i" };
@@ -1161,8 +1161,8 @@ const GetwalletInfo = async (req, res) => {
       success: true,
       message: "Wallet information",
       data: {
-        summary,                                   
-        transactions,                              
+        summary,
+        transactions,
         pagination: {
           page: Number(page),
           limit: perPage,
@@ -2128,7 +2128,101 @@ async function singledealer(req, res) {
   }
 }
 
+async function setDealerOnline(req, res) {
+  try {
+    const { dealerId } = req.params;
+    const { active } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(dealerId)) {
+      return res.status(400).json({ success: false, message: "Invalid dealerId" });
+    }
+    if (typeof active !== "boolean") {
+      return res.status(400).json({ success: false, message: "active must be boolean" });
+    }
+
+    const now = new Date();
+    const update = active
+      ? { online: true, activeSince: now, lastSeen: now }
+      : { online: false, activeSince: null, lastSeen: now };
+
+    const dealer = await Vendor.findByIdAndUpdate(
+      dealerId,
+      { $set: update },
+      { new: true, lean: true }
+    );
+
+    if (!dealer) return res.status(404).json({ success: false, message: "Dealer not found" });
+
+    return res.status(200).json({
+      success: true,
+      message: `Dealer is now ${dealer.online ? "Active" : "Inactive"}`,
+      data: dealer,
+    });
+  } catch (err) {
+    console.error("setDealerOnline error:", err);
+    return res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
+
+// GET /api/vendor/active?city=&state=&page=&limit=
+async function getActiveDealers(req, res) {
+  try {
+    const {
+      city,
+      state,
+      page = 1,
+      limit = 20,
+      q // optional search by shopName/ownerName/phone/email
+    } = req.query;
+
+    const pg = Math.max(parseInt(page, 10) || 1, 1);
+    const sz = Math.min(Math.max(parseInt(limit, 10) || 20, 1), 100);
+
+    const filter = { online: true }; // 🔑 active = online
+    if (city) filter.city = city;
+    if (state) filter.state = state;
+
+    if (q && String(q).trim()) {
+      const rx = new RegExp(String(q).trim(), "i");
+      filter.$or = [
+        { shopName: rx },
+        { ownerName: rx },
+        { phone: rx },
+        { email: rx },
+      ];
+    }
+
+    const [data, total] = await Promise.all([
+      Vendor.find(filter)
+        .sort({ activeSince: -1, updatedAt: -1 })
+        .skip((pg - 1) * sz)
+        .limit(sz)
+        .select(
+          "shopName ownerName phone email city state latitude longitude online activeSince lastSeen services"
+        )
+        .lean(),
+      Vendor.countDocuments(filter),
+    ]);
+
+    return res.status(200).json({
+      success: true,
+      message: "Active dealers fetched successfully",
+      page: pg,
+      limit: sz,
+      total,
+      totalPages: Math.max(1, Math.ceil(total / sz)),
+      data,
+    });
+  } catch (err) {
+    console.error("getActiveDealers error:", err);
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error" });
+  }
+}
+
 module.exports = {
+  getActiveDealers,
   editDealer,
   dealerList,
   deleteDealer,
@@ -2150,4 +2244,5 @@ module.exports = {
   getAllDealersWithVerifyFalse,
   updateDealerDocStatus,
   updateDealerVerfication,
+  setDealerOnline
 };

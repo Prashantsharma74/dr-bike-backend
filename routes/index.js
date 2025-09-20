@@ -34,11 +34,8 @@ const ticket = require("../routes/ticketRoutes");
 const notification = require("../routes/notification")
 const additional = require("../routes/additionalRouter")
 
-
-// User App Admin
 router.use('/tokenGenrate', genrateToken);
 router.use('/adminauth', adminauth);
-// router.use('/employee',verifyToken,employee);
 router.use('/customers', customers);
 router.use('/service', service);
 router.use('/additional-service', additional);
@@ -66,16 +63,9 @@ router.use('/report', verifyToken, report);
 router.use('/reward', reward);
 router.use('/rating', rating);
 
-// Map
 router.post('/geocode', geocode);
 router.post('/geo_place', geo_place);
-
-// otp
-// router.post('/send-otp', sendOtpAdmin);
-// Route to verify OTP for SubAdmin (direct login for Admin)
 router.post('/verify-otp', verifyOtpAdmin);
-
-// Provider APP
 router.use('/dealerAuth', dealerauth);
 
 module.exports = router;
