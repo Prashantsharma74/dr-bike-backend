@@ -62,59 +62,6 @@ const createTicket = async (req, res) => {
   }
 };
 
-// const replyToTicket = async (req, res) => {
-//   try {
-//     const { ticket_id } = req.params;
-//     const { sender_id, sender_type, message } = req.body;
-
-//     // ✅ Validations
-//     if (!ticket_id || !mongoose.Types.ObjectId.isValid(ticket_id)) {
-//       return res.status(400).json({ success: false, message: "Invalid ticket_id" });
-//     }
-//     if (!sender_id || !mongoose.Types.ObjectId.isValid(sender_id)) {
-//       return res.status(400).json({ success: false, message: "Invalid sender_id" });
-//     }
-//     if (![1, 2, 4].includes(Number(sender_type))) {
-//       return res.status(400).json({ success: false, message: "sender_type must be 1 (Admin), 2 (Dealer) or 4 (User)" });
-//     }
-//     if (!message || !String(message).trim()) {
-//       return res.status(400).json({ success: false, message: "Message is required" });
-//     }
-
-//     // 🔎 Find ticket
-//     const ticket = await Ticket.findById(ticket_id);
-//     if (!ticket) {
-//       return res.status(404).json({ success: false, message: "Ticket not found" });
-//     }
-
-//     // ❗ Optional rule: block replies on Closed tickets
-//     // if (ticket.status === "Closed" && sender_type !== 1) {
-//     //   return res.status(400).json({ success: false, message: "Ticket is closed; only admin can reply" });
-//     // }
-
-//     // ✅ Push new message
-//     ticket.messages.push({
-//       sender_id,
-//       sender_type,
-//       message: String(message).trim(),
-//     });
-
-//     await ticket.save();
-
-//     const responseDoc = ticket.toJSON({ virtuals: true });
-
-//     return res.status(200).json({
-//       success: true,
-//       message: "Message added to ticket",
-//       data: responseDoc,
-//     });
-//   } catch (error) {
-//     console.error("Ticket Reply Error:", error);
-//     return res.status(500).json({ success: false, message: "Internal server error" });
-//   }
-// };
-
-
 // Role helpers: accept numeric or string; normalize to string
 const ROLE_NUM2STR = { 1: "admin", 2: "dealer", 4: "user" };
 const ROLE_STR = ["admin", "dealer", "user"];
@@ -131,116 +78,160 @@ const normalizeRole = (val) => {
 const replyToTicket = async (req, res) => {
   try {
     const { ticket_id } = req.params;
-    let {
+    const { message, sender_id, sender_type } = req.body;
+
+    if (!ticket_id || !message || !sender_id || !sender_type) {
+      return res.status(400).json({ success: false, message: "ticket_id, message, sender_id, sender_type are required" });
+    }
+
+    const ticket = await Ticket.findById(ticket_id);
+    if (!ticket) return res.status(404).json({ success: false, message: "Ticket not found" });
+    if (ticket.status === "Closed") return res.status(400).json({ success: false, message: "Ticket is closed" });
+
+    // push message
+    ticket.messages.push({
       sender_id,
-      sender_type,
+      sender_type,       // "admin" | "dealer" | "user"  (or numbers if that's what you store)
       message,
-      attachments = [],
-      internal = false,
-      repliedTo = null,
-    } = req.body || {};
-
-    let filter;
-    if (mongoose.Types.ObjectId.isValid(ticket_id)) {
-      filter = { _id: ticket_id };
-    } else {
-      const ticketNo = parseTicketNo(ticket_id);
-      if (!ticketNo) {
-        return res.status(400).json({ success: false, message: "ticket_id must be a valid ObjectId or like TCK-00001" });
-      }
-      filter = { ticketNo };
-    }
-
-    if (!sender_id || !mongoose.Types.ObjectId.isValid(sender_id)) {
-      return res.status(400).json({ success: false, message: "Invalid sender_id" });
-    }
-
-    const senderRole = normalizeRole(sender_type);
-    if (!senderRole) {
-      return res.status(400).json({ success: false, message: 'sender_type must be 1/2/4 or "admin"/"dealer"/"user"' });
-    }
-
-    const text = String(message || "").trim();
-    if (!text) {
-      return res.status(400).json({ success: false, message: "Message is required" });
-    }
-    if (text.length > 10_000) {
-      return res.status(400).json({ success: false, message: "Message must be ≤ 10,000 characters" });
-    }
-
-    const ticket = await Ticket.findOne(filter);
-    if (!ticket) {
-      return res.status(404).json({ success: false, message: "Ticket not found" });
-    }
-
-    internal = Boolean(internal);
-    if (internal && senderRole !== "admin") {
-      return res.status(403).json({ success: false, message: "Only admins can create internal messages" });
-    }
-
-    const normAtt = Array.isArray(attachments)
-      ? attachments.map((a) => ({
-        url: typeof a?.url === "string" ? a.url.trim() : "",
-        name: typeof a?.name === "string" ? a.name.trim() : "",
-        type: typeof a?.type === "string" ? a.type.trim() : "",
-        size: Number(a?.size || 0),
-      }))
-      : [];
-
-    for (const a of normAtt) {
-      if (!a.url) {
-        return res.status(400).json({ success: false, message: "Each attachment requires a url" });
-      }
-      if (a.name.length > 255) {
-        return res.status(400).json({ success: false, message: "Attachment name must be ≤ 255 characters" });
-      }
-    }
-
-    const now = new Date();
-    const msgDoc = {
-      sender_id,
-      sender_type: senderRole,
-      message: text,
-      attachments: normAtt,
-      internal,
-      repliedTo: mongoose.Types.ObjectId.isValid(repliedTo) ? repliedTo : null,
-      timestamp: now,
-    };
-
-    ticket.messages.push(msgDoc);
-
-    ticket.lastMessageAt = now;
-    ticket.lastMessageText = text || (normAtt?.[0]?.name || "[attachment]");
-
-    const senderIdStr = String(sender_id);
-    const participants = new Set([
-      String(ticket.user_id),
-      ...ticket.messages.map((m) => String(m.sender_id)).filter(Boolean),
-    ]);
-
-    participants.forEach((pid) => {
-      if (pid === senderIdStr) return;
-      if (internal) {
-        return;
-      }
-      const cur = ticket.unreadFor.get(pid) || 0;
-      ticket.unreadFor.set(pid, cur + 1);
+      timestamp: new Date(),
     });
+    // optional: update convenience fields
+    ticket.lastMessageAt = new Date();
+    ticket.lastMessageText = message;
 
     await ticket.save();
 
-    await ticket.populate({ path: "messages.sender_id", select: "name email" });
+    // repop / lean if you want to send a clean object
+    const updated = await Ticket.findById(ticket_id).lean({ virtuals: true });
 
-    return res.status(200).json({
-      success: true,
-      message: "Message added to ticket",
-      data: ticket.toJSON({ virtuals: true }),
+    // 🔊 emit to everyone viewing this ticket
+    const io = req.app.get("io");
+    io.to(String(ticket_id)).emit("ticket:message:new", {
+      ticketId: String(ticket_id),
+      ticket: updated,                // or just send the new message to minimize payload
+      // message: updated.messages[updated.messages.length - 1],
     });
-  } catch (error) {
-    console.error("Ticket Reply Error:", error);
+
+    return res.status(200).json({ success: true, message: "Reply added", data: updated });
+  } catch (err) {
+    console.error("Ticket Reply Error:", err);
     return res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
+
+// const replyToTicket = async (req, res) => {
+//   try {
+//     const { ticket_id } = req.params;
+//     let {
+//       sender_id,
+//       sender_type,
+//       message,
+//       attachments = [],
+//       internal = false,
+//       repliedTo = null,
+//     } = req.body || {};
+
+//     let filter;
+//     if (mongoose.Types.ObjectId.isValid(ticket_id)) {
+//       filter = { _id: ticket_id };
+//     } else {
+//       const ticketNo = parseTicketNo(ticket_id);
+//       if (!ticketNo) {
+//         return res.status(400).json({ success: false, message: "ticket_id must be a valid ObjectId or like TCK-00001" });
+//       }
+//       filter = { ticketNo };
+//     }
+
+//     if (!sender_id || !mongoose.Types.ObjectId.isValid(sender_id)) {
+//       return res.status(400).json({ success: false, message: "Invalid sender_id" });
+//     }
+
+//     const senderRole = normalizeRole(sender_type);
+//     if (!senderRole) {
+//       return res.status(400).json({ success: false, message: 'sender_type must be 1/2/4 or "admin"/"dealer"/"user"' });
+//     }
+
+//     const text = String(message || "").trim();
+//     if (!text) {
+//       return res.status(400).json({ success: false, message: "Message is required" });
+//     }
+//     if (text.length > 10_000) {
+//       return res.status(400).json({ success: false, message: "Message must be ≤ 10,000 characters" });
+//     }
+
+//     const ticket = await Ticket.findOne(filter);
+//     if (!ticket) {
+//       return res.status(404).json({ success: false, message: "Ticket not found" });
+//     }
+
+//     internal = Boolean(internal);
+//     if (internal && senderRole !== "admin") {
+//       return res.status(403).json({ success: false, message: "Only admins can create internal messages" });
+//     }
+
+//     const normAtt = Array.isArray(attachments)
+//       ? attachments.map((a) => ({
+//         url: typeof a?.url === "string" ? a.url.trim() : "",
+//         name: typeof a?.name === "string" ? a.name.trim() : "",
+//         type: typeof a?.type === "string" ? a.type.trim() : "",
+//         size: Number(a?.size || 0),
+//       }))
+//       : [];
+
+//     for (const a of normAtt) {
+//       if (!a.url) {
+//         return res.status(400).json({ success: false, message: "Each attachment requires a url" });
+//       }
+//       if (a.name.length > 255) {
+//         return res.status(400).json({ success: false, message: "Attachment name must be ≤ 255 characters" });
+//       }
+//     }
+
+//     const now = new Date();
+//     const msgDoc = {
+//       sender_id,
+//       sender_type: senderRole,
+//       message: text,
+//       attachments: normAtt,
+//       internal,
+//       repliedTo: mongoose.Types.ObjectId.isValid(repliedTo) ? repliedTo : null,
+//       timestamp: now,
+//     };
+
+//     ticket.messages.push(msgDoc);
+
+//     ticket.lastMessageAt = now;
+//     ticket.lastMessageText = text || (normAtt?.[0]?.name || "[attachment]");
+
+//     const senderIdStr = String(sender_id);
+//     const participants = new Set([
+//       String(ticket.user_id),
+//       ...ticket.messages.map((m) => String(m.sender_id)).filter(Boolean),
+//     ]);
+
+//     participants.forEach((pid) => {
+//       if (pid === senderIdStr) return;
+//       if (internal) {
+//         return;
+//       }
+//       const cur = ticket.unreadFor.get(pid) || 0;
+//       ticket.unreadFor.set(pid, cur + 1);
+//     });
+
+//     await ticket.save();
+
+//     await ticket.populate({ path: "messages.sender_id", select: "name email" });
+
+//     return res.status(200).json({
+//       success: true,
+//       message: "Message added to ticket",
+//       data: ticket.toJSON({ virtuals: true }),
+//     });
+//   } catch (error) {
+//     console.error("Ticket Reply Error:", error);
+//     return res.status(500).json({ success: false, message: "Internal server error" });
+//   }
+// };
 
 // const getMyTickets = async (req, res) => {
 //   try {

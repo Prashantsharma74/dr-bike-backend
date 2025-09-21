@@ -2164,7 +2164,6 @@ async function setDealerOnline(req, res) {
   }
 };
 
-// GET /api/vendor/active?city=&state=&page=&limit=
 async function getActiveDealers(req, res) {
   try {
     const {
@@ -2172,7 +2171,7 @@ async function getActiveDealers(req, res) {
       state,
       page = 1,
       limit = 20,
-      q // optional search by shopName/ownerName/phone/email
+      q
     } = req.query;
 
     const pg = Math.max(parseInt(page, 10) || 1, 1);
