@@ -644,39 +644,39 @@ async function subadminsignup(req, res) {
   }
 }
 
-const sendOtp = async (req, res) => {
-  let { phone } = req.body;
-  console.log("Received phone:", phone);
-  phone = String(phone).trim();
+// const sendOtp = async (req, res) => {
+//   let { phone } = req.body;
+//   console.log("Received phone:", phone);
+//   phone = String(phone).trim();
 
-  if (!/^\d{10}$/.test(phone)) {
-    return res.status(400).json({ message: "Invalid phone number. Expected 10 digits." });
-  }
+//   if (!/^\d{10}$/.test(phone)) {
+//     return res.status(400).json({ message: "Invalid phone number. Expected 10 digits." });
+//   }
 
-  const fullPhone = `+91${phone}`;
+//   const fullPhone = `+91${phone}`;
 
-  try {
-    const user = await admin.findOne({ mobile: phone });
-    if (!user) {
-      return res.status(403).json({ message: "Access denied. Not an admin user." });
-    }
+//   try {
+//     const user = await admin.findOne({ mobile: phone });
+//     if (!user) {
+//       return res.status(403).json({ message: "Access denied. Not an admin user." });
+//     }
 
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    otpStore.set(phone, otp);
-    setTimeout(() => otpStore.delete(phone), 5 * 60 * 1000);
+//     const otp = Math.floor(100000 + Math.random() * 900000).toString();
+//     otpStore.set(phone, otp);
+//     setTimeout(() => otpStore.delete(phone), 5 * 60 * 1000);
 
-    await client.messages.create({
-      body: `Your OTP is ${otp}`,
-      from: process.env.TWILIO_PHONE_NUMBER,
-      to: fullPhone
-    });
+//     await client.messages.create({
+//       body: `Your OTP is ${otp}`,
+//       from: process.env.TWILIO_PHONE_NUMBER,
+//       to: fullPhone
+//     });
 
-    return res.status(200).json({ status: true, message: "OTP sent successfully" });
-  } catch (error) {
-    console.error("Twilio error:", error.message);
-    return res.status(500).json({ status: false, message: "Failed to send OTP" });
-  }
-};
+//     return res.status(200).json({ status: true, message: "OTP sent successfully" });
+//   } catch (error) {
+//     console.error("Twilio error:", error.message);
+//     return res.status(500).json({ status: false, message: "Failed to send OTP" });
+//   }
+// };
 
 // const verifyOtp = async (req, res) => {
 //   const phone = String(req.body.phone).trim();
@@ -720,6 +720,43 @@ const sendOtp = async (req, res) => {
 //     return res.status(500).json({ message: "Server error" });
 //   }
 // };
+
+const sendOtp = async (req, res) => {
+  let { phone } = req.body;
+  console.log("Received phone:", phone);
+  phone = String(phone).trim();
+
+  if (!/^\d{10}$/.test(phone)) {
+    return res.status(400).json({ message: "Invalid phone number. Expected 10 digits." });
+  }
+
+  const fullPhone = `+91${phone}`;
+
+  try {
+    const user = await admin.findOne({ mobile: phone });
+    if (!user) {
+      return res.status(403).json({ message: "Access denied. Not an admin user." });
+    }
+
+    // ✅ Use default OTP instead of random
+    const otp = "999999";
+
+    otpStore.set(phone, otp);
+    setTimeout(() => otpStore.delete(phone), 5 * 60 * 1000);
+
+    // Optional: Still send SMS, or skip in dev
+    await client.messages.create({
+      body: `Your OTP is ${otp}`,
+      from: process.env.TWILIO_PHONE_NUMBER,
+      to: fullPhone
+    });
+
+    return res.status(200).json({ status: true, message: "OTP sent successfully" });
+  } catch (error) {
+    console.error("Twilio error:", error.message);
+    return res.status(500).json({ status: false, message: "Failed to send OTP" });
+  }
+};
 
 const verifyOtp = async (req, res) => {
   const phone = String(req.body.phone).trim();
