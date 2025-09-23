@@ -738,18 +738,17 @@ const sendOtp = async (req, res) => {
       return res.status(403).json({ message: "Access denied. Not an admin user." });
     }
 
-    // ✅ Use default OTP instead of random
     const otp = "999999";
 
     otpStore.set(phone, otp);
     setTimeout(() => otpStore.delete(phone), 5 * 60 * 1000);
 
     // Optional: Still send SMS, or skip in dev
-    await client.messages.create({
-      body: `Your OTP is ${otp}`,
-      from: process.env.TWILIO_PHONE_NUMBER,
-      to: fullPhone
-    });
+    // await client.messages.create({
+    //   body: `Your OTP is ${otp}`,
+    //   from: process.env.TWILIO_PHONE_NUMBER,
+    //   to: fullPhone
+    // });
 
     return res.status(200).json({ status: true, message: "OTP sent successfully" });
   } catch (error) {
