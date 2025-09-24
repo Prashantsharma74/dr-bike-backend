@@ -732,6 +732,7 @@ const sendOtp = async (req, res) => {
 
   const fullPhone = `+91${phone}`;
 
+  console.log("mobile",phone)
   try {
     const user = await admin.findOne({ mobile: phone });
     if (!user) {

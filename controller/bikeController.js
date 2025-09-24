@@ -604,7 +604,7 @@ const getAllBikes = async (req, res) => {
       .populate({
         path: "models",
         populate: {
-          path: "variants",
+          // path: "variants",
         },
       })
       .lean();

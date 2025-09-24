@@ -55,6 +55,6 @@ router.post("/add-bike-model", addBikeModel);
 router.post("/add-bike-variant", addBikeVariant); 
 router.get("/get-bike-companies", getBikeCompanies);
 router.get("/get-bike-models/:company_id", getBikeModels);
-router.get("/get-bike-variants/:model_id", getBikeVariants); // Get variants by model
+router.get("/get-bike-variants/:model_id", getBikeVariants); 
 router.get("/bikes", getAllBikes);
 module.exports = router;
