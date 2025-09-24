@@ -155,85 +155,125 @@ async function bikeList(req, res) {
 }
 
 
+// async function deleteBike(req, res) {
+//   try {
+//     const data = jwt_decode(req.headers.token);
+//     const user_id = data.user_id;
+//     const user_type = data.user_type;
+//     const type = data.type;
+//     if (user_id == null || user_type != 1) {
+
+//       if (user_type === 3) {
+//         const subAdmin = await Admin.findById(user_id)
+
+//         if (!subAdmin) {
+//           var response = {
+//             status: 401,
+//             message: "Subadmin not found!",
+//           };
+//           return res.status(401).send(response);
+//         }
+
+//         if (user_type === 3) {
+//           const subAdmin = await Admin.findById(user_id)
+
+//           if (!subAdmin) {
+//             var response = {
+//               status: 401,
+//               message: "Subadmin not found!",
+//             };
+//             return res.status(401).send(response);
+//           }
+//         }
+
+//         const isAllowed = await checkPermission(user_id, "Bikes.delete");
+
+//         if (!isAllowed) {
+//           var response = {
+//             status: 401,
+//             message: "Subadmin does not have permission to delete Bikes!",
+//           };
+//           return res.status(401).send(response);
+//         }
+
+//       }
+
+//     }
+
+//     const { bike_id } = req.body;
+//     const bikeRes = await bikeModel.findOne({ id: bike_id });
+//     if (bikeRes) {
+//       bikeModel.findOneAndDelete({ id: bike_id }, async function (err, docs) {
+//         if (err) {
+//           var response = {
+//             status: 201,
+//             message: "Vehicle delete failed",
+//           };
+//           return res.status(201).send(response);
+//         } else {
+//           var response = {
+//             status: 200,
+//             message: "vehicle deleted successfully",
+//           };
+//           return res.status(200).send(response);
+//         }
+//       });
+//     } else {
+//       var response = {
+//         status: 201,
+//         message: "vehicle not Found",
+//       };
+//       return res.status(201).send(response);
+//     }
+//   } catch (error) {
+//     console.log("error", error);
+//     response = {
+//       status: 201,
+//       message: "Operation was not successful",
+//     };
+//     return res.status(201).send(response);
+//   }
+// }
+
+
 async function deleteBike(req, res) {
   try {
-    const data = jwt_decode(req.headers.token);
-    const user_id = data.user_id;
-    const user_type = data.user_type;
-    const type = data.type;
-    if (user_id == null || user_type != 1) {
+    const user_id = req.params.user_id; // get user id from params
+    if (!user_id) {
+      return res.status(400).json({ status: 400, message: "User ID is required" });
+    }
 
-      if (user_type === 3) {
-        const subAdmin = await Admin.findById(user_id)
+    // Check if user is sub-admin
+    const subAdmin = await Admin.findById(user_id);
+    if (!subAdmin) {
+      return res.status(404).json({ status: 404, message: "Subadmin not found" });
+    }
 
-        if (!subAdmin) {
-          var response = {
-            status: 401,
-            message: "Subadmin not found!",
-          };
-          return res.status(401).send(response);
-        }
-
-        if (user_type === 3) {
-          const subAdmin = await Admin.findById(user_id)
-
-          if (!subAdmin) {
-            var response = {
-              status: 401,
-              message: "Subadmin not found!",
-            };
-            return res.status(401).send(response);
-          }
-        }
-
-        const isAllowed = await checkPermission(user_id, "Bikes.delete");
-
-        if (!isAllowed) {
-          var response = {
-            status: 401,
-            message: "Subadmin does not have permission to delete Bikes!",
-          };
-          return res.status(401).send(response);
-        }
-
-      }
-
+    // Check permission
+    const isAllowed = await checkPermission(user_id, "Bikes.delete");
+    if (!isAllowed) {
+      return res.status(403).json({ status: 403, message: "You do not have permission to delete Bikes" });
     }
 
     const { bike_id } = req.body;
-    const bikeRes = await bikeModel.findOne({ id: bike_id });
-    if (bikeRes) {
-      bikeModel.findOneAndDelete({ id: bike_id }, async function (err, docs) {
-        if (err) {
-          var response = {
-            status: 201,
-            message: "Vehicle delete failed",
-          };
-          return res.status(201).send(response);
-        } else {
-          var response = {
-            status: 200,
-            message: "vehicle deleted successfully",
-          };
-          return res.status(200).send(response);
-        }
-      });
-    } else {
-      var response = {
-        status: 201,
-        message: "vehicle not Found",
-      };
-      return res.status(201).send(response);
+    if (!bike_id) {
+      return res.status(400).json({ status: 400, message: "Bike ID is required" });
     }
+
+    const bike = await BikeModel.findById(bike_id);
+    if (!bike) {
+      return res.status(404).json({ status: 404, message: "Bike not found" });
+    }
+
+    await BikeModel.findByIdAndDelete(bike_id);
+
+    return res.status(200).json({ status: 200, message: "Bike deleted successfully" });
   } catch (error) {
-    console.log("error", error);
-    response = {
-      status: 201,
-      message: "Operation was not successful",
-    };
-    return res.status(201).send(response);
+    console.error("Error deleting bike:", error);
+    return res.status(500).json({ status: 500, message: "Operation was not successful" });
   }
 }
+
 
 
 async function editBike(req, res) {
@@ -600,11 +640,22 @@ const getBikeVariants = async (req, res) => {
 
 const getAllBikes = async (req, res) => {
   try {
+    // const companies = await BikeCompany.find()
+    //   .populate({
+    //     path: "models",
+    //     populate: {
+    //       path: "variants",
+    //     },
+    //   })
+    //   .lean();
+
     const companies = await BikeCompany.find()
       .populate({
         path: "models",
+        select: "model_name",
         populate: {
-          // path: "variants",
+          path: "variants",
+          select: "variant_name engine_cc",
         },
       })
       .lean();

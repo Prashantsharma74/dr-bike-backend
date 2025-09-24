@@ -26,7 +26,6 @@ const bikeCompanySchema = new mongoose.Schema(
   { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
 );
 
-// Add virtual for 'models'
 bikeCompanySchema.virtual("models", {
   ref: "BikeModel",
   localField: "_id",

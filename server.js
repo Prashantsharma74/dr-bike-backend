@@ -141,7 +141,7 @@ const server = http.createServer(app);
 const ALLOWED_ORIGINS = [
   "http://localhost:3000",
   "http://localhost:5173",
-  "https://your-admin-ui.example.com",
+  "https://dr-bike-frontend.vercel.app/",
 ];
 
 app.use(cors({

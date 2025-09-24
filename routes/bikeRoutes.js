@@ -48,7 +48,7 @@ const upload = multer({
 router.post("/addBike",upload.single("images"), addBike);
 router.get("/bikeList", bikeList);
 router.put("/editBike/:id", editBike);
-router.delete("/deleteBike", deleteBike);
+router.delete("/deleteBike/:user_id", deleteBike);
 router.get("/getBike/:id", getBike);
 router.post("/add-bike-company", addBikeCompany);
 router.post("/add-bike-model", addBikeModel); 
