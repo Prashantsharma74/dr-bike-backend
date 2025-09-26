@@ -426,7 +426,8 @@ const getuserbookings = async (req, res) => {
       return res.status(404).json({
         status: 200,
         success: true,
-        message: "No bookings found for this user"
+        message: "No bookings found for this user",
+        data: userBookings
       });
     }
 
