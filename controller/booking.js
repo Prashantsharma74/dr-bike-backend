@@ -423,7 +423,7 @@ const getuserbookings = async (req, res) => {
       .sort({ create_date: -1 });
 
     if (!userBookings?.length) {
-      return res.status(404).json({
+      return res.status(200).json({
         status: 200,
         success: true,
         message: "No bookings found for this user",
