@@ -122,7 +122,6 @@ async function verifyOTP(req, res) {
   try {
     const { otp, phone } = req.body;
 
-    // Validate required fields
     if (!phone) {
       return res.status(400).json({
         success: false,
@@ -130,10 +129,8 @@ async function verifyOTP(req, res) {
       });
     }
 
-    // Find dealer by phone only
     const dealer = await Vendor.findOne({ phone });
 
-    // OTP validation (hardcoded 9999)
     if (otp !== '9999') {
       return res.status(401).json({
         success: false,
@@ -141,7 +138,6 @@ async function verifyOTP(req, res) {
       });
     }
 
-    // If dealer doesn't exist, create new one
     if (!dealer) {
       const newDealer = new Vendor({
         phone,
@@ -172,7 +168,6 @@ async function verifyOTP(req, res) {
       });
     }
 
-    // For existing dealer
     const token = validation.generateUserToken(dealer._id, 'dealer', '2h');
     const isNewUser = !dealer.isProfile || !dealer.isDoc || !dealer.isVerify;
 
@@ -194,7 +189,6 @@ async function verifyOTP(req, res) {
   } catch (error) {
     console.error('OTP verification error:', error);
 
-    // Handle specific MongoDB errors
     if (error.code === 11000) {
       if (error.keyPattern.phone) {
         return res.status(409).json({

@@ -2038,9 +2038,39 @@ const updateDealerVerfication = async (req, res) => {
 }
 
 // By prashant 
+// async function dealerList(req, res) {
+//   try {
+//     const dealerResponse = await Vendor.find({});
+
+//     if (dealerResponse.length > 0) {
+//       return res.status(200).send({
+//         status: 200,
+//         message: "Success",
+//         data: dealerResponse,
+//       });
+//     } else {
+//       return res.status(200).send({
+//         status: 200,
+//         message: "No Dealers Found",
+//         data: [],
+//       });
+//     }
+//   } catch (error) {
+//     console.error("Dealer list error:", error);
+//     return res.status(500).send({
+//       status: 500,
+//       message: "Operation was not successful",
+//     });
+//   }
+// }
+
 async function dealerList(req, res) {
   try {
-    const dealerResponse = await Vendor.find({});
+    const dealerResponse = await Vendor.find({
+      "status.adminApproved": false,
+      "status.isActive": false,
+      "status.isVerified": false
+    });
 
     if (dealerResponse.length > 0) {
       return res.status(200).send({
