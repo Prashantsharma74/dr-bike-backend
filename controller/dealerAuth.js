@@ -1347,44 +1347,84 @@ async function approveDealer(req, res) {
   }
 }
 
+// async function rejectDealer(req, res) {
+//   try {
+//     const { notes } = req.body;
+
+//     const vendor = await Vendor.findByIdAndUpdate(
+//       req.params.id,
+//       {
+//         registrationStatus: 'Rejected',
+//         adminNotes: notes,
+//         isActive: false,
+//         'status.adminApproved': false,
+//         'status.isActive': false,
+//       },
+//       { new: true }
+//     );
+
+//     // Send rejection notification
+//     await sendRejectionEmail(vendor, notes);
+
+//     res.status(200).json({
+//       success: true,
+//       message: "Vendor rejected successfully",
+//       data: {
+//         status: {
+//           adminApproved: false,
+//           isActive: false,
+//           isVerified: vendor.isVerify
+//         }
+//       }
+//     });
+//   } catch (error) {
+//     res.status(500).json({
+//       success: false,
+//       message: "Error rejecting vendor",
+//       error: error.message
+//     });
+//   }
+// };
+
 async function rejectDealer(req, res) {
   try {
     const { notes } = req.body;
 
-    const vendor = await Vendor.findByIdAndUpdate(
-      req.params.id,
-      {
-        registrationStatus: 'Rejected',
-        adminNotes: notes,
-        isActive: false,
-        'status.adminApproved': false,
-        'status.isActive': false,
-      },
-      { new: true }
-    );
+    // Find the vendor first
+    const vendor = await Vendor.findById(req.params.id);
 
-    // Send rejection notification
+    if (!vendor) {
+      return res.status(404).json({
+        success: false,
+        message: "Vendor not found"
+      });
+    }
+
+    // Send rejection email BEFORE deletion
     await sendRejectionEmail(vendor, notes);
+
+    // Delete vendor after rejection
+    await Vendor.findByIdAndDelete(req.params.id);
 
     res.status(200).json({
       success: true,
-      message: "Vendor rejected successfully",
+      message: "Vendor rejected and deleted successfully",
       data: {
-        status: {
-          adminApproved: false,
-          isActive: false,
-          isVerified: vendor.isVerify
-        }
+        vendorId: req.params.id,
+        deleted: true
       }
     });
+
   } catch (error) {
+    console.error("Reject dealer error:", error);
+
     res.status(500).json({
       success: false,
       message: "Error rejecting vendor",
       error: error.message
     });
   }
-};
+}
 
 function getStepNumber(section) {
   const stepMap = {
