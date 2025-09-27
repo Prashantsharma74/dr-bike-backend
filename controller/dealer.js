@@ -2067,9 +2067,9 @@ const updateDealerVerfication = async (req, res) => {
 async function dealerList(req, res) {
   try {
     const dealerResponse = await Vendor.find({
-      "status.adminApproved": false,
-      "status.isActive": false,
-      "status.isVerified": false
+      "status.adminApproved": true,
+      "status.isActive": true,
+      "status.isVerified": true
     });
 
     if (dealerResponse.length > 0) {
