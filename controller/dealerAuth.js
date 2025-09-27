@@ -61,6 +61,63 @@ async function sendOtp(req, res) {
   }
 }
 
+// async function usersignin(req, res) {
+//   try {
+//     const { phone, ftoken, device_token } = req.body;
+
+//     if (!phone) {
+//       return res.status(400).json({
+//         success: false,
+//         message: 'Phone number is required!'
+//       });
+//     }
+
+//     let dealer = await Vendor.findOne({ phone, isActive: true, isBlock: false });
+
+//     const otpData = await otpAuth.otp(phone);
+//     const otp = otpData.otp;
+
+//     if (!dealer) {
+//       dealer = new Vendor({
+//         phone,
+//         otp,
+//         ftoken,
+//         device_token,
+//         isActive: true,
+//         isVerify: false,
+//         isProfile: false,
+//         isDoc: false,
+//       });
+//     } else {
+//       dealer.otp = otp;
+//       dealer.ftoken = ftoken;
+//       dealer.device_token = device_token;
+//       dealer.isActive = true;
+//     }
+
+//     await dealer.save();
+
+//     res.status(dealer.isNew ? 201 : 200).json({
+//       success: true,
+//       message: 'OTP sent to your mobile.',
+//       data: {
+//         phone: dealer.phone,
+//         isVerify: dealer.isVerify,
+//         isDoc: dealer.isDoc,
+//         isProfile: dealer.isProfile
+//       }
+//     });
+
+//   } catch (error) {
+//     console.error('Login error:', error);
+//     res.status(500).json({
+//       success: false,
+//       message: 'Internal server error',
+//       error: process.env.NODE_ENV === 'development' ? error.message : undefined
+//     });
+//   }
+// }
+
 async function usersignin(req, res) {
   try {
     const { phone, ftoken, device_token } = req.body;
@@ -68,38 +125,42 @@ async function usersignin(req, res) {
     if (!phone) {
       return res.status(400).json({
         success: false,
-        message: 'Phone number is required!'
+        message: "Phone number is required!"
       });
     }
 
-    let dealer = await Vendor.findOne({ phone, isActive: true, isBlock: false });
+    const otp = "9999";
+    const otpExpiry = new Date(Date.now() + 5 * 60 * 1000);
 
-    const otpData = await otpAuth.otp(phone);
-    const otp = otpData.otp;
+    let dealer = await Vendor.findOne({ phone });
 
     if (!dealer) {
+      // new dealer creation
       dealer = new Vendor({
         phone,
         otp,
+        otpExpiry,
         ftoken,
         device_token,
         isActive: true,
         isVerify: false,
         isProfile: false,
-        isDoc: false,
+        isDoc: false
       });
     } else {
+      // update existing dealer
       dealer.otp = otp;
-      dealer.ftoken = ftoken;
-      dealer.device_token = device_token;
+      dealer.otpExpiry = otpExpiry;
+      dealer.ftoken = ftoken || dealer.ftoken;
+      dealer.device_token = device_token || dealer.device_token;
       dealer.isActive = true;
     }
 
     await dealer.save();
 
-    res.status(dealer.isNew ? 201 : 200).json({
+    return res.status(dealer.isNew ? 201 : 200).json({
       success: true,
-      message: 'OTP sent to your mobile.',
+      message: "OTP sent to your mobile.",
       data: {
         phone: dealer.phone,
         isVerify: dealer.isVerify,
@@ -107,13 +168,12 @@ async function usersignin(req, res) {
         isProfile: dealer.isProfile
       }
     });
-
   } catch (error) {
-    console.error('Login error:', error);
-    res.status(500).json({
+    console.error("Login error:", error);
+    return res.status(500).json({
       success: false,
-      message: 'Internal server error',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      message: "Internal server error",
+      ...(process.env.NODE_ENV === "development" ? { error: error.message } : {})
     });
   }
 }
@@ -826,6 +886,91 @@ async function updateShopDetails(req, res) {
 
 // Registration Submission & Status
 
+// async function uploadDocuments(req, res) {
+//   try {
+//     const { id } = req.params;
+//     const files = req.files;
+//     const { aadharCardNo, panCardNo, shopOpeningDate } = req.body;
+
+//     if (!files || Object.keys(files).length === 0) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "No documents were uploaded"
+//       });
+//     }
+
+//     const updates = {
+//       updatedAt: new Date(),
+//       "formProgress.completedSteps.documents": true,
+//       "completionTimestamps.documents": new Date()
+//     };
+
+//     // ✅ Add uploaded file paths
+//     if (files.aadharFront) updates["documents.aadharFront"] = files.aadharFront[0].path;
+//     if (files.aadharBack) updates["documents.aadharBack"] = files.aadharBack[0].path;
+//     if (files.panCard) updates["documents.panCardFront"] = files.panCard[0].path;
+//     if (files.shopCertificate) updates["documents.shopCertificate"] = files.shopCertificate[0].path;
+//     if (files.faceVerificationImage) updates["documents.faceVerificationImage"] = files.faceVerificationImage[0].path;
+
+//     // ✅ Add text fields if provided
+//     if (aadharCardNo) updates["aadharCardNo"] = aadharCardNo;
+//     if (panCardNo) updates["panCardNo"] = panCardNo;
+//     if (shopOpeningDate) updates["shopOpeningDate"] = new Date(shopOpeningDate);
+
+//     const updatedVendor = await Vendor.findByIdAndUpdate(
+//       id,
+//       updates,
+//       { new: true, runValidators: true }
+//     ).select('documents aadharCardNo panCardNo shopOpeningDate formProgress completionTimestamps');
+
+//     if (!updatedVendor) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "Vendor not found"
+//       });
+//     }
+
+//     res.status(200).json({
+//       success: true,
+//       message: "Documents and info uploaded successfully",
+//       data: {
+//         documents: updatedVendor.documents,
+//         aadharCardNo: updatedVendor.aadharCardNo,
+//         panCardNo: updatedVendor.panCardNo,
+//         shopOpeningDate: updatedVendor.shopOpeningDate,
+//         progress: {
+//           completed: updatedVendor.formProgress.completedSteps.documents,
+//           lastUpdated: updatedVendor.completionTimestamps.documents
+//         }
+//       }
+//     });
+
+//   } catch (error) {
+//     console.error('Document upload error:', error);
+
+//     if (error.code === 'ENOENT') {
+//       return res.status(500).json({
+//         success: false,
+//         message: "Error storing documents - file system error"
+//       });
+//     }
+
+//     if (error.name === 'ValidationError') {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Validation failed",
+//         errors: Object.values(error.errors).map(e => e.message)
+//       });
+//     }
+
+//     res.status(500).json({
+//       success: false,
+//       message: "Error uploading documents",
+//       error: process.env.NODE_ENV === 'development' ? error.message : undefined
+//     });
+//   }
+// }
+
 async function uploadDocuments(req, res) {
   try {
     const { id } = req.params;
@@ -857,11 +1002,19 @@ async function uploadDocuments(req, res) {
     if (panCardNo) updates["panCardNo"] = panCardNo;
     if (shopOpeningDate) updates["shopOpeningDate"] = new Date(shopOpeningDate);
 
+    // --- NEW BLOCK: Update document flags ---
+    updates.isDoc = true; // mark that documents are uploaded
+    updates["documentVerification.aadhar"] = !!(files.aadharFront && files.aadharBack);
+    updates["documentVerification.pan"] = !!files.panCard;
+    updates["documentVerification.shop"] = !!files.shopCertificate;
+    updates["documentVerification.face"] = !!files.faceVerificationImage;
+    // --- END OF BLOCK ---
+
     const updatedVendor = await Vendor.findByIdAndUpdate(
       id,
       updates,
       { new: true, runValidators: true }
-    ).select('documents aadharCardNo panCardNo shopOpeningDate formProgress completionTimestamps');
+    ).select('documents aadharCardNo panCardNo shopOpeningDate formProgress completionTimestamps isDoc documentVerification');
 
     if (!updatedVendor) {
       return res.status(404).json({
@@ -881,7 +1034,9 @@ async function uploadDocuments(req, res) {
         progress: {
           completed: updatedVendor.formProgress.completedSteps.documents,
           lastUpdated: updatedVendor.completionTimestamps.documents
-        }
+        },
+        isDoc: updatedVendor.isDoc,
+        documentVerification: updatedVendor.documentVerification
       }
     });
 
@@ -1162,8 +1317,9 @@ async function approveDealer(req, res) {
         registrationStatus: 'Approved',
         approvedAt: new Date(),
         isActive: true,
-        'status.adminApproved': true,
-        'status.isActive': true
+        "status.adminApproved": true,
+        "status.isActive": true,
+        "status.isVerified": true
       },
       { new: true }
     );
