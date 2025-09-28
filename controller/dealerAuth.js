@@ -437,7 +437,7 @@ async function getProgress(req, res) {
       status: {
         adminApproved: vendor.status.adminApproved || false,
         isActive: vendor.status.isActive || false,
-        isVerified: vendor.status.isVerify || false
+        isVerified: vendor.status.isVerified || false
       }
     });
 
