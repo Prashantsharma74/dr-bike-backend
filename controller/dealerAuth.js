@@ -435,7 +435,7 @@ async function getProgress(req, res) {
       completedSteps: Object.fromEntries(vendor.formProgress.completedSteps),
       timestamps: vendor.completionTimestamps,
       status: {
-        adminApproved: vendor.status.adminApproved || false,ś
+        adminApproved: vendor.status.adminApproved || false,
         isActive: vendor.status.isActive || false,
         isVerified: vendor.status.isVerify || false
       }
