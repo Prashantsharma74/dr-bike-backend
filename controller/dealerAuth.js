@@ -1238,42 +1238,63 @@ async function checkApprovalStatus(req, res) {
 };
 
 // Admin Endpoints
+// async function getPendingRegistrations(req, res) {
+//   try {
+//     const pendingVendors = await Vendor.find({ registrationStatus: 'Pending' }).lean();
+
+//     console.log("pendingVendors", pendingVendors)
+
+//     // Map through vendors to ensure status structure is consistent
+//     const formattedVendors = pendingVendors.map(vendor => {
+//       return {
+//         ...vendor,
+//         status: {
+//           adminApproved: vendor.status?.adminApproved || false,
+//           isActive: vendor.status?.isActive || false,
+//           isVerified: vendor.status?.isVerified || false
+//         }
+//       };
+//     });
+
+//     res.status(200).json({
+//       success: true,
+//       count: formattedVendors.length,
+//       vendors: formattedVendors
+//     });
+//   } catch (error) {
+//     res.status(500).json({
+//       success: false,
+//       message: "Error fetching pending registrations",
+//       error: error.message
+//     });
+//   }
+// };
+
 async function getPendingRegistrations(req, res) {
   try {
-    const pendingVendors = await Vendor.find({ registrationStatus: 'Pending' }).lean();
-    // .select("shopName ownerName phone submittedAt");
-
-    // Map through vendors to ensure status structure is consistent
-    const formattedVendors = pendingVendors.map(vendor => {
-      return {
-        ...vendor,
-        status: {
-          adminApproved: vendor.status?.adminApproved || false,
-          isActive: vendor.status?.isActive || false,
-          isVerified: vendor.status?.isVerified || false
-        }
-      };
-    });
+    const pendingVendors = await Vendor.find({
+      registrationStatus: 'Pending',
+      $or: [
+        { "status.adminApproved": false },
+        { "status.isActive": false },
+        { "status.isVerified": false }
+      ]
+    }).lean();
 
     res.status(200).json({
       success: true,
-      count: formattedVendors.length,
-      vendors: formattedVendors
+      count: pendingVendors.length,
+      vendors: pendingVendors
     });
-
-    // res.status(200).json({
-    //   success: true,
-    //   count: pendingVendors.length,
-    //   vendors: pendingVendors
-    // });
   } catch (error) {
+    console.error("Error fetching pending registrations:", error);
     res.status(500).json({
       success: false,
       message: "Error fetching pending registrations",
       error: error.message
     });
   }
-};
+}
 
 async function getDealerDetails(req, res) {
   try {
