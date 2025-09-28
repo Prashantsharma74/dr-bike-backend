@@ -424,7 +424,6 @@ async function getProgress(req, res) {
       });
     }
 
-    console.log("")
 
     // 5. Return progress data
     res.status(200).json({
