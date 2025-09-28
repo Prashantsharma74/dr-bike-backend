@@ -424,6 +424,8 @@ async function getProgress(req, res) {
       });
     }
 
+    console.log("")
+
     // 5. Return progress data
     res.status(200).json({
       success: true,
@@ -432,7 +434,7 @@ async function getProgress(req, res) {
       completedSteps: Object.fromEntries(vendor.formProgress.completedSteps),
       timestamps: vendor.completionTimestamps,
       status: {
-        adminApproved: vendor.adminApproved || false,
+        adminApproved: vendor.adminApproved,
         isActive: vendor.isActive || false,
         isVerified: vendor.isVerify || false
       }
