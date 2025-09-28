@@ -414,8 +414,10 @@ async function getProgress(req, res) {
 
     // 4. Find vendor (now using user_id instead of _id)
     const vendor = await Vendor.findById(decoded.user_id)
-      .select("formProgress completionTimestamps isActive adminApproved");
+    // .select("formProgress completionTimestamps isActive adminApproved");
     // .select("formProgress completionTimestamps");
+
+    console.log("Vendor detaials", vendor)
 
     if (!vendor) {
       return res.status(404).json({
@@ -433,9 +435,9 @@ async function getProgress(req, res) {
       completedSteps: Object.fromEntries(vendor.formProgress.completedSteps),
       timestamps: vendor.completionTimestamps,
       status: {
-        adminApproved: vendor.adminApproved,
-        isActive: vendor.isActive || false,
-        isVerified: vendor.isVerify || false
+        adminApproved: vendor.status.adminApproved || false,ś
+        isActive: vendor.status.isActive || false,
+        isVerified: vendor.status.isVerify || false
       }
     });
 
