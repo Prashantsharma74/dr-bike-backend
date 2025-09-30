@@ -4,21 +4,21 @@ const AutoIncrement = require("mongoose-sequence")(mongoose);
 
 const userBikeSchema = new mongoose.Schema(
   {
-    bike_id: { type: Number, unique: true }, // Auto-incremented bike ID
+    bike_id: { type: Number, unique: true },
     user_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "customers",
       required: true,
     },
-    name: { // Updated from bike_company
+    name: {
       type: String,
       required: true,
     },
-    model: { // Updated from model_name
+    model: {
       type: String,
       required: true,
     },
-    bike_cc: { // Updated from variant
+    bike_cc: {
       type: String,
       required: true,
     },
@@ -29,18 +29,17 @@ const userBikeSchema = new mongoose.Schema(
     },
     variant_id: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "BikeVariant", // References the Bike Variant model
+      ref: "BikeVariant", 
       required: true,
     },
     status: {
       type: Number,
-      default: 1, // 1 = Active, 0 = Inactive
+      default: 1, 
     },
   },
   { timestamps: true }
 );
 
-// Auto-increment plugin for bike_id
 userBikeSchema.plugin(AutoIncrement, { id: "UserBike", inc_field: "bike_id" });
 
 module.exports = mongoose.model("UserBike", userBikeSchema);

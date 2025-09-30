@@ -385,67 +385,178 @@ async function getbooking(req, res) {
   }
 }
 
+const Customer = require("../models/customer_model");
+const Vendor = require("../models/dealerModel");
+const UserBike = require("../models/userBikeModel");
+
 const getuserbookings = async (req, res) => {
   try {
     const { user_id } = req.params;
-
-    const { user_type } = req.query;
+    const user_type = Number(req.query.user_type);
 
     if (!user_id) {
       return res.status(400).json({
         status: 400,
-        message: "User ID is required in URL (e.g., /api/bookings/123)"
+        message: "User ID is required in URL (e.g., /api/bookings/:user_id)."
       });
     }
 
-    if (!user_type || ![2, 4].includes(Number(user_type))) {
+    if (![2, 4].includes(user_type)) {
       return res.status(400).json({
         status: 400,
-        message: "Valid user_type (2 for dealer, 4 for user) is required in query params"
+        message: "Valid user_type (2 for dealer, 4 for user) is required in query params."
       });
     }
 
-    console.log("user_type", user_type, "user_id", user_id);
+    const targetField = user_type === 2 ? "dealer_id" : "user_id";
 
-    // Set filter based on user_type
-    let filter = {};
-    if (user_type == 2) {
-      filter = { dealer_id: user_id }; // Dealer's bookings
-    } else if (user_type == 4) {
-      filter = { user_id: user_id };   // User's bookings
+    // Build filter: accept Mongo ObjectId or numeric auto-increment id
+    const filter = {};
+
+    if (mongoose.Types.ObjectId.isValid(user_id)) {
+      filter[targetField] = mongoose.Types.ObjectId(user_id);
+    } else if (/^\d+$/.test(user_id)) {
+      const numericId = Number(user_id);
+
+      if (targetField === "user_id") {
+        const cust = await Customer.findOne({ id: numericId }).select("_id").lean();
+        if (!cust) {
+          return res.status(404).json({ status: 404, message: `Customer with numeric id ${numericId} not found.` });
+        }
+        filter[targetField] = cust._id;
+      } else {
+        const vendor = await Vendor.findOne({ id: numericId }).select("_id").lean();
+        if (!vendor) {
+          return res.status(404).json({ status: 404, message: `Vendor with numeric id ${numericId} not found.` });
+        }
+        filter[targetField] = vendor._id;
+      }
+    } else {
+      return res.status(400).json({
+        status: 400,
+        message: "Provided user_id must be either a Mongo ObjectId or a numeric id."
+      });
     }
 
-    const userBookings = await booking.find(filter)
-      .populate("services")
-      .populate("dealer_id")
-      .populate("pickupAndDropId")
-      .populate("user_id")
-      .sort({ create_date: -1 });
+    // pagination
+    const page = Math.max(1, Number(req.query.page) || 1);
+    const limit = Math.min(100, Number(req.query.limit) || 20);
+    const skip = (page - 1) * limit;
 
-    if (!userBookings?.length) {
+    // Query and populate the bike details (userBike_id) + other fields
+    const [total, userBookings] = await Promise.all([
+      booking.countDocuments(filter),
+      booking.find(filter)
+        .populate("services")
+        .populate("additionalServices")
+        .populate("dealer_id")
+        .populate("pickupAndDropId")
+        // populate user with optional inner population of user's bikes
+        .populate({
+          path: "user_id",
+          // uncomment to populate user.userBike array as well:
+          // populate: { path: "userBike" }
+        })
+        // IMPORTANT: populate the userBike referenced in booking so we get bike details
+        .populate({
+          path: "userBike_id",
+          populate: { path: "variant_id" } // optional: populate variant inside bike
+        })
+        .sort({ create_date: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean()
+    ]);
+
+    if (!userBookings || userBookings.length === 0) {
       return res.status(200).json({
         status: 200,
         success: true,
         message: "No bookings found for this user",
-        data: userBookings
+        data: [],
+        meta: { total: 0, page, limit }
       });
     }
 
-    // Return successful response
-    res.status(200).json({
+    return res.status(200).json({
       status: 200,
       success: true,
-      data: userBookings
+      data: userBookings,
+      meta: { total, page, limit, pages: Math.ceil(total / limit) }
     });
 
   } catch (error) {
     console.error("Error fetching bookings:", error);
-    res.status(500).json({
+    return res.status(500).json({
       status: 500,
-      message: "Internal Server Error"
+      message: "Internal Server Error",
+      error: error.message
     });
   }
 };
+
+
+// const getuserbookings = async (req, res) => {
+//   try {
+//     const { user_id } = req.params;
+
+//     const { user_type } = req.query;
+
+//     if (!user_id) {
+//       return res.status(400).json({
+//         status: 400,
+//         message: "User ID is required in URL (e.g., /api/bookings/123)"
+//       });
+//     }
+
+//     if (!user_type || ![2, 4].includes(Number(user_type))) {
+//       return res.status(400).json({
+//         status: 400,
+//         message: "Valid user_type (2 for dealer, 4 for user) is required in query params"
+//       });
+//     }
+
+//     console.log("user_type", user_type, "user_id", user_id);
+
+//     // Set filter based on user_type
+//     let filter = {};
+//     if (user_type == 2) {
+//       filter = { dealer_id: user_id }; // Dealer's bookings
+//     } else if (user_type == 4) {
+//       filter = { user_id: user_id };   // User's bookings
+//     }
+
+//     const userBookings = await booking.find(filter)
+//       .populate("services")
+//       .populate("dealer_id")
+//       .populate("pickupAndDropId")
+//       .populate("user_id")
+//       .sort({ create_date: -1 });
+
+//     if (!userBookings?.length) {
+//       return res.status(200).json({
+//         status: 200,
+//         success: true,
+//         message: "No bookings found for this user",
+//         data: userBookings
+//       });
+//     }
+
+//     // Return successful response
+//     res.status(200).json({
+//       status: 200,
+//       success: true,
+//       data: userBookings
+//     });
+
+//   } catch (error) {
+//     console.error("Error fetching bookings:", error);
+//     res.status(500).json({
+//       status: 500,
+//       message: "Internal Server Error"
+//     });
+//   }
+// };
 
 async function deletebooking(req, res) {
   try {
