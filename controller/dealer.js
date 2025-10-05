@@ -213,7 +213,6 @@ const dealerWithInRange = async (req, res) => {
   try {
     const { userLat, userLon } = req.query;
 
-    // Validate inputs
     if (!userLat || !userLon) {
       return res.status(400).json({
         success: false,
@@ -233,9 +232,9 @@ const dealerWithInRange = async (req, res) => {
       });
     }
 
-    // Fetch dealers within a rough bounding box first (optimization)
     const dealers = await Vendor.find({
       is_online: "on",
+      online: true, 
       wallet: { $gt: -500 },
       isBlock: false,
       latitude: { $gte: latitude - 0.03, $lte: latitude + 0.03 },
