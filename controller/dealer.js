@@ -54,161 +54,6 @@ async function checkPermission(user_id, requiredPermission) {
   }
 }
 
-// const dealerWithInRange = async (req, res) => {
-//   try {
-//     console.log("📌 Received Query Params:", req.query);
-
-//     // Extract query params
-//     const { userLat, userLon, name, model, bike_cc, plate_number } = req.query;
-//     const data = jwt_decode(req.headers.token);
-//     const user_id = data.user_id;
-
-//     console.log("📌 Extracted Data:", { userLat, userLon, name, model, bike_cc, plate_number, user_id });
-
-//     if (!name || !model || !bike_cc || !plate_number) {
-//       return res.status(200).json({ success: false, message: "Missing required bike details" });
-//     }
-
-//     // Convert bike_cc to a number for accurate filtering
-//     const bikeCCAsNumber = Number(bike_cc);
-
-//     // Check if UserBike already exists
-//     let existingBike = await UserBike.findOne({ user_id, plate_number });
-
-//     if (!existingBike) {
-//       console.log("✅ Creating new UserBike entry...");
-//       const newUserBike = new UserBike({ user_id, name, model, bike_cc: bikeCCAsNumber, plate_number });
-//       await newUserBike.save();
-//     }
-
-//     console.log("🔎 Fetching dealers within range...");
-//     const dealers = await Dealer.find({ is_online: "on", wallet: { $gt: -500 }, isBlock: false })
-//       .populate("services", "name image")
-//       .populate({
-//         path: "bikes",
-//         select: { name: 1, model: 1, bike_cc: 1 }, // Explicitly select fields to avoid issues
-//         options: { lean: true } // Convert Mongoose documents to plain objects
-//       });
-
-//     console.log(`✅ Total Dealers Found: ${dealers.length}`);
-
-//     // Filter dealers based on `model` and `bike_cc`
-//     const dealersWithRatings = await Promise.all(
-//       dealers.map(async (dealer) => {
-//         const distance = calculateDistance(userLat, userLon, dealer.latitude, dealer.longitude);
-//         console.log(`🚗 Dealer: ${dealer.name}, Distance: ${distance.toFixed(2)} km`);
-
-//         if (distance > 3) return null; // Exclude dealers beyond 3km range
-
-//         console.log(`🔍 Dealer ${dealer.name} Bikes:`, dealer.bikes);
-
-//         let filteredBikes = dealer.bikes.filter((bike) => {
-//           console.log(`🔎 Checking bike before filtering:`, bike);
-
-//           // Ensure bike fields are properly populated
-//           if (!bike || bike.model == null || bike.bike_cc == null) {
-//             console.log(`❌ Skipping bike due to missing data:`, bike);
-//             return false;
-//           }
-
-//           // Normalize model names by trimming and replacing extra spaces
-//           let bikeModel = String(bike.model).toLowerCase().replace(/\s+/g, ' ').trim();
-//           let searchModel = String(model).toLowerCase().replace(/\s+/g, ' ').trim();
-
-//           // Ensure `bike_cc` is compared as a number
-//           let bikeCC = Number(bike.bike_cc);
-//           let searchCC = Number(bike_cc);
-
-//           console.log(`
-//             🏍 Checking bike:
-//             - Bike Model: "${bikeModel}" (Type: ${typeof bikeModel})
-//             - Search Model: "${searchModel}" (Type: ${typeof searchModel})
-//             - Bike CC: ${bikeCC} (Type: ${typeof bikeCC})
-//             - Search CC: ${searchCC} (Type: ${typeof searchCC})
-//           `);
-
-//           const modelMatch = bikeModel === searchModel;
-//           const ccMatch = bikeCC === searchCC;
-
-//           console.log(`✅ Model Match: ${modelMatch}, CC Match: ${ccMatch}`);
-
-//           return modelMatch && ccMatch;
-//         });
-
-//         console.log("✅ Filtered Bikes for Dealer:", filteredBikes);
-
-//         if (filteredBikes.length === 0) return null; // Skip dealers without matching bikes
-
-//         // ✅ Fetch dealer ratings (Ensure correct ID format)
-//         const ratings = await Rating.find({ dealer_id: dealer._id.toString() });
-
-//         const totalRatings = ratings.length;
-//         const sumRatings = ratings.reduce((acc, curr) => acc + curr.rating, 0);
-//         const averageRating = totalRatings > 0 ? sumRatings / totalRatings : 0;
-
-//         return {
-//           dealer: { ...dealer.toObject(), bikes: filteredBikes },
-//           averageRating: averageRating.toFixed(1),
-//           reviews: ratings.map((rating) => ({
-//             comment: rating.comment,
-//             rating: rating.rating
-//           })),
-//         };
-//       })
-//     );
-
-//     // Remove null values
-//     const validDealersWithRatings = dealersWithRatings.filter((dealer) => dealer !== null);
-
-//     console.log("✅ Final Dealers Response:", validDealersWithRatings);
-//     res.json({ success: true, dealersWithRatings: validDealersWithRatings });
-
-//   } catch (error) {
-//     console.error("❌ Error in dealerWithInRange:", error);
-//     res.status(500).json({ success: false, message: "Internal Server Error" });
-//   }
-// };
-
-
-// const dealerWithInRange = async (req, res) => {
-//   try {
-//     const { userLat, userLon } = req.query;
-
-//     // Ensure user latitude and longitude are provided
-//     if (!userLat || !userLon) {
-//       return res.status(200).json({ error: "User location (latitude & longitude) is required" });
-//     }
-
-//     // Fetch all active dealers
-//     const dealers = await Dealer.find({
-//       is_online: "on",
-//       wallet: { $gt: -500 },
-//       isBlock: false
-//     });
-
-//     console.log("dealer", dealers)
-//     // Filter dealers based on 3 km distance
-//     const nearbyDealers = dealers.filter(dealer => {
-//       const distance = calculateDistance(
-//         parseFloat(userLat),
-//         parseFloat(userLon),
-//         parseFloat(dealer.latitude),
-//         parseFloat(dealer.longitude)
-//       );
-//       return distance <= 3;
-//     });
-
-
-//     console.log("nearbyDealers", nearbyDealers)
-
-//     res.status(200).json({ success: true, data: nearbyDealers });
-
-//   } catch (error) {
-//     console.error("Error fetching nearby dealers:", error);
-//     res.status(500).json({ error: "Internal Server Error" });
-//   }
-// };
-
 const dealerWithInRange = async (req, res) => {
   try {
     const { userLat, userLon } = req.query;
@@ -243,7 +88,6 @@ const dealerWithInRange = async (req, res) => {
 
     console.log(`✅ Total Dealers Found: ${dealers}`);
 
-    // Calculate precise distances for filtered dealers
     const nearbyDealers = dealers.filter(dealer => {
       const distance = calculateDistance(
         latitude,
@@ -251,7 +95,7 @@ const dealerWithInRange = async (req, res) => {
         dealer.latitude,
         dealer.longitude
       );
-      return distance <= 3; // 3 km
+      return distance <= 3;
     });
 
     return res.status(200).json({
@@ -331,92 +175,6 @@ const dealerWithInRange2 = async (req, res) => {
     res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
-
-// async function addDealer(req, res) {
-//   try {
-//       const data = jwt_decode(req.headers.token);
-//       const user_id = data.user_id;
-//       const user_type = data.user_type;
-
-//       if (!user_id || user_type !== 1) { 
-//           if (user_type === 3) {
-//               const subAdmin = await Admin.findById(user_id);
-//               if (!subAdmin) {
-//                   return res.status(403).json({ success: false, message: "Subadmin not found!" });
-//               }
-
-//               const isAllowed = await checkPermission(user_id, "Dealers.create");
-//               if (!isAllowed) {
-//                   return res.status(403).json({ success: false, message: "No permission to add dealers!" });
-//               }
-//           } else {
-//               return res.status(403).json({ success: false, message: "Unauthorized access!" });
-//           }
-//       }
-
-//       // Extract fields from request body
-//       let dealerData = { ...req.body };
-//       dealerData.create_by = user_id;  // Set creator
-
-
-//       dealerData.isVerify = true;
-//       dealerData.isProfile = true;
-//       dealerData.isDoc = true;
-//       dealerData.goDigital = true;
-//       dealerData.isShopDetailsAdded = true;
-//       dealerData.isDocumentsAdded = true;
-
-//       // Handle file uploads
-//       if (req.files) {
-
-//         if (req.files?.images) {
-//           dealerData.images = req.files.images[0].filename; // Convert array to single string
-//       }
-
-//           if (req.files.panCardFront) {
-//               dealerData.panCardFront = req.files.panCardFront[0].filename;
-//           }
-//           if (req.files.panCardBack) {
-//               dealerData.panCardBack = req.files.panCardBack[0].filename;
-//           }
-//           if (req.files.adharCardFront) {
-//               dealerData.adharCardFront = req.files.adharCardFront[0].filename;
-//           }
-//           if (req.files.adharCardBack) {
-//               dealerData.adharCardBack = req.files.adharCardBack[0].filename;
-//           }
-//           if (req.files.passportImage) {
-//               dealerData.passportImage = req.files.passportImage[0].filename;
-//           }
-//           if (req.files.PassbookImage) {
-//               dealerData.PassbookImage = req.files.PassbookImage[0].filename;
-//           }
-//           if (req.files.shopImages) {
-//               dealerData.shopImages = req.files.shopImages.map(file => file.filename);
-//           }
-//       }
-
-//       // Check if email already exists
-//       const emailCheck = await Dealer.findOne({ email: dealerData.email });
-//       if (emailCheck) {
-//           return res.status(400).json({ success: false, message: "Email already exists" });
-//       }
-
-//       // Create a new dealer record
-//       const newDealer = await Dealer.create(dealerData);
-
-//       return res.status(201).json({
-//           success: true,
-//           message: "Dealer added successfully",
-//           data: newDealer,
-//       });
-
-//   } catch (error) {
-//       console.error("Error adding dealer:", error);
-//       return res.status(500).json({ success: false, message: "Internal server error" });
-//   }
-// }
-// p start
 
 async function addAmount(req, res) {
   try {

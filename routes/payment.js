@@ -2,7 +2,7 @@ var express = require('express');
 var multer = require('multer');
 var fs = require('fs-extra');
 const router = express.Router();
-const {paymentRequest,GetAllPayment,Cashpayment,GetPayment, paymentResponse,paymentInvoices,payment,GetPaymentOrder,Returnurl, saveCard, getAllCards, deleteCard, paymentNew, ReturnurlNew,Ondemand, onDemandNew, paymentDealer, ReturnurlDealer, createContact,CreateFund,AllFund,AllContact,PhonepaynewPayment,PhonepaycheckStatus , paymentDealerCash, ReturnurlDealerCash, transferFunds, createBeneficiary, getBeneficiary,createOrderForAdd,dealerPayout,approvePayout,bookingPayment,bookingPaymentReturn} = require("../controller/payment");
+const {paymentRequest,GetAllPayment,Cashpayment,GetPayment, paymentResponse,paymentInvoices,payment,GetPaymentOrder,Returnurl, saveCard, getAllCards, deleteCard, paymentNew, ReturnurlNew,Ondemand, onDemandNew, paymentDealer, ReturnurlDealer, createContact,CreateFund,AllFund,AllContact,PhonepaynewPayment,PhonepaycheckStatus , paymentDealerCash, ReturnurlDealerCash, transferFunds, createBeneficiary, getBeneficiary,createOrderForAdd,dealerPayout,approvePayout,bookingPayment,bookingPaymentReturn, processQRScan, generateUPIQR, generatePaymentQR, generateCashfreeQR} = require("../controller/payment");
 const { default: axios } = require('axios');
 const CryptoJS = require('crypto-js');
 const crypto = require('crypto');
@@ -460,6 +460,13 @@ router.post("/approvePayout", approvePayout);
 router.post("/book/payment", bookingPayment);
 router.get("/payment-return", bookingPaymentReturn);
 
+// By Prashant 
+
+router.post('/process-qr-scan', processQRScan);
+// Routes mein add karein
+router.post('/generate-upi-qr', generateUPIQR);
+router.post('/generate-payment-qr', generatePaymentQR);
+router.post('/generate-cashfree-qr', generateCashfreeQR);
 module.exports = router;
 
 

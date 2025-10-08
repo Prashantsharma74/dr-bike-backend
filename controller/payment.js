@@ -64,19 +64,6 @@ async function paymentRequest(req, res) {
       url = "https://test.cashfree.com/billpay/checkout/post/submit";
     }
 
-    // const options = {
-    // 	method: 'POST',
-    // 	url: "https://test.cashfree.com/billpay/checkout/post/submit",
-    // 	headers: {'Content-Type': 'application/json'},
-    // 	body: postData,
-    // 	json:true
-    // };
-    // request(options, function (error, response, body) {
-    // 	if (error) throw new Error(error);
-    // 	//console.log(response);
-    // 	console.log(body);
-    //   });
-
     res.render('request', { postData: JSON.stringify(postData), url: url })
 
   } catch (error) {
@@ -92,13 +79,6 @@ async function paymentRequest(req, res) {
 
 async function paymentResponse(req, res) {
   try {
-
-    //let bookings = await booking.findOne({_id:req.body.orderId})
-    //console.log("booking",bookings);
-    //
-    //let track = await Tracking.findOne({booking_id:req.body.orderId})
-    //console.log("track",track);
-
     var postData = {
       "orderId": req.body.orderId,
       //"dealer_id": bookings.dealer_id,
@@ -124,27 +104,6 @@ async function paymentResponse(req, res) {
     postData['computedsignature'] = computedsignature;
     res.render('response', { postData: JSON.stringify(postData) });
     console.log(postData);
-    //res.send("hello");
-    //       if(postData){
-
-    //         const data =await Tracking.findByIdAndUpdate({_id:track._id},{status:"Payment"},{new:true})
-    //         // console.log(data);
-    //         const paymentres = await Payment.create(postData)
-    //         // var datetime = new Date().toISOString().slice(0,10);
-    //         // console.log(datetime);
-    //         const response={
-    //             status:200,
-    //             message:"Payment Successfull",
-    //             data:paymentres	
-    //         }
-    //         res.status(200).json(response)
-    //       } else {
-    //         const response = {
-    //             status: 201,
-    //             message: "Operation was not successful",
-    //       }
-    //      return res.status(201).send(response);
-    // }
   } catch (error) {
     console.log("error", error);
     response = {
@@ -154,7 +113,6 @@ async function paymentResponse(req, res) {
     return res.status(201).send(response);
   }
 }
-
 
 async function paymentInvoices(req, res) {
   try {
@@ -235,100 +193,6 @@ async function GetPaymentOrder(req, res) {
   }
 }
 
-// this api is not deployed in production mode.
-// async function Cashpayment(req, res) {
-//   try {
-//     // const data = jwt_decode(req.headers.token);
-//     // const user_id = data.user_id;
-//     // const user_type = data.user_type;
-
-//     // if (user_id == null || (user_type != 1 && user_type != 3 && user_type != 4)) {
-//     //     return res.status(200).json({ status: 200, message: "Admin is unauthorized!" });
-//     // }
-
-//     const { customer_id, order_amount, pay_type, booking_id, dealer_id } = req.body;
-//     const order_id = Math.floor(1000000000000000 + Math.random() * 90000000000000).toString();
-
-//     const bookings = await Booking.findById(booking_id);
-//     console.log(bookings, "bookings")
-//     const dealer = await Dealer.findById(dealer_id);
-//     const trackings = await Tracking.findOne({ booking_id: booking_id });
-//     const PaymentCheck = await Payment.findOne({ booking_id: booking_id });
-
-//     if (!bookings) {
-//       return res.status(200).json({ status: 200, message: "No Booking Found" });
-//     }
-
-//     if (!dealer) {
-//       return res.status(200).json({ status: 200, message: "No Dealer Found" });
-//     }
-
-//     if (PaymentCheck) {
-//       return res.status(200).json({ status: 200, message: "Payment already received for thi booking", data: PaymentCheck });
-//     }
-
-//     // This represents 10%
-//     const commissionPercentage = (order_amount * dealer.commission) / 100; // Calculate commission amount as percentage of order_amount
-
-
-//     // Deduct commission amount from the dealer's wallet if payment type is cash
-//     // if (pay_type === "cash") {
-//     //     if (dealer.wallet >= commissionPercentage) {
-//     //         // Sufficient balance in dealer's wallet
-//     //       } else {
-//     //         // Insufficient balance in dealer's wallet, allow wallet to go into negative balance
-//     //         dealer.wallet -= commissionPercentage;
-//     //         await dealer.save();
-//     //       }
-//     //     }
-//     dealer.wallet -= commissionPercentage;
-//     await dealer.save();
-
-//     const datas = {
-//       orderId: order_id,
-//       booking_id: booking_id,
-//       dealer_id: dealer_id,
-//       user_id: customer_id,
-//       orderAmount: order_amount,
-//       payment_type: "cash",
-//       order_status: "PAID",
-//       order_currency: 'INR',
-//     };
-
-//     const payment = await Payment.create(datas);
-
-//     // Create wallet document
-//     const walletData = {
-//       dealer_id: dealer._id,
-//       user_id: customer_id,
-//       Amount: order_amount,
-//       Type: 'Debit',
-//       Note: 'Cash Payment received',
-//       Total: dealer.wallet,
-//     };
-//     await Wallet.create(walletData);
-
-//     // Update Booking status
-//     const updatebookStatus = await Booking.findByIdAndUpdate(
-//       { _id: booking_id },
-//       { $set: { status: "cash received" } },
-//       { new: true }
-//     );
-//     console.log(updatebookStatus, "status")
-//     // Update Tracking status
-//     await Tracking.findByIdAndUpdate(
-//       { _id: trackings._id },
-//       { $set: { status: "cash received" } },
-//       { new: true }
-//     );
-
-//     return res.status(200).json({ status: 200, message: "Cash Payment successful", data: payment });
-//   } catch (error) {
-//     console.error("Error:", error);
-//     return res.status(500).json({ status: 500, message: "Operation was not successful" });
-//   }
-// }
-
 async function Cashpayment(req, res) {
   try {
     const { customer_id, order_amount, pay_type, booking_id, dealer_id } = req.body;
@@ -342,12 +206,10 @@ async function Cashpayment(req, res) {
     if (!bookings) return res.status(200).json({ status: 200, message: "No Booking Found" });
     if (!dealer) return res.status(200).json({ status: 200, message: "No Dealer Found" });
 
-    // ✅ If payment already exists -> ensure status completed, then return
     if (existingPayment) {
-      // yahan pe ensure karo ki booking/tracking completed ho jaye
       await Booking.findByIdAndUpdate(
         booking_id,
-        { $set: { status: "completed", billStatus: "paid" } },   // <-- aapki policy ke hisaab se
+        { $set: { status: "completed", billStatus: "paid" } },
         { new: true }
       );
 
@@ -436,86 +298,6 @@ async function GetPayment(req, res) {
   }
 }
 
-
-// async function payment(req, res) {
-//   try {
-
-//     const { customer_id, customer_name, customer_email, customer_phone,
-//       order_amount, booking_id, dealer_id, return_url } = req.body;
-
-//     var order_id = Math.floor(1000000000000000 + Math.random() * 90000000000000).toString();
-
-
-//     const user = {
-//       order_meta: {
-//         // return_url: `https://merchantsite.com/return?order_id={order_id}`
-//         // return_url: return_url
-//         return_url: `https://mrbikedoctor.in/api/returnurl`
-//       },
-//       customer_details: {
-//         customer_id: customer_id,
-//         customer_name: customer_name,
-//         customer_email: customer_email,
-//         customer_phone: customer_phone
-//       },
-//       order_tags: {
-//         booking_id: booking_id,
-//         dealer_id: dealer_id
-//       },
-//       orderId:"Order_"+order_id,
-//       order_amount: order_amount,
-//       order_currency: 'INR',
-//       order_id: "Ord_"+order_id,
-//       order_note: "Booking order"
-//     }
-
-//     // console.log(user.customer_details);
-//     // console.log(user.order_tags);
-//     // console.log(user.order_amount);
-//     // console.log(user.order_id);
-//     // console.log(55555555555);
-
-//     // testing
-//     await axios.post("https://sandbox.cashfree.com/pg/orders", user, {
-
-//     // for production
-//     // await axios.post("https://api.cashfree.com/pg/orders", user, {
-//       headers: {
-//         'Content-Type': 'application/json',
-//         'x-api-version': "2023-08-01",
-//         'x-client-id': process.env.APP_ID,
-//         'x-client-secret': process.env.SECRET_KEY,
-//         // 'x-api-version': "2022-01-01",   // v2
-//         // 'x-api-version': "2022-09-01",   // v3
-//         // 'x-api-version': "2023-08-01",   // v4
-//       },
-//     })
-//     .then((result) => {
-//         console.log("result" , result);
-//         var response = {
-//           status: 200,
-//           message: "Payment Order Created Successfully",
-//           order_token: result.data.order_token,
-//           payment_link: result.data.payment_link,
-//           stack: 'good',
-//           return_data: result.data,
-//         };
-//         return res.status(200).send(response);
-//       })
-//       .catch((e) => res.json({ error: e.stack }))
-
-//   } catch (error) {
-//     response = {
-//       status: 201,
-//       message: "Operation was not successful",
-//       error: error
-//     };
-//     return res.status(201).send(response);
-//   }
-// }
-
-
-
 async function paymentNew(req, res) {
   try {
     var receipt = Math.floor(
@@ -550,20 +332,6 @@ async function paymentNew(req, res) {
 
     const response = await axios.post('https://api.razorpay.com/v1/orders', razorpayData, config);
 
-    // const paymentData = {
-    //   // cf_order_id: result?.data.cf_order_id,
-    //   orderId: order_id,
-    //   booking_id: booking_id,
-    //   dealer_id: dealer_id,
-    //   user_id: customer_id,
-    //   orderAmount: order_amount,
-    //   order_status: "Order created",
-    //   // order_token: result?.data.order_token,
-    //   // users_id: customer?.id,
-    //   // dealers_id: dealer?.id,
-    // };
-    // await Payment.create(paymentData);
-
     res.json({ postData: response.data, url: 'https://api.razorpay.com/v1/checkout' });
   } catch (error) {
     console.log("error", error);
@@ -576,121 +344,9 @@ async function paymentNew(req, res) {
 };
 
 
-// CashFree payment Return URL
-// async function Returnurl(req, res) {
-
-//   try {
-
-//     const order_id = req.query.order_id;
-//     console.log("teststeste===========>",req.query.order_id);
-
-
-
-//     // for testing
-//     await axios.get(`https://sandbox.cashfree.com/pg/orders/${order_id}`,
-
-//     // for Production
-//     // axios.get(`https://api.cashfree.com/pg/orders/${order_id}`,
-//       {
-//         headers: {
-//           'Content-Type': 'application/json',
-//           'x-client-id': process.env.APP_ID,
-//           'x-client-secret': process.env.SECRET_KEY,
-//           'x-api-version': "2023-08-01"
-//         }
-//       })
-//       .then(async (result) => {
-//         // console.log("result",result);
-
-//         const customer = await customers.findById(result?.data.customer_details.customer_id);
-//         const dealer = await Dealer.findById(result?.data.order_tags.dealer_id);
-
-//         const datass = {
-//           cf_order_id: result?.data.cf_order_id,
-//           orderId: result?.data.order_id,
-//           booking_id: result?.data.order_tags.booking_id,
-//           dealer_id: result?.data.order_tags.dealer_id,
-//           user_id: result?.data.customer_details.customer_id,
-//           orderAmount: result?.data.order_amount,
-//           order_status: result?.data.order_status,
-//           order_token: result?.data.order_token,
-//           users_id: customer?.id,
-//           dealers_id: dealer?.id,
-//           payment_type: 'Online',
-//           // method:result?.data.notes.method,
-//         }
-//         console.log(datass)
-
-//         // await Payment.create(datass);
-
-//         if(result?.data.order_status == "PAID"){
-
-//           await Payment.updateOne(
-//             { orderId: datass.orderId }, // match condition
-//             datass, // update fields
-//             { upsert: true } // create a new document if no match is found
-//           );
-
-//           const percentageAmount = (dealer.commission/100) * result?.data.order_amount
-//           dealer.wallet += result?.data.order_amount-percentageAmount;
-//           await dealer.save();
-
-//             const walletData = {
-//               dealer_id: dealer?._id,
-//               user_id: customer?._id,
-//               Amount: result?.data.order_amount, // paid amount
-//               Type: 'Credit', 
-//               Note: 'Online payment received, commission deducted', 
-//               Total:  dealer.wallet
-//             };
-//                 // Create wallet document
-//            const check = await Wallet.create(walletData);
-//            console.log(check,"data")
-
-//             //  Update booking status
-//             await Booking.findOneAndUpdate({ _id:result?.data.order_tags.booking_id }, { status: 'Payment' });
-//             // Update tracking status
-//             const trackings = await Tracking.findOneAndUpdate({ booking_id: result?.data.order_tags.booking_id },{ status: 'Payment' })
-//             console.log(trackings);  
-//          }
-
-//         const dataz = {
-//           amount: result?.data.order_amount,
-//           Cashfree_order_id: result.data.cf_order_id,
-//           orderId: result?.data.order_id,
-//           order_status: result?.data.order_status,
-//         }
-
-//         // return res.status(201).send("ok");
-//         return res.status(201).json({ result: dataz });
-//         // res.render('response', { postData: JSON.stringify(dataz) });
-//       })
-//       .catch((e) => {
-//         console.error(e.stack)
-//         return res.json({ error: e.stack });
-//       })
-//   } catch (error) {
-//     response = {
-//       status: 201,
-//       message: "Operation was not successful",
-//       error: error
-//     };
-//     return res.status(201).send(response);
-//   }
-// }
-
-
-
-
-
-
 const secret_key = process.env.SECRETKEYTESTWEBHOOK;
-// router.post("/update_order", async (req, res) => {
+
 async function Returnurlweb(req, res) {
-  // console.log(
-  //   "update_order-------astropush123-------payment-----entity---------->",
-  //   req.body.payload.payment.entity
-  // );
   const data = crypto.createHmac("sha256", secret_key);
   data.update(JSON.stringify(req.body));
   const digest = data.digest("hex");
@@ -1931,68 +1587,6 @@ async function transferFunds(req, res) {
   }
 }
 
-// async function payment(req, res) {
-//   try {
-//     const { customer_id, customer_name, customer_email, customer_phone,
-//       order_amount, booking_id, dealer_id, return_url } = req.body;
-
-//     const order_id = "Order_" + Math.floor(1000000000000000 + Math.random() * 90000000000000).toString();
-
-//     const orderData = {
-//       order_meta: {
-//         return_url: return_url || "https://mrbikedoctors.com/api"
-//       },
-//       customer_details: {
-//         customer_id: customer_id,
-//         customer_name: customer_name,
-//         customer_email: customer_email,
-//         customer_phone: customer_phone
-//       },
-//       order_tags: {
-//         booking_id: booking_id,
-//         dealer_id: dealer_id
-//       },
-//       order_amount: order_amount,
-//       order_currency: 'INR',
-//       order_id: order_id,
-//       order_note: "Booking order"
-//     };
-
-//     // Create an order in Cashfree
-//     const response = await axios.post("https://sandbox.cashfree.com/pg/orders", orderData, {
-//       headers: {
-//         'Content-Type': 'application/json',
-//         'x-api-version': "2023-08-01",
-//         'x-client-id': process.env.APP_ID,
-//         'x-client-secret': process.env.SECRET_KEY
-//       }
-//     });
-
-//     if (response.data && response.data.payment_session_id) {
-//       const paymentSessionId = response.data.payment_session_id;
-//       const paymentUrl = `https://payments.cashfree.com/order/#payment_session_id=${paymentSessionId}`;
-
-//       // Generate QR code
-//       const qrCodeData = await QRCode.toDataURL(paymentUrl);
-
-//       return res.status(200).json({
-//         status: 200,
-//         message: "Payment Order Created Successfully",
-//         order_token: response.data.order_token,
-//         payment_link: response.data.payment_link,
-//         qr_code: qrCodeData,  // QR Code Image Data
-//         return_data: response.data
-//       });
-//     } else {
-//       return res.status(200).json({ status: 200, message: "Failed to create order" });
-//     }
-//   } catch (error) {
-//     console.error("Error:", error);
-//     return res.status(500).json({ status: 500, message: "Operation was not successful", error: error.message });
-//   }
-// }
-
-
 async function payment(req, res) {
   try {
     const {
@@ -2543,7 +2137,529 @@ async function GetAllPayment(req, res) {
   }
 }
 
+// By Prashant
+
+// Parse UPI QR Code
+function parseUPIQR(qrData) {
+  try {
+    const url = new URL(qrData);
+    const params = new URLSearchParams(url.search);
+
+    return {
+      type: 'upi_payment',
+      upi_id: params.get('pa'),
+      payee_name: params.get('pn'),
+      amount: params.get('am'),
+      currency: params.get('cu'),
+      transaction_note: params.get('tn')
+    };
+  } catch (error) {
+    return { type: 'raw_data', data: qrData };
+  }
+}
+
+// Process Cashfree Payment from QR
+// async function processCashfreePayment(paymentSessionId, dealer_id) {
+//   try {
+//     // Verify payment status with Cashfree
+//     const response = await axios.get(`https://sandbox.cashfree.com/pg/orders/sessions/${paymentSessionId}`, {
+//       headers: {
+//         'Content-Type': 'application/json',
+//         'x-client-id': process.env.APP_ID,
+//         'x-client-secret': process.env.SECRET_KEY,
+//         'x-api-version': '2023-08-01'
+//       }
+//     });
+
+//     const paymentData = response.data;
+
+//     if (paymentData.order_status === "PAID") {
+//       // Find the payment record
+//       const payment = await Payment.findOne({
+//         order_token: paymentSessionId
+//       }).populate('booking_id');
+
+//       if (payment) {
+//         // Update booking status
+//         await Booking.findByIdAndUpdate(payment.booking_id, {
+//           status: "completed",
+//           billStatus: "paid"
+//         });
+
+//         // Update tracking
+//         await Tracking.findOneAndUpdate(
+//           { booking_id: payment.booking_id },
+//           { status: "completed" }
+//         );
+
+//         return {
+//           status: 200,
+//           message: "Payment verified successfully",
+//           data: {
+//             payment_id: payment._id,
+//             amount: payment.orderAmount,
+//             booking_id: payment.booking_id,
+//             status: "completed"
+//           }
+//         };
+//       }
+//     }
+
+//     return {
+//       status: 400,
+//       message: "Payment not completed or not found",
+//       data: paymentData
+//     };
+
+//   } catch (error) {
+//     throw new Error(`Cashfree verification failed: ${error.message}`);
+//   }
+// }
+
+async function processCashfreePayment(paymentSessionId, dealer_id) {
+  try {
+    // For testing with fake session IDs, simulate a successful payment
+    if (paymentSessionId.startsWith('session_')) {
+      // Mock response for testing
+      const mockPayment = await Payment.findOne({ dealer_id }).sort({ createdAt: -1 });
+
+      if (mockPayment) {
+        // Update booking status
+        await Booking.findByIdAndUpdate(mockPayment.booking_id, {
+          status: "completed",
+          billStatus: "paid"
+        });
+
+        // Update tracking
+        await Tracking.findOneAndUpdate(
+          { booking_id: mockPayment.booking_id },
+          { status: "completed" }
+        );
+
+        return {
+          status: 200,
+          message: "Payment verified successfully (TEST MODE)",
+          data: {
+            payment_id: mockPayment._id,
+            amount: mockPayment.orderAmount,
+            booking_id: mockPayment.booking_id,
+            status: "completed",
+            test_mode: true
+          }
+        };
+      }
+    }
+
+    // Real Cashfree API call for production
+    const response = await axios.get(`https://sandbox.cashfree.com/pg/orders/${paymentSessionId}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        'x-client-id': process.env.APP_ID,
+        'x-client-secret': process.env.SECRET_KEY,
+        'x-api-version': '2023-08-01'
+      }
+    });
+
+    const paymentData = response.data;
+
+    if (paymentData.order_status === "PAID") {
+      const payment = await Payment.findOne({ orderId: paymentSessionId }).populate('booking_id');
+
+      if (payment) {
+        await Booking.findByIdAndUpdate(payment.booking_id, {
+          status: "completed",
+          billStatus: "paid"
+        });
+
+        await Tracking.findOneAndUpdate(
+          { booking_id: payment.booking_id },
+          { status: "completed" }
+        );
+
+        return {
+          status: 200,
+          message: "Payment verified successfully",
+          data: {
+            payment_id: payment._id,
+            amount: payment.orderAmount,
+            booking_id: payment.booking_id,
+            status: "completed"
+          }
+        };
+      }
+    }
+
+    return {
+      status: 400,
+      message: "Payment not completed or not found",
+      data: paymentData
+    };
+
+  } catch (error) {
+    console.error("Cashfree API Error:", error.response?.data || error.message);
+    throw new Error(`Cashfree verification failed: ${error.message}`);
+  }
+}
+
+// Process Booking QR
+async function processBookingQR(booking_id, dealer_id, amount) {
+  try {
+    const booking = await Booking.findById(booking_id);
+    if (!booking) {
+      return {
+        status: 404,
+        message: "Booking not found"
+      };
+    }
+
+    // Check if payment already exists
+    const existingPayment = await Payment.findOne({ booking_id });
+    if (existingPayment) {
+      return {
+        status: 400,
+        message: "Payment already processed for this booking",
+        data: existingPayment
+      };
+    }
+
+    // Create cash payment record (similar to your Cashpayment function)
+    const order_id = Math.floor(1000000000000000 + Math.random() * 90000000000000).toString();
+
+    const payment = await Payment.create({
+      orderId: order_id,
+      booking_id,
+      dealer_id,
+      user_id: booking.created_by,
+      orderAmount: amount || booking.total_amount,
+      payment_type: "qr_cash",
+      order_status: "PAID",
+      order_currency: "INR",
+      payment_by: "dealer"
+    });
+
+    // Update booking status
+    await Booking.findByIdAndUpdate(booking_id, {
+      status: "completed",
+      billStatus: "paid"
+    });
+
+    // Update tracking
+    await Tracking.findOneAndUpdate(
+      { booking_id },
+      { status: "completed" }
+    );
+
+    return {
+      status: 200,
+      message: "QR payment processed successfully",
+      data: payment
+    };
+
+  } catch (error) {
+    throw new Error(`Booking processing failed: ${error.message}`);
+  }
+}
+
+// QR Scanner API - Process scanned QR data
+async function processQRScan(req, res) {
+  try {
+    const { qr_data, dealer_id, user_id, amount, booking_id } = req.body;
+
+    if (!qr_data || !dealer_id) {
+      return res.status(400).json({
+        status: 400,
+        message: "QR data and dealer ID are required"
+      });
+    }
+
+    console.log("QR Data Received:", qr_data);
+
+    let parsedData;
+    try {
+      if (qr_data.includes('payment_session_id')) {
+        const paymentSessionId = qr_data.split('payment_session_id=')[1];
+        parsedData = { type: 'cashfree_payment', payment_session_id: paymentSessionId };
+      }
+      // If QR contains UPI payment data
+      else if (qr_data.startsWith('upi://')) {
+        parsedData = this.parseUPIQR(qr_data);
+      }
+      // If QR contains JSON data
+      else if (qr_data.startsWith('{')) {
+        parsedData = JSON.parse(qr_data);
+      }
+      else {
+        // Try to extract booking ID from QR data
+        const bookingMatch = qr_data.match(/booking[:_\s-]*([a-fA-F0-9]{24})/);
+        if (bookingMatch) {
+          parsedData = { type: 'booking_reference', booking_id: bookingMatch[1] };
+        } else {
+          parsedData = { type: 'raw_data', data: qr_data };
+        }
+      }
+    } catch (parseError) {
+      console.error("QR Parse Error:", parseError);
+      parsedData = { type: 'raw_data', data: qr_data };
+    }
+
+    // Process based on QR type
+    let result;
+    switch (parsedData.type) {
+      // case 'cashfree_payment':
+      //   result = await this.processCashfreePayment(parsedData.payment_session_id, dealer_id);
+      //   break;
+      // ✅ CORRECT - Call the function directly
+      case 'cashfree_payment':
+        result = await processCashfreePayment(parsedData.payment_session_id, dealer_id);
+        break;
+
+      case 'booking_reference':
+        result = await this.processBookingQR(parsedData.booking_id, dealer_id, amount);
+        break;
+
+      case 'upi_payment':
+        result = await this.processUPIPayment(parsedData, dealer_id, amount);
+        break;
+
+      default:
+        result = {
+          status: 400,
+          message: "Unsupported QR format",
+          data: parsedData
+        };
+    }
+
+    return res.status(result.status || 200).json(result);
+
+  } catch (error) {
+    console.error("QR Scan Processing Error:", error);
+    return res.status(500).json({
+      status: 500,
+      message: "Failed to process QR code",
+      error: error.message
+    });
+  }
+}
+
+// UPI QR Code Generate API
+async function generateUPIQR(req, res) {
+  try {
+    const { upi_id, amount, payee_name, transaction_note } = req.body;
+
+    // Required validation
+    if (!upi_id || !amount) {
+      return res.status(400).json({
+        status: 400,
+        message: "UPI ID and amount are required"
+      });
+    }
+
+    // Create UPI payment URL
+    const upiUrl = `upi://pay?pa=${upi_id}&pn=${payee_name || 'Merchant'}&am=${amount}&cu=INR&tn=${transaction_note || 'Payment'}`;
+
+    // Generate QR code
+    const qrCodeData = await QRCode.toDataURL(upiUrl);
+
+    // Save to database (optional)
+    const paymentRecord = await Payment.create({
+      orderId: `UPI_${Date.now()}`,
+      orderAmount: amount,
+      payment_type: "upi_qr",
+      order_status: "pending",
+      upi_id: upi_id,
+      qr_data: upiUrl,
+      qr_image: qrCodeData
+    });
+
+    return res.status(200).json({
+      status: 200,
+      message: "UPI QR generated successfully",
+      data: {
+        payment_id: paymentRecord._id,
+        upi_url: upiUrl,
+        qr_code: qrCodeData, // Base64 image
+        amount: amount,
+        upi_id: upi_id
+      }
+    });
+
+  } catch (error) {
+    console.error("QR Generation Error:", error);
+    return res.status(500).json({
+      status: 500,
+      message: "Failed to generate QR code",
+      error: error.message
+    });
+  }
+}
+
+// Cashfree QR Code Generation
+async function generateCashfreeQR(req, res) {
+  try {
+    const { amount, customer_id, customer_name, order_note } = req.body;
+
+    const order_id = "QR_" + Date.now();
+
+    const orderData = {
+      order_amount: amount,
+      order_currency: "INR",
+      order_id: order_id,
+      customer_details: {
+        customer_id: customer_id,
+        customer_name: customer_name
+      },
+      order_meta: {
+        return_url: "https://yourdomain.com/payment-success"
+      }
+    };
+
+    // Create order in Cashfree
+    const response = await axios.post(
+      "https://sandbox.cashfree.com/pg/orders",
+      orderData,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-version": "2023-08-01",
+          "x-client-id": process.env.APP_ID,
+          "x-client-secret": process.env.SECRET_KEY,
+        },
+      }
+    );
+
+    // Generate QR from payment link
+    const paymentUrl = `https://payments.cashfree.com/order/#${response.data.payment_session_id}`;
+    const qrCodeData = await QRCode.toDataURL(paymentUrl);
+
+    return res.status(200).json({
+      status: 200,
+      message: "Payment QR generated successfully",
+      data: {
+        order_id: order_id,
+        payment_url: paymentUrl,
+        qr_code: qrCodeData,
+        amount: amount,
+        cf_order_id: response.data.cf_order_id
+      }
+    });
+
+  } catch (error) {
+    console.error("Cashfree QR Error:", error);
+    return res.status(500).json({
+      status: 500,
+      message: "Failed to generate payment QR",
+      error: error.message
+    });
+  }
+}
+
+// Complete QR Payment System
+async function generatePaymentQR(req, res) {
+  try {
+    const {
+      type = "upi", // upi, cashfree, phonepay
+      amount,
+      upi_id,
+      customer_name,
+      customer_phone,
+      booking_id,
+      dealer_id
+    } = req.body;
+
+    if (!amount) {
+      return res.status(400).json({
+        status: 400,
+        message: "Amount is required"
+      });
+    }
+
+    let qrData, paymentUrl, order_id;
+
+    switch (type) {
+      case "upi":
+        const merchantUPI = upi_id || "drbike@ybl"; // Your UPI ID
+        paymentUrl = `upi://pay?pa=${merchantUPI}&pn=DrBike&am=${amount}&cu=INR&tn=Payment for service`;
+        order_id = `UPI_${Date.now()}`;
+        break;
+
+      case "cashfree":
+        order_id = `CF_${Date.now()}`;
+        // Cashfree order creation
+        const cfResponse = await axios.post(
+          "https://sandbox.cashfree.com/pg/orders",
+          {
+            order_id: order_id,
+            order_amount: amount,
+            order_currency: "INR",
+            customer_details: {
+              customer_name: customer_name || "Customer",
+              customer_phone: customer_phone || "9999999999"
+            }
+          },
+          {
+            headers: {
+              "Content-Type": "application/json",
+              "x-api-version": "2023-08-01",
+              "x-client-id": process.env.APP_ID,
+              "x-client-secret": process.env.SECRET_KEY,
+            },
+          }
+        );
+        paymentUrl = `https://payments.cashfree.com/order/#${cfResponse.data.payment_session_id}`;
+        break;
+
+      default:
+        return res.status(400).json({
+          status: 400,
+          message: "Invalid QR type"
+        });
+    }
+
+    // Generate QR code
+    const qrCodeData = await QRCode.toDataURL(paymentUrl);
+
+    // Save payment record
+    const paymentRecord = await Payment.create({
+      orderId: order_id,
+      orderAmount: amount,
+      booking_id: booking_id,
+      dealer_id: dealer_id,
+      payment_type: `${type}_qr`,
+      order_status: "pending",
+      qr_data: paymentUrl,
+      qr_image: qrCodeData
+    });
+
+    return res.status(200).json({
+      status: 200,
+      message: "Payment QR generated successfully",
+      data: {
+        payment_id: paymentRecord._id,
+        order_id: order_id,
+        qr_code: qrCodeData,
+        payment_url: paymentUrl,
+        amount: amount,
+        type: type,
+        instructions: "Scan this QR code with any UPI app to complete payment"
+      }
+    });
+
+  } catch (error) {
+    console.error("QR Generation Error:", error);
+    return res.status(500).json({
+      status: 500,
+      message: "Failed to generate payment QR",
+      error: error.message
+    });
+  }
+}
+
 module.exports = {
+  generatePaymentQR,
+  generateCashfreeQR,
+  generateUPIQR,
+  processCashfreePayment,
+  processBookingQR,
   paymentRequest,
   paymentResponse,
   paymentInvoices,
@@ -2577,5 +2693,6 @@ module.exports = {
   dealerPayout,
   approvePayout,
   bookingPayment,
-  bookingPaymentReturn
+  bookingPaymentReturn,
+  processQRScan
 }
