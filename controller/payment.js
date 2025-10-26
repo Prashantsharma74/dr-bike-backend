@@ -106,6 +106,67 @@ const initiatePayment = async (req, res) => {
     }
 };
 
+// Handle Cashfree webhook to update payment status
+const paymentWebhook = async (req, res) => {
+    try {
+        // const data = req.body;
+
+        // const { order_id, order_status, order_token } = data;
+
+        const order_id="ORD_1761506677639";
+        const order_status="SUCCESS";
+        const order_token="temp_token";
+
+        if (!order_id) {
+            return res.status(400).json({ success: false, message: "Missing order_id" });
+        }
+
+        // Map Cashfree statuses to your enum
+        let mappedStatus;
+        switch (order_status) {
+            case "SUCCESS":
+                mappedStatus = "SUCCESS";
+                break;
+            case "FAILED":
+                mappedStatus = "FAILED";
+                break;
+            case "CANCELLED":
+                mappedStatus = "CANCELLED";
+                break;
+            case "ACTIVE": // just in case
+            case "PENDING":
+                mappedStatus = "PENDING";
+                break;
+            default:
+                mappedStatus = "PENDING";
+        }
+
+        // Update the payment in DB
+        const updatedPayment = await Payment.findOneAndUpdate(
+            { orderId: order_id },
+            {
+                order_status: mappedStatus,
+                order_token: order_token || "temp_token",
+            },
+            { new: true }
+        );
+
+        if (!updatedPayment) {
+            return res.status(404).json({ success: false, message: "Payment not found" });
+        }
+
+        // Optional: trigger other actions, e.g., mark booking as paid
+        // await Booking.findByIdAndUpdate(updatedPayment.booking_id, { billStatus: "paid" });
+
+        console.log(`Webhook processed: order_id=${order_id}, status=${mappedStatus}`);
+
+        res.status(200).send("Webhook received"); // Cashfree expects 200 response
+    } catch (error) {
+        console.error("Webhook error:", error);
+        res.status(500).send("Server error");
+    }
+};
+
 //  Get single payment details
 const getPaymentById = async (req, res) => {
     try {
@@ -189,7 +250,7 @@ const getAllPayments = async (req, res) => {
                 options: { strictPopulate: false }, // avoids crash if booking missing
             })
             .populate("dealer_id", "name email")
-            .populate("user_id", "name email")
+            .populate("user_id", "first_name last_name email")
             .sort(sort)
             .skip(skip)
             .limit(limit);
@@ -216,4 +277,4 @@ const getAllPayments = async (req, res) => {
     }
 };
 
-module.exports = { getAllPayments, initiatePayment, getPaymentById };
+module.exports = { getAllPayments, initiatePayment, getPaymentById, paymentWebhook };
