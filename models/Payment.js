@@ -64,79 +64,85 @@
 
 // module.exports = mongoose.model("Payment", paymentSchema );
 
+
 const mongoose = require("mongoose");
 
-const paymentSchema = new mongoose.Schema({
+const paymentSchema = new mongoose.Schema(
+  {
     cf_order_id: {
-        type: Number,
+      type: Number,
+      required: true,
+      unique: true
     },
     orderId: {
-        type: String,
+      type: String,
+      required: true
     },
     booking_id: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Booking"
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Booking",
+      required: true
     },
     dealer_id: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "dealer"
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Vendor", // Changed to match your dealer model export name
+      required: true
     },
     user_id: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "customers"
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "customers",
+      required: true
     },
-    users_id: {
-        type: String,
-    },
-    dealers_id: {
-        type: String,
-    },
+    // Remove redundant fields:
+    // users_id: { type: String }, // Remove this
+    // dealers_id: { type: String }, // Remove this
+
     orderAmount: {
-        type: Number,
+      type: Number,
+      required: true,
+      min: 0
     },
     payment_type: {
-        type: String,
-        // enum: ["qr", "online", "cash", "card"],
-         enum: ["qr", "online", "cash", "card", "upi", "upi_qr", "cashfree_qr", "phonepay_qr"],
-        default: "qr"
+      type: String,
+      required: true
     },
     order_currency: {
-        type: String,
-        default: "INR"
+      type: String,
+      default: "INR",
+      enum: ["INR", "USD"]
     },
     order_status: {
-        type: String,
-        enum: ["created", "pending", "completed", "failed", "cancelled"],
-        default: "created"
+      type: String,
+      required: true,
+      enum: ["PENDING", "SUCCESS", "FAILED", "CANCELLED"]
     },
     order_token: {
-        type: String,
-    },
-    qr_data: {
-        type: String, // Store QR code data/URL
-    },
-    qr_image_url: {
-        type: String, // Store QR image URL
-    },
-    upi_id: {
-        type: String, // UPI ID for QR payments
+      type: String,
+      required: true
     },
     payment_by: {
-        type: String,
-        enum: ["dealer", "user"],
-        default: "dealer",
-    },
-    payment_gateway: {
-        type: String,
-        enum: ["cashfree", "razorpay", "phonepe", "paytm", "upi"],
-        default: "cashfree"
+      type: String,
+      enum: ["dealer", "user"],
+      default: "dealer",
+      required: true
     },
     create_date: {
-        type: Date,
-        default: Date.now
+      type: Date,
+      default: Date.now
     },
-}, {
+  },
+  {
     timestamps: true,
-});
+  }
+);
+
+// Add indexes for better query performance
+paymentSchema.index({ cf_order_id: 1 });
+paymentSchema.index({ orderId: 1 });
+paymentSchema.index({ booking_id: 1 });
+paymentSchema.index({ dealer_id: 1 });
+paymentSchema.index({ user_id: 1 });
+paymentSchema.index({ order_status: 1 });
+paymentSchema.index({ create_date: -1 });
 
 module.exports = mongoose.model("Payment", paymentSchema);

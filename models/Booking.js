@@ -125,9 +125,14 @@ const bookingSchema = new mongoose.Schema(
 );
 
 bookingSchema.plugin(AutoIncrement, { id: "booking_seq", inc_field: "id" });
+// bookingSchema.virtual("bookingId").get(function () {
+//   return `B-${this.id.toString().padStart(2, "0")}`;
+// });
 bookingSchema.virtual("bookingId").get(function () {
+  if (!this.id) return null; 
   return `B-${this.id.toString().padStart(2, "0")}`;
 });
+
 bookingSchema.set("toJSON", { virtuals: true });
 
 module.exports = mongoose.model("Booking", bookingSchema);
