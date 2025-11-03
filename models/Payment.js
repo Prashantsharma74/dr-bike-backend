@@ -118,7 +118,8 @@ const paymentSchema = new mongoose.Schema(
     },
     order_token: {
       type: String,
-      required: true
+      // required: true
+      default: "temp_token"
     },
     payment_by: {
       type: String,
