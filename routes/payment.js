@@ -1,35 +1,33 @@
-// const express = require('express');
-// const router = express.Router();
-// // const { getAllPayments, initiatePayment, getPaymentById, paymentWebhook, createCheckoutUrl, createCheckoutSession, createPaymentLink } = require("../controller/payment");
-
-// // Route: GET /api/payments
-// //
-// // router.post("/initiate", initiatePayment);
-// // router.post("/create-checkout", createCheckoutUrl);
-// // router.post('/create-checkout-session', createCheckoutSession);
-// // router.post('/link', createPaymentLink);
-// // router.get("/single-payment-detail/:id", getPaymentById);
-// // router.get("/webhook", paymentWebhook);
-
-// module.exports = router;
-
 const express = require('express');
 const router = express.Router();
-const {
-    createPaymentOrder,
-    verifyPayment,
-    paymentWebhook,
-    getPaymentDetails,
-    initiateRefund,
-      getAllPayments
-} = require('../controller/payment');
+const { getAllPayments, initiatePayment, getPaymentById, paymentWebhook, createCheckoutUrl, createCheckoutSession, createPaymentLink } = require("../controller/payment");
 
-// Payment routes
-router.post('/create-order', createPaymentOrder);
-router.get('/verify/:order_id', verifyPayment);
-router.post('/webhook', paymentWebhook);
-router.get('/details/:id', getPaymentDetails);
-router.post('/refund', initiateRefund);
-router.get("/all-payments", getAllPayments);
+router.post("/initiate", initiatePayment);
+router.post("/create-checkout", createCheckoutUrl);
+router.post('/create-checkout-session', createCheckoutSession);
+router.post('/link', createPaymentLink);
+router.get("/single-payment-detail/:id", getPaymentById);
+router.get("/webhook", paymentWebhook);
 
 module.exports = router;
+
+// const express = require('express');
+// const router = express.Router();
+// const {
+//     createPaymentOrder,
+//     verifyPayment,
+//     paymentWebhook,
+//     getPaymentDetails,
+//     initiateRefund,
+//       getAllPayments
+// } = require('../controller/payment');
+
+// // Payment routes
+// router.post('/create-order', createPaymentOrder);
+// router.get('/verify/:order_id', verifyPayment);
+// router.post('/webhook', paymentWebhook);
+// router.get('/details/:id', getPaymentDetails);
+// router.post('/refund', initiateRefund);
+// router.get("/all-payments", getAllPayments);
+
+// module.exports = router;
