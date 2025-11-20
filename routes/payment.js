@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getAllPayments, initiatePayment, getPaymentById, paymentWebhook, createCheckoutUrl, createCheckoutSession, createPaymentLink } = require("../controller/payment");
+const { getAllPayments,getBillByBookingId,getUserBillsSimple,getUserBillDetails,getAllBills, initiatePayment, getPaymentById, paymentWebhook, createCheckoutUrl, createCheckoutSession, createPaymentLink } = require("../controller/payment");
 
 router.post("/initiate", initiatePayment);
 router.post("/create-checkout", createCheckoutUrl);
@@ -8,6 +8,10 @@ router.post('/create-checkout-session', createCheckoutSession);
 router.post('/link', createPaymentLink);
 router.get("/single-payment-detail/:id", getPaymentById);
 router.get("/webhook", paymentWebhook);
+router.get('/bills/booking/:booking_id', getBillByBookingId);
+router.get('/bills/all', getAllBills);
+router.get('/user/:user_id/bills/simple', getUserBillsSimple);
+router.get('/user/:user_id/bills/:bill_id', getUserBillDetails);
 
 module.exports = router;
 

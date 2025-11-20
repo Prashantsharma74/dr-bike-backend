@@ -22,6 +22,7 @@ const API_KEY_ID = process.env.API_KEY_ID_RAZO;
 const API_KEY_SECRET = process.env.API_KEY_SECRET_RAZO;
 const Vendor = require("../models/Dealer");
 const Customer = require("../models/customer_model");
+const Bill = require("../models/billSchema");
 
 const CASHFREE_BASE_URL =
     process.env.CASHFREE_ENV === "production"
@@ -106,66 +107,366 @@ const initiatePayment = async (req, res) => {
     }
 };
 
-// Handle Cashfree webhook to update payment status
+
 const paymentWebhook = async (req, res) => {
     try {
-        // const data = req.body;
+        const signature = req.headers['x-webhook-signature'];
+        const timestamp = req.headers['x-webhook-timestamp'];
+        const body = req.body;
 
-        // const { order_id, order_status, order_token } = data;
+        console.log('🔔 Webhook received:', JSON.stringify(body, null, 2));
 
-        const order_id = "ORD_1762157489304";
-        const order_status = "SUCCESS";
-        const order_token = "temp_token";
+        // Extract data from Cashfree webhook
+        const orderId = body.data?.order?.order_id;
+        const orderStatus = body.data?.order?.order_status;
+        const paymentMethod = body.data?.order?.payment_method;
+        const transactionId = body.data?.order?.payment_utr;
+        const paymentTime = body.data?.order?.payment_time;
 
-        if (!order_id) {
-            return res.status(400).json({ success: false, message: "Missing order_id" });
+        if (!orderId) {
+            console.log('❌ Missing orderId in webhook');
+            return res.status(400).send("Missing orderId");
         }
 
-        // Map Cashfree statuses to your enum
+        // Find payment record
+        const payment = await Payment.findOne({ orderId: orderId });
+        if (!payment) {
+            console.warn(`❌ Webhook: Payment not found for orderId: ${orderId}`);
+            return res.status(404).send("Payment not found");
+        }
+
+        console.log(`✅ Payment found: ${orderId}, Current status: ${payment.order_status}`);
+
+        // Map Cashfree status
         let mappedStatus;
-        switch (order_status) {
-            case "SUCCESS":
+        switch (orderStatus) {
+            case "PAID":
                 mappedStatus = "SUCCESS";
                 break;
+            case "EXPIRED":
             case "FAILED":
                 mappedStatus = "FAILED";
                 break;
             case "CANCELLED":
                 mappedStatus = "CANCELLED";
                 break;
-            case "ACTIVE": // just in case
-            case "PENDING":
-                mappedStatus = "PENDING";
-                break;
             default:
                 mappedStatus = "PENDING";
         }
 
-        // Update the payment in DB
-        const updatedPayment = await Payment.findOneAndUpdate(
-            { orderId: order_id },
-            {
-                order_status: mappedStatus,
-                order_token: order_token || "temp_token",
-            },
-            { new: true }
-        );
+        console.log(`🔄 Mapping status: ${orderStatus} -> ${mappedStatus}`);
 
-        if (!updatedPayment) {
-            return res.status(404).json({ success: false, message: "Payment not found" });
+        // Update payment
+        payment.order_status = mappedStatus;
+        payment.payment_method = paymentMethod || null;
+        payment.transaction_id = transactionId || null;
+        payment.metadata = payment.metadata || {};
+        payment.metadata.webhook_data = body.data;
+        payment.metadata.last_webhook_received = new Date();
+
+        await payment.save();
+        console.log(`✅ Payment updated in database: ${orderId} -> ${mappedStatus}`);
+
+        // ✅ NEW: Generate Bill if payment is successful
+        if (mappedStatus === "SUCCESS") {
+            await generateBill(payment);
         }
 
-        // Optional: trigger other actions, e.g., mark booking as paid
-        // await Booking.findByIdAndUpdate(updatedPayment.booking_id, { billStatus: "paid" });
+        // Update booking if payment successful
+        if (mappedStatus === "SUCCESS") {
+            await Booking.findByIdAndUpdate(payment.booking_id, {
+                $set: {
+                    billStatus: "paid",
+                    status: "confirmed",
+                    paymentStatus: "completed",
+                    paymentDate: new Date(paymentTime || Date.now())
+                },
+            });
+            console.log(`✅ Booking updated: ${payment.booking_id}`);
+        }
 
-        console.log(`Webhook processed: order_id=${order_id}, status=${mappedStatus}`);
+        console.log(`🎉 Webhook processed successfully: orderId=${orderId}, status=${mappedStatus}`);
+        res.status(200).send("Webhook processed successfully");
 
-        res.status(200).send("Webhook received"); // Cashfree expects 200 response
     } catch (error) {
-        console.error("Webhook error:", error);
+        console.error("❌ Webhook processing error:", error);
         res.status(500).send("Server error");
     }
 };
+
+// ✅ NEW: Bill Generation Function
+const generateBill = async (payment) => {
+    try {
+        // Check if bill already exists
+        const existingBill = await Bill.findOne({ booking_id: payment.booking_id });
+        if (existingBill) {
+            console.log(`📄 Bill already exists for booking: ${payment.booking_id}`);
+            return existingBill;
+        }
+
+        // Get booking details with populated data
+        const booking = await Booking.findById(payment.booking_id)
+            .populate("user_id", "first_name last_name email phone")
+            .populate("userBike_id", "model registration_number vin")
+            .populate("services", "name price")
+            .populate("additionalServices", "name price");
+
+        if (!booking) {
+            throw new Error("Booking not found for bill generation");
+        }
+
+        // Prepare services array
+        const services = [];
+        let subtotal = 0;
+
+        // Add main services
+        if (booking.services && booking.services.length > 0) {
+            booking.services.forEach(service => {
+                if (service && service.name) {
+                    services.push({
+                        name: service.name,
+                        price: service.price || 0,
+                        quantity: 1,
+                        total: service.price || 0
+                    });
+                    subtotal += service.price || 0;
+                }
+            });
+        }
+
+        // Add additional services
+        if (booking.additionalServices && booking.additionalServices.length > 0) {
+            booking.additionalServices.forEach(service => {
+                if (service && service.name) {
+                    services.push({
+                        name: `Additional: ${service.name}`,
+                        price: service.price || 0,
+                        quantity: 1,
+                        total: service.price || 0
+                    });
+                    subtotal += service.price || 0;
+                }
+            });
+        }
+
+        // Use serviceSummary if available (fallback)
+        if (services.length === 0 && booking.serviceSummary && booking.serviceSummary.length > 0) {
+            booking.serviceSummary.forEach(service => {
+                if (service.serviceName) {
+                    services.push({
+                        name: service.serviceName,
+                        price: service.price || 0,
+                        quantity: 1,
+                        total: service.price || 0
+                    });
+                    subtotal += service.price || 0;
+                }
+            });
+        }
+
+        // Calculate tax and total
+        const taxRate = 18; // 18% GST
+        const taxAmount = (subtotal * taxRate) / 100;
+        const totalAmount = subtotal + taxAmount;
+
+        // Generate bill number
+        const billNumber = `BILL-${Date.now()}-${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
+
+        // Create bill
+        const bill = new Bill({
+            booking_id: payment.booking_id,
+            payment_id: payment._id,
+            bill_number: billNumber,
+            bill_date: new Date(),
+            customer_details: {
+                name: `${booking.user_id.first_name} ${booking.user_id.last_name}`,
+                email: booking.user_id.email,
+                phone: booking.user_id.phone
+            },
+            bike_details: {
+                model: booking.userBike_id?.model || "N/A",
+                registration: booking.userBike_id?.registration_number || "N/A",
+                vin: booking.userBike_id?.vin || "N/A"
+            },
+            services: services,
+            subtotal: subtotal,
+            tax_amount: taxAmount,
+            tax_rate: taxRate,
+            total_amount: totalAmount,
+            payment_details: {
+                payment_method: payment.payment_method || "online",
+                transaction_id: payment.transaction_id,
+                payment_date: new Date()
+            },
+            status: "generated"
+        });
+
+        await bill.save();
+        console.log(`✅ Bill generated successfully: ${billNumber} for booking: ${payment.booking_id}`);
+
+        // Update booking with bill generated flag
+        await Booking.findByIdAndUpdate(payment.booking_id, {
+            $set: {
+                billGenerated: true,
+                totalBill: totalAmount,
+                tax: taxAmount
+            }
+        });
+
+        return bill;
+
+    } catch (error) {
+        console.error("❌ Bill generation error:", error);
+        throw error;
+    }
+};
+
+// Get Bill by Booking ID
+const getBillByBookingId = async (req, res) => {
+    try {
+        const { booking_id } = req.params;
+
+        const bill = await Bill.findOne({ booking_id: booking_id })
+            .populate("booking_id")
+            .populate("payment_id");
+
+        if (!bill) {
+            return res.status(404).json({
+                success: false,
+                message: "Bill not found for this booking"
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: "Bill fetched successfully",
+            data: bill
+        });
+
+    } catch (error) {
+        console.error("Get Bill Error:", error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch bill",
+            error: error.message
+        });
+    }
+};
+
+// Get All Bills with Filtering
+const getAllBills = async (req, res) => {
+    try {
+        const { page = 1, limit = 10, startDate, endDate } = req.query;
+
+        const filters = {};
+
+        // Date range filter
+        if (startDate || endDate) {
+            filters.bill_date = {};
+            if (startDate) {
+                const start = new Date(startDate);
+                start.setHours(0, 0, 0, 0);
+                filters.bill_date.$gte = start;
+            }
+            if (endDate) {
+                const end = new Date(endDate);
+                end.setHours(23, 59, 59, 999);
+                filters.bill_date.$lte = end;
+            }
+        }
+
+        const bills = await Bill.find(filters)
+            .populate("booking_id")
+            .populate("payment_id")
+            .sort({ bill_date: -1 })
+            .limit(limit * 1)
+            .skip((page - 1) * limit);
+
+        const totalBills = await Bill.countDocuments(filters);
+
+        res.status(200).json({
+            success: true,
+            message: "Bills fetched successfully",
+            data: {
+                bills,
+                pagination: {
+                    currentPage: page,
+                    totalPages: Math.ceil(totalBills / limit),
+                    totalBills
+                }
+            }
+        });
+
+    } catch (error) {
+        console.error("Get All Bills Error:", error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch bills",
+            error: error.message
+        });
+    }
+};
+
+// Handle Cashfree webhook to update payment status
+// const paymentWebhook = async (req, res) => {
+//     try {
+//         // const data = req.body;
+
+//         // const { order_id, order_status, order_token } = data;
+
+//         const order_id = "ORD_1762157489304";
+//         const order_status = "SUCCESS";
+//         const order_token = "temp_token";
+
+//         if (!order_id) {
+//             return res.status(400).json({ success: false, message: "Missing order_id" });
+//         }
+
+//         // Map Cashfree statuses to your enum
+//         let mappedStatus;
+//         switch (order_status) {
+//             case "SUCCESS":
+//                 mappedStatus = "SUCCESS";
+//                 break;
+//             case "FAILED":
+//                 mappedStatus = "FAILED";
+//                 break;
+//             case "CANCELLED":
+//                 mappedStatus = "CANCELLED";
+//                 break;
+//             case "ACTIVE": // just in case
+//             case "PENDING":
+//                 mappedStatus = "PENDING";
+//                 break;
+//             default:
+//                 mappedStatus = "PENDING";
+//         }
+
+//         // Update the payment in DB
+//         const updatedPayment = await Payment.findOneAndUpdate(
+//             { orderId: order_id },
+//             {
+//                 order_status: mappedStatus,
+//                 order_token: order_token || "temp_token",
+//             },
+//             { new: true }
+//         );
+
+//         if (!updatedPayment) {
+//             return res.status(404).json({ success: false, message: "Payment not found" });
+//         }
+
+//         // Optional: trigger other actions, e.g., mark booking as paid
+//         // await Booking.findByIdAndUpdate(updatedPayment.booking_id, { billStatus: "paid" });
+
+//         console.log(`Webhook processed: order_id=${order_id}, status=${mappedStatus}`);
+
+//         res.status(200).send("Webhook received"); // Cashfree expects 200 response
+//     } catch (error) {
+//         console.error("Webhook error:", error);
+//         res.status(500).send("Server error");
+//     }
+// };
 
 //  Get single payment details
 const getPaymentById = async (req, res) => {
@@ -629,7 +930,141 @@ const createPaymentLink = async (req, res) => {
     }
 };
 
-module.exports = { getAllPayments, initiatePayment, getPaymentById, paymentWebhook, createCheckoutUrl, createCheckoutSession, createPaymentLink };
+// Get All Bills for User (Simplified)
+const getUserBillsSimple = async (req, res) => {
+    try {
+        const { user_id } = req.params;
+
+        // Get all bookings for this user
+        const userBookings = await Booking.find({ user_id: user_id })
+            .select('_id bookingId serviceDate status')
+            .populate('userBike_id', 'model registration_number');
+
+        if (userBookings.length === 0) {
+            return res.status(200).json({
+                success: true,
+                message: "No bookings found for this user",
+                data: []
+            });
+        }
+
+        const bookingIds = userBookings.map(booking => booking._id);
+
+        // Get all bills for these bookings
+        const bills = await Bill.find({ booking_id: { $in: bookingIds } })
+            .populate('payment_id', 'orderId payment_method')
+            .sort({ bill_date: -1 })
+            .lean();
+
+        // Map bills with booking details
+        const billsWithDetails = bills.map(bill => {
+            const booking = userBookings.find(b => b._id.toString() === bill.booking_id.toString());
+            return {
+                bill_id: bill._id,
+                bill_number: bill.bill_number,
+                bill_date: bill.bill_date,
+                booking_id: booking?._id,
+                booking_number: booking?.bookingId,
+                service_date: booking?.serviceDate,
+                bike_model: booking?.userBike_id?.model,
+                bike_registration: booking?.userBike_id?.registration_number,
+                booking_status: booking?.status,
+                customer_name: bill.customer_details?.name,
+                total_amount: bill.total_amount,
+                payment_method: bill.payment_details?.payment_method,
+                bill_status: bill.status
+            };
+        });
+
+        res.status(200).json({
+            success: true,
+            message: "User bills fetched successfully",
+            data: billsWithDetails
+        });
+
+    } catch (error) {
+        console.error("Get User Bills Simple Error:", error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch user bills",
+            error: error.message
+        });
+    }
+};
+
+// Get Bill Details for User (with download format)
+const getUserBillDetails = async (req, res) => {
+    try {
+        const { user_id, bill_id } = req.params;
+
+        // Verify the bill belongs to the user
+        const bill = await Bill.findById(bill_id)
+            .populate({
+                path: "booking_id",
+                select: "user_id bookingId serviceDate userBike_id",
+                populate: {
+                    path: "userBike_id",
+                    select: "model registration_number vin year"
+                }
+            })
+            .populate("payment_id", "orderId payment_method transaction_id");
+
+        if (!bill) {
+            return res.status(404).json({
+                success: false,
+                message: "Bill not found"
+            });
+        }
+
+        // Check if bill belongs to the requested user
+        if (bill.booking_id.user_id.toString() !== user_id) {
+            return res.status(403).json({
+                success: false,
+                message: "Access denied. This bill does not belong to you"
+            });
+        }
+
+        // Format bill for download/view
+        const billDetails = {
+            bill_id: bill._id,
+            bill_number: bill.bill_number,
+            bill_date: bill.bill_date,
+            booking_number: bill.booking_id.bookingId,
+            service_date: bill.booking_id.serviceDate,
+            bike_details: {
+                model: bill.booking_id.userBike_id?.model,
+                registration: bill.booking_id.userBike_id?.registration_number,
+                vin: bill.booking_id.userBike_id?.vin,
+                year: bill.booking_id.userBike_id?.year
+            },
+            customer_details: bill.customer_details,
+            services: bill.services,
+            subtotal: bill.subtotal,
+            tax_amount: bill.tax_amount,
+            tax_rate: bill.tax_rate,
+            total_amount: bill.total_amount,
+            payment_details: bill.payment_details,
+            bill_status: bill.status,
+            created_at: bill.createdAt
+        };
+
+        res.status(200).json({
+            success: true,
+            message: "Bill details fetched successfully",
+            data: billDetails
+        });
+
+    } catch (error) {
+        console.error("Get User Bill Details Error:", error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch bill details",
+            error: error.message
+        });
+    }
+};
+
+module.exports = { getBillByBookingId, getAllBills, getUserBillsSimple, getUserBillDetails, getAllPayments, initiatePayment, getPaymentById, paymentWebhook, createCheckoutUrl, createCheckoutSession, createPaymentLink };
 
 // const axios = require('axios');
 // const Payment = require("../models/Payment");
@@ -868,7 +1303,7 @@ module.exports = { getAllPayments, initiatePayment, getPaymentById, paymentWebho
 //         });
 
 //         if (existingPendingPayment) {
-//             const checkoutUrl = existingPendingPayment.metadata?.session_id 
+//             const checkoutUrl = existingPendingPayment.metadata?.session_id
 //                 ? `https://${process.env.CASHFREE_ENV === 'production' ? 'payments.cashfree.com' : 'sandbox.cashfree.com'}/order/#${existingPendingPayment.metadata.session_id}`
 //                 : null;
 
@@ -889,7 +1324,7 @@ module.exports = { getAllPayments, initiatePayment, getPaymentById, paymentWebho
 //         const recentFailedPayment = await Payment.findOne({
 //             booking_id: booking_id,
 //             order_status: "FAILED",
-//             createdAt: { 
+//             createdAt: {
 //                 $gte: new Date(Date.now() - 5 * 60 * 1000) // Last 5 minutes
 //             }
 //         });
